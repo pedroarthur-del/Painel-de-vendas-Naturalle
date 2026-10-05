@@ -70,6 +70,51 @@
     font:inherit; font-size:13px; color:var(--ink); padding:9px 10px; border-radius:7px}
   .resumo-menu button:hover{background:var(--paper)}
 
+  /* navegação por abas: Visão geral x Rankings */
+  .tabnav{display:flex; gap:8px; margin:18px 0 20px}
+  .tabnav button{font:inherit; font-size:13.5px; font-weight:700; color:var(--mauve-d); background:var(--card);
+    border:1px solid var(--line); border-radius:10px; padding:10px 18px; cursor:pointer}
+  .tabnav button.active{background:var(--orange-d); color:#fff; border-color:var(--orange-d)}
+  .rank-table{width:100%; border-collapse:collapse; font-size:13px}
+  .rank-table th{text-align:left; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; padding:7px 10px; border-bottom:2px solid var(--line)}
+  .rank-table td{padding:9px 10px; border-bottom:1px solid var(--line-2)}
+  .rank-table td.num{text-align:right; font-variant-numeric:tabular-nums}
+  .rank-table tr:last-child td{border-bottom:none}
+  .rank-pos{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:50%; background:var(--paper); font-weight:700; font-size:11.5px; color:var(--mauve-d); margin-right:8px}
+  .rank-up{color:var(--green); font-weight:700} .rank-down{color:var(--brick); font-weight:700}
+
+  /* pódio estilo F1 */
+  .podio{display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:6px 0 24px; flex-wrap:wrap}
+  .podio-slot{display:flex; flex-direction:column; align-items:center; width:140px}
+  .podio-medal{font-size:30px; margin-bottom:6px}
+  .podio-nome{font-weight:700; font-size:13.5px; color:var(--ink); text-align:center; margin-bottom:3px; word-break:break-word}
+  .podio-val{font-size:12.5px; color:var(--muted); margin-bottom:8px; text-align:center}
+  .podio-stand{width:100%; border-radius:10px 10px 0 0; display:flex; align-items:flex-start; justify-content:center;
+    padding-top:8px; font-size:22px; font-weight:800; color:#fff}
+  .podio-slot.s1 .podio-stand{height:92px; background:linear-gradient(180deg,var(--orange),var(--orange-d))}
+  .podio-slot.s2 .podio-stand{height:66px; background:linear-gradient(180deg,#A8A0AE,#8C8494)}
+  .podio-slot.s3 .podio-stand{height:48px; background:linear-gradient(180deg,#C98A5A,#A5673A)}
+  @media (max-width:640px){ .podio-slot{width:104px} .podio-nome{font-size:12px} }
+
+  /* aba de configuração */
+  .cfg-section{margin-bottom:26px}
+  .cfg-section h3{font-size:14px; color:var(--ink); margin:0 0 4px}
+  .cfg-section .desc{margin-bottom:12px}
+  .cfg-meta-geral{display:flex; align-items:center; gap:8px; max-width:280px}
+  .cfg-meta-geral span{font-size:14px; font-weight:700; color:var(--mauve-d)}
+  .cfg-meta-geral input{flex:1; font:inherit; font-size:15px; font-weight:700; color:var(--ink);
+    border:1px solid var(--line); border-radius:9px; padding:9px 11px}
+  .cfg-table{width:100%; border-collapse:collapse; font-size:13.5px}
+  .cfg-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted);
+    font-weight:700; padding:7px 10px; border-bottom:2px solid var(--line)}
+  .cfg-table td{padding:7px 10px; border-bottom:1px solid var(--line-2)}
+  .cfg-table input{width:140px; font:inherit; font-size:13.5px; border:1px solid var(--line); border-radius:7px; padding:6px 9px}
+  .cfg-table .fonte{font-size:11px; color:var(--neutral); margin-left:6px}
+  .cfg-soon{font-size:13px; color:var(--muted); background:var(--paper); border:1px dashed var(--line);
+    border-radius:10px; padding:14px 16px}
+
   .state{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
     padding:44px 34px; text-align:center; box-shadow:var(--shadow)}
   .state.err{border-color:#E9C3B5; background:#FCF4EF}
@@ -261,6 +306,14 @@
 
     <div class="proj-banner" id="projBanner"></div>
 
+    <div class="tabnav">
+      <button type="button" id="tabBtnGeral" class="active">Visão geral</button>
+      <button type="button" id="tabBtnRankings">Rankings</button>
+      <button type="button" id="tabBtnConfig">Config</button>
+    </div>
+
+    <div id="tabGeral">
+
     <div class="grid">
       <div class="panel">
         <h2>Realizado acumulado x Meta x Projeção — por semana</h2>
@@ -341,6 +394,68 @@
     <div class="panel">
       <p class="footpanel" id="note"></p>
     </div>
+
+    </div><!-- /tabGeral -->
+
+    <div id="tabRankings" class="hidden">
+
+      <div class="grid">
+        <div class="panel">
+          <h2>1º Ranking — Atingimento da meta</h2>
+          <p class="desc">Só entram vendedores com meta cadastrada no mês. Ordenado do maior pro menor atingimento.</p>
+          <div id="rankMetaWrap"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>2º Ranking — Crescimento de faturamento, semana x semana</h2>
+          <p class="desc" id="rankCrescDesc">Compara a última semana com dado contra a semana anterior.</p>
+          <div id="rankCrescWrap"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>3º Ranking — Novos clientes (lojas)</h2>
+          <p class="desc">Ainda não dá pra calcular — veja o aviso abaixo.</p>
+          <div id="rankClientesWrap"></div>
+        </div>
+      </div>
+
+    </div><!-- /tabRankings -->
+
+    <div id="tabConfig" class="hidden">
+      <div class="grid">
+        <div class="panel">
+          <h2>Config — metas do painel</h2>
+          <p class="desc">Editando: <b id="cfgPeriodo"></b>. Pra editar outro mês, troque o filtro de Ano/Mês ali em cima — essa aba sempre edita o mês selecionado.</p>
+
+          <div class="cfg-section">
+            <h3>Meta geral do mês</h3>
+            <p class="desc">Meta da empresa inteira (todos os vendedores e canais somados). É a mesma usada no banner do topo.</p>
+            <div class="cfg-meta-geral"><span>R$</span><input type="text" id="cfgMetaGeral" placeholder="digitar"></div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Metas por vendedor</h3>
+            <p class="desc">Sobrescreve a meta que está na planilha, só pra essa visão — a planilha original não é alterada. Afeta os rankings, o painel diário e o atingimento. Deixe em branco pra voltar a usar o valor da planilha.</p>
+            <div id="cfgVendedoresWrap"></div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Por marca <span class="badge-warn">em breve</span></h3>
+            <div class="cfg-soon">Ainda não temos o faturamento quebrado por marca (Naturalle x Selecto) pra todo mundo — só pro grupo Outros Canais. Quando isso existir, a meta por marca entra aqui.</div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Por SKU <span class="badge-warn">em breve</span></h3>
+            <div class="cfg-soon">Ainda não temos venda quebrada por produto/SKU — só o total por vendedor. Quando existir, a meta por SKU entra aqui.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /tabConfig -->
+
   </div>
 </div>
 <script>
@@ -564,6 +679,15 @@ let lastMeta={filename:null, savedAt:null};
 /* ---------- file handling ---------- */
 $('#btnFile').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{ const f=e.target.files[0]; if(f) readFile(f); };
+
+const TABS=['Geral','Rankings','Config'];
+function irParaAba(nome){
+  TABS.forEach(n=>{
+    $('#tab'+n).classList.toggle('hidden', n!==nome);
+    $('#tabBtn'+n).classList.toggle('active', n===nome);
+  });
+}
+TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 $('#btnClear').onclick=()=>{
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
   RECS=null; lastMeta={filename:null,savedAt:null};
@@ -896,8 +1020,11 @@ function compute(){
   marcaRows.forEach(r=>{ marcaAgg[r.marca]=(marcaAgg[r.marca]||0)+r.venda; });
 
   // ranking
-  const rank=monthScoped.map(r=>({v:r.vendedor,grupo:r.grupo,venda:r.venda,meta:r.meta,
-    pct:r.meta? r.venda/r.meta*100:null})).sort((a,b)=>b.venda-a.venda);
+  const rank=monthScoped.map(r=>{
+    const metaEff = getMetaOverride(ano,mes,'__all',r.vendedor) ?? r.meta;
+    return {v:r.vendedor,grupo:r.grupo,venda:r.venda,meta:metaEff,
+      pct:metaEff? r.venda/metaEff*100:null, semanas:r.semanas};
+  }).sort((a,b)=>b.venda-a.venda);
 
   // desempenho diário — só existe pra meses lançados no formato novo (por dia).
   // Ignora fim de semana e os feriados informados; e só avalia dias que já "aconteceram" (até ontem).
@@ -910,7 +1037,8 @@ function compute(){
     const diasUteisDoMes=[...diasSet].filter(d=>isBizDay(ano,mes,d) && !feriados.includes(d)).sort((a,b)=>a-b);
     const soVendedores = state.grupo==='__all' && state.vend==='__all';   // canais só aparecem ao escolher o grupo "Outros Canais" ou um vendedor
     const linhas=monthScoped.filter(r=>r.dias!=null && !(soVendedores && r.grupo===GRUPO3_CANAIS)).map(r=>{
-      const metaDia=(r.meta!=null && bizDaysTotal>0)? r.meta/bizDaysTotal : null;
+      const metaEff = getMetaOverride(ano,mes,'__all',r.vendedor) ?? r.meta;
+      const metaDia=(metaEff!=null && bizDaysTotal>0)? metaEff/bizDaysTotal : null;
       const porDia={}; r.dias.forEach(d=>{ porDia[d.dia]=d.valor; });
       let diasZerados=0, diasAbaixo=0, diasAvaliados=0;
       diasUteisDoMes.forEach(d=>{
@@ -939,6 +1067,8 @@ function render(){
   drawAcum(k); drawYoY(k); drawMoM(k); drawGrupoMeta(k); drawAting(k);
   drawRank(k); drawEvol(k); drawMarca(k); drawGrupoShare(k);
   renderDiario(k);
+  renderRankMeta(k); renderRankCresc(k); renderRankClientes(k);
+  renderConfig(k);
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
     : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';
@@ -1219,6 +1349,133 @@ function renderDiario(k){
     html+='<div class="diario-summary">Nenhum vendedor ficou um dia sem vender até agora neste mês.</div>';
   }
   wrap.innerHTML=html;
+}
+
+/* ---------- 1º ranking: atingimento da meta ---------- */
+const MEDALHAS=['🥇','🥈','🥉'];
+function podioHTML(linhas, valLabel){
+  // ordem visual de pódio: 2º / 1º / 3º (igual pódio de corrida)
+  const ordem=[1,0,2].filter(i=>linhas[i]);
+  return '<div class="podio">'+ordem.map(i=>{
+    const r=linhas[i];
+    return `<div class="podio-slot s${i+1}">
+      <div class="podio-medal">${MEDALHAS[i]}</div>
+      <div class="podio-nome">${esc(r.v)}</div>
+      <div class="podio-val">${valLabel(r)}</div>
+      <div class="podio-stand">${i+1}º</div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+/* ---------- 1º ranking: atingimento da meta (com pódio) ---------- */
+function renderRankMeta(k){
+  const wrap=$('#rankMetaWrap');
+  const linhas=k.rank.filter(r=>r.meta!=null && r.meta>0).sort((a,b)=>b.pct-a.pct);
+  if(!linhas.length){ wrap.innerHTML='<div class="na">Ninguém com meta cadastrada neste recorte.</div>'; return; }
+  let html = linhas.length>=2 ? podioHTML(linhas, r=>r.pct.toFixed(0)+'%') : '';
+  html+='<table class="rank-table"><thead><tr><th>#</th><th>Vendedor</th><th class="num">Realizado</th><th class="num">Meta</th><th class="num">Atingimento</th></tr></thead><tbody>';
+  linhas.forEach((r,i)=>{
+    const cls = r.pct>=100?'rank-up':(r.pct<85?'rank-down':'');
+    html+=`<tr><td><span class="rank-pos">${i+1}</span></td><td>${esc(r.v)}</td><td class="num">${BRL.format(r.venda)}</td>`+
+      `<td class="num">${BRL.format(r.meta)}</td><td class="num ${cls}">${r.pct.toFixed(0)}%</td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+/* ---------- 2º ranking: crescimento de faturamento, TODAS as semanas do mês ---------- */
+function renderRankCresc(k){
+  const wrap=$('#rankCrescWrap');
+  if(k.weeksElapsed<2){
+    wrap.innerHTML='<div class="na">Esse mês ainda não tem 2 semanas com dado — o comparativo semana x semana só aparece a partir da 2ª semana do mês.</div>';
+    $('#rankCrescDesc').innerHTML='Compara todas as semanas do mês, uma com a anterior.';
+    return;
+  }
+  const nSem=k.weeksElapsed; // só semanas que já têm dado
+  const linhas=k.rank.map(r=>{
+    const sem=(r.semanas||[]).slice(0,nSem);
+    const variacoes=[]; // uma por par de semanas consecutivas
+    for(let i=1;i<nSem;i++){
+      const ant=sem[i-1]||0, atu=sem[i]||0;
+      if(ant>0) variacoes.push((atu-ant)/ant*100);
+      else if(atu>0) variacoes.push(Infinity);
+      else variacoes.push(null);
+    }
+    const finitos=variacoes.filter(v=>v!=null && v!==Infinity);
+    const temNovo=variacoes.includes(Infinity);
+    const maiorSwing=temNovo? Infinity : (finitos.length? Math.max(...finitos.map(Math.abs)) : 0);
+    return {v:r.v, sem, variacoes, maiorSwing, temDado:sem.some(x=>x>0)};
+  }).filter(r=>r.temDado)
+    .sort((a,b)=>{ const av=a.maiorSwing===Infinity?1e9:a.maiorSwing, bv=b.maiorSwing===Infinity?1e9:b.maiorSwing; return bv-av; });
+  if(!linhas.length){ wrap.innerHTML='<div class="na">Sem dado suficiente pra comparar.</div>'; return; }
+  $('#rankCrescDesc').innerHTML=`Semana 1 a ${nSem} deste mês · ordenado por quem tem a maior oscilação entre duas semanas seguidas (sinal de inconsistência, bom ou ruim).`;
+  let html='<table class="rank-table"><thead><tr><th>#</th><th>Vendedor</th>'+
+    Array.from({length:nSem},(_,i)=>'<th class="num">Sem '+(i+1)+'</th>').join('')+
+    '<th class="num">Maior oscilação</th></tr></thead><tbody>';
+  linhas.forEach((r,i)=>{
+    const cels=r.sem.map((v,j)=>{
+      if(j===0) return `<td class="num">${BRL.format(v)}</td>`;
+      const vr=r.variacoes[j-1];
+      const txt = vr===Infinity?' <span class="rank-up">novo</span>':(vr==null?'':' <span class="'+(vr>=0?'rank-up':'rank-down')+'">'+(vr>=0?'▲':'▼')+Math.abs(vr).toFixed(0)+'%</span>');
+      return `<td class="num">${BRL.format(v)}${txt}</td>`;
+    }).join('');
+    const swingTxt = r.maiorSwing===Infinity? 'novo' : r.maiorSwing.toFixed(0)+'%';
+    html+=`<tr><td><span class="rank-pos">${i+1}</span></td><td>${esc(r.v)}</td>${cels}<td class="num rank-down">${swingTxt}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+/* ---------- 3º ranking: novos clientes (ainda não calculável — ver aviso) ---------- */
+function renderRankClientes(k){
+  $('#rankClientesWrap').innerHTML =
+    '<div class="na">Esse ranking ainda não dá pra montar. A aba Vendas guarda só o total por vendedor — não sabe quais '+
+    'clientes compraram. Essa informação existe nos relatórios do Questor (coluna "Cliente"), mas as abas onde eles são '+
+    'colados guardam só o mês atual: quando o mês vira, o conteúdo anterior é substituído, e sem um histórico de clientes '+
+    'já vistos não dá pra saber se um cliente é novo ou só não comprou nos dias já cobertos. Pra funcionar de verdade, '+
+    'precisaria de uma lista de clientes acompanhada mês a mês dentro da planilha.</div>';
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- aba Config: metas do mês (geral + por vendedor) ---------- */
+function renderConfig(k){
+  $('#cfgPeriodo').textContent = MESES_L[k.mes-1][0].toUpperCase()+MESES_L[k.mes-1].slice(1)+'/'+k.ano;
+
+  const metaGeral = getMetaOverride(k.ano,k.mes,'__all','__all');
+  const inpGeral = $('#cfgMetaGeral');
+  inpGeral.value = metaGeral!=null ? Number(Math.round(metaGeral)).toLocaleString('pt-BR') : '';
+  inpGeral.onchange = e=>{
+    const v=parseMetaInput(e.target.value);
+    saveMetaOverride(k.ano,k.mes,'__all','__all',v);
+    render();
+  };
+
+  // um vendedor por nome, juntando todos os grupos/meses iguais a este ano/mes (ignora o filtro de grupo/vendedor do topo)
+  const vendsMes = RECS.filter(r=>r.ano===k.ano && r.mes===k.mes);
+  const porVend = {};
+  vendsMes.forEach(r=>{ if(!porVend[r.vendedor]) porVend[r.vendedor]=r; });
+  const nomes = Object.keys(porVend).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  let html='<table class="cfg-table"><thead><tr><th>Vendedor</th><th>Meta</th></tr></thead><tbody>';
+  nomes.forEach(nome=>{
+    const override = getMetaOverride(k.ano,k.mes,'__all',nome);
+    const daPlanilha = porVend[nome].meta;
+    const efetiva = override ?? daPlanilha;
+    const valStr = efetiva!=null ? Number(Math.round(efetiva)).toLocaleString('pt-BR') : '';
+    const fonte = override!=null ? 'editado aqui' : (daPlanilha!=null ? 'da planilha' : 'sem meta');
+    html+=`<tr><td>${esc(nome)}</td><td><input type="text" data-vend="${esc(nome)}" value="${valStr}" placeholder="digitar"><span class="fonte">${fonte}</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  const wrap=$('#cfgVendedoresWrap');
+  wrap.innerHTML = nomes.length? html : '<div class="na">Nenhum vendedor encontrado para esse mês.</div>';
+  wrap.querySelectorAll('input[data-vend]').forEach(inp=>{
+    inp.onchange = e=>{
+      const v=parseMetaInput(e.target.value);
+      saveMetaOverride(k.ano,k.mes,'__all',e.target.dataset.vend,v);
+      render();
+    };
+  });
 }
 
 function drawEvol(k){ kill('cEvol');
