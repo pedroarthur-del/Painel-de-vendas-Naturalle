@@ -1,0 +1,1539 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naturalle · Painel Comercial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --orange:#C97A2C; --orange-d:#A15F1D; --orange-l:#F3D9B8;
+    --mauve:#8C6469; --mauve-d:#6E4C50; --mauve-l:#E7D6D8;
+    --paper:#FBF7F1; --card:#FFFFFF; --ink:#2E2420; --muted:#7A6A62;
+    --line:#EAE0D2; --line-2:#F2EBDE;
+    --green:#3F7D52; --green-l:#DCEADD; --amber:#C98A26; --amber-l:#F5E4C4; --brick:#B0492F; --brick-l:#F5DCD4;
+    --neutral:#C9BEB3;
+    --radius:14px; --shadow:0 1px 2px rgba(46,36,32,.05),0 6px 20px rgba(46,36,32,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; line-height:1.45}
+  .num{font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .wrap{max-width:1220px; margin:0 auto; padding:22px 20px 60px}
+
+  header.top{display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; margin-bottom:6px}
+  .brand{display:flex; align-items:center; gap:14px}
+  .brand img{height:46px; width:auto; display:block}
+  .brand .sub{font-size:11.5px; color:var(--muted); margin-top:2px; letter-spacing:.05em; text-transform:uppercase; font-weight:600}
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .btn{display:inline-flex; align-items:center; gap:8px; cursor:pointer; border:none;
+    background:linear-gradient(135deg,var(--orange),var(--orange-d)); color:#fff; font-weight:600; font-size:14px;
+    padding:10px 16px; border-radius:10px; box-shadow:var(--shadow); transition:filter .15s}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:focus-visible{outline:3px solid var(--amber); outline-offset:2px}
+  .btn.ghost{background:var(--card); color:var(--mauve-d); border:1px solid var(--line); font-weight:600}
+  .btn.ghost:hover{background:var(--line-2); filter:none}
+  select{font:inherit; font-size:13px; color:var(--ink); background:var(--card);
+    border:1px solid var(--line); border-radius:9px; padding:8px 10px; cursor:pointer}
+  select:focus-visible{outline:3px solid var(--amber); outline-offset:1px}
+  .filterbar{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin:14px 0 18px;
+    padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px}
+  .filterbar .fld{display:flex; align-items:center; gap:7px}
+  .filterbar label{font-size:12px; color:var(--muted); font-weight:600}
+  .filename{font-size:12px; color:var(--muted); margin-left:auto}
+  .filename b{color:var(--orange-d)}
+  .badge-warn{display:inline-block; font-size:10.5px; font-weight:700; color:#8a5a1a; background:var(--amber-l);
+    border-radius:6px; padding:2px 7px; margin-left:6px; vertical-align:middle}
+
+  /* modo de exportação de PDF: esconde controles interativos, mantém conteúdo */
+  body.pdf-exporting .controls,
+  body.pdf-exporting .filterbar,
+  body.pdf-exporting #empty,
+  body.pdf-exporting #error{ display:none !important; }
+  body.pdf-exporting .wrap{ max-width:900px; }
+  .pdf-context{display:none; font-size:12.5px; color:var(--muted); margin:0 0 14px; padding:10px 14px;
+    background:var(--card); border:1px solid var(--line); border-radius:10px}
+  body.pdf-exporting .pdf-context{display:block}
+
+  /* resumo do dia: mesma ideia do modo PDF, mas mostra só contexto + banner + projeção */
+  body.resumo-exporting .controls, body.resumo-exporting .filterbar,
+  body.resumo-exporting #empty, body.resumo-exporting #error{ display:none !important; }
+  body.resumo-exporting .wrap{ max-width:900px }
+  body.resumo-exporting .pdf-context{display:block}
+  .resumo-wrap{position:relative}
+  .resumo-menu{position:absolute; top:calc(100% + 6px); right:0; background:var(--card); border:1px solid var(--line);
+    border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:6px; z-index:20; min-width:200px}
+  .resumo-menu button{display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    font:inherit; font-size:13px; color:var(--ink); padding:9px 10px; border-radius:7px}
+  .resumo-menu button:hover{background:var(--paper)}
+
+  /* navegação por abas: Visão geral x Rankings */
+  .tabnav{display:flex; gap:8px; margin:18px 0 20px}
+  .tabnav button{font:inherit; font-size:13.5px; font-weight:700; color:var(--mauve-d); background:var(--card);
+    border:1px solid var(--line); border-radius:10px; padding:10px 18px; cursor:pointer}
+  .tabnav button.active{background:var(--orange-d); color:#fff; border-color:var(--orange-d)}
+  .rank-table{width:100%; border-collapse:collapse; font-size:13px}
+  .rank-table th{text-align:left; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; padding:7px 10px; border-bottom:2px solid var(--line)}
+  .rank-table td{padding:9px 10px; border-bottom:1px solid var(--line-2)}
+  .rank-table td.num{text-align:right; font-variant-numeric:tabular-nums}
+  .rank-table tr:last-child td{border-bottom:none}
+  .rank-pos{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:50%; background:var(--paper); font-weight:700; font-size:11.5px; color:var(--mauve-d); margin-right:8px}
+  .rank-up{color:var(--green); font-weight:700} .rank-down{color:var(--brick); font-weight:700}
+
+  /* pódio estilo F1 */
+  .podio{display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:6px 0 24px; flex-wrap:wrap}
+  .podio-slot{display:flex; flex-direction:column; align-items:center; width:140px}
+  .podio-medal{font-size:30px; margin-bottom:6px}
+  .podio-nome{font-weight:700; font-size:13.5px; color:var(--ink); text-align:center; margin-bottom:3px; word-break:break-word}
+  .podio-val{font-size:12.5px; color:var(--muted); margin-bottom:8px; text-align:center}
+  .podio-stand{width:100%; border-radius:10px 10px 0 0; display:flex; align-items:flex-start; justify-content:center;
+    padding-top:8px; font-size:22px; font-weight:800; color:#fff}
+  .podio-slot.s1 .podio-stand{height:92px; background:linear-gradient(180deg,var(--orange),var(--orange-d))}
+  .podio-slot.s2 .podio-stand{height:66px; background:linear-gradient(180deg,#A8A0AE,#8C8494)}
+  .podio-slot.s3 .podio-stand{height:48px; background:linear-gradient(180deg,#C98A5A,#A5673A)}
+  @media (max-width:640px){ .podio-slot{width:104px} .podio-nome{font-size:12px} }
+
+  /* aba de configuração */
+  .cfg-section{margin-bottom:26px}
+  .cfg-section h3{font-size:14px; color:var(--ink); margin:0 0 4px}
+  .cfg-section .desc{margin-bottom:12px}
+  .cfg-meta-geral{display:flex; align-items:center; gap:8px; max-width:280px}
+  .cfg-meta-geral span{font-size:14px; font-weight:700; color:var(--mauve-d)}
+  .cfg-meta-geral input{flex:1; font:inherit; font-size:15px; font-weight:700; color:var(--ink);
+    border:1px solid var(--line); border-radius:9px; padding:9px 11px}
+  .cfg-table{width:100%; border-collapse:collapse; font-size:13.5px}
+  .cfg-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted);
+    font-weight:700; padding:7px 10px; border-bottom:2px solid var(--line)}
+  .cfg-table td{padding:7px 10px; border-bottom:1px solid var(--line-2)}
+  .cfg-table input{width:140px; font:inherit; font-size:13.5px; border:1px solid var(--line); border-radius:7px; padding:6px 9px}
+  .cfg-table .fonte{font-size:11px; color:var(--neutral); margin-left:6px}
+  .cfg-soon{font-size:13px; color:var(--muted); background:var(--paper); border:1px dashed var(--line);
+    border-radius:10px; padding:14px 16px}
+
+  .state{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:44px 34px; text-align:center; box-shadow:var(--shadow)}
+  .state.err{border-color:#E9C3B5; background:#FCF4EF}
+  .state .big{width:56px;height:56px;margin:0 auto 16px}
+  .state h2{margin:0 0 8px; font-size:20px; letter-spacing:-.02em}
+  .state p{margin:0 auto 8px; max-width:580px; color:var(--muted); font-size:14px}
+  .state code{background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:2px 6px;
+    font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--ink)}
+  .miss{color:var(--brick); font-weight:600}
+
+  .banner{background:linear-gradient(120deg,#3A2A24,#5A362E 55%,#7A4A3A); border-radius:var(--radius);
+    padding:20px 24px; color:#F7EFE6; box-shadow:var(--shadow); margin-bottom:14px;
+    display:flex; flex-wrap:wrap; gap:18px 30px; align-items:center}
+  .banner .bcell{min-width:150px}
+  .banner .bcap{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:#D9C3B4; font-weight:700; margin-bottom:5px}
+  .banner .bval{font-size:25px; font-weight:700; letter-spacing:-.02em}
+  .banner .pill{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px;
+    padding:4px 12px; border-radius:999px; margin-left:2px}
+  .pill.up{background:#2E5A3E; color:#D9F0DE}
+  .pill.down{background:#7A3323; color:#FBE0D6}
+  .pill.mut{background:rgba(255,255,255,.14); color:#EFE4DA}
+  .banner .track{height:8px; width:220px; background:rgba(255,255,255,.14); border-radius:999px; overflow:hidden; margin-top:8px}
+  .banner .track>span{display:block; height:100%; background:var(--orange); border-radius:999px}
+  .banner .updated{margin-left:auto; font-size:11.5px; color:#D9C3B4; text-align:right}
+  .banner .meta-edit-hint{font-size:9.5px; text-transform:none; letter-spacing:0; opacity:.75}
+  .banner .meta-edit-row{display:flex; align-items:center; gap:5px; margin-top:2px}
+  .banner .meta-prefix{font-size:13px; color:#D9C3B4; font-weight:700}
+  .banner .meta-edit-row input{width:110px; font:inherit; font-size:17px; font-weight:700; color:var(--ink);
+    background:#fff; border:none; border-radius:7px; padding:4px 8px}
+  .banner .meta-edit-row input::placeholder{color:var(--muted); font-weight:400; font-size:13px}
+  .banner .meta-edit-row input:focus-visible{outline:3px solid var(--orange); outline-offset:1px}
+
+  .proj-banner{background:linear-gradient(120deg,#C97A2C,#A15F1D 55%,#8C6469); border-radius:var(--radius);
+    padding:20px 26px; margin-bottom:14px; box-shadow:var(--shadow); text-align:center; color:#fff}
+  .proj-banner .proj-cap{font-size:12px; letter-spacing:.08em; font-weight:700; color:#FBE8D3; text-transform:uppercase}
+  .proj-banner .proj-val{font-size:40px; font-weight:800; letter-spacing:-.02em; margin-top:4px}
+  .proj-banner .proj-sub{font-size:13.5px; color:#FBE8D3; margin-top:6px; font-weight:600}
+  .proj-banner .proj-bizdays{margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.25);
+    display:flex; align-items:center; justify-content:center; gap:9px; flex-wrap:wrap; font-size:13px; color:#FBE8D3}
+  .proj-banner .proj-bizdays label{font-weight:700}
+  .proj-banner .proj-bizdays input{width:100px; text-align:center; font:inherit; font-weight:700; color:var(--ink);
+    border:none; border-radius:8px; padding:5px 6px}
+  .proj-banner .proj-bizdays input:focus-visible{outline:3px solid #fff; outline-offset:1px}
+  .proj-banner .proj-bizdays-sub{font-size:11.5px; color:#FBE8D3; opacity:.92}
+
+  .grid{display:grid; gap:14px; grid-template-columns:1fr; margin-bottom:14px}
+  .row2{display:grid; gap:14px; grid-template-columns:1fr 1fr; margin-bottom:14px}
+  .row3{display:grid; gap:14px; grid-template-columns:1fr 1fr 1fr; margin-bottom:14px}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px 18px; box-shadow:var(--shadow)}
+  .panel h2{margin:0 0 2px; font-size:15px; letter-spacing:-.01em; color:var(--ink)}
+  .panel .desc{font-size:12px; color:var(--muted); margin:0 0 14px}
+  .cbox{position:relative; width:100%}
+  .cbox.tall{height:300px} .cbox.mid{height:250px} .cbox.rank{height:380px} .cbox.short{height:220px} .cbox.donut{height:230px}
+  .na{font-size:13px;color:var(--muted);background:var(--paper);border:1px dashed var(--line);
+    border-radius:10px;padding:14px;text-align:center;margin-top:8px}
+  .kpistat{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center}
+  .kpistat .kcap{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .kpistat .kval{font-size:28px;font-weight:700;color:var(--ink)}
+  .kpistat .ksub{font-size:12px;color:var(--muted);margin-top:6px}
+  .footpanel{font-size:11.5px; color:var(--muted); line-height:1.8}
+  .diario-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:10px}
+  .diario-table{border-collapse:collapse; font-size:12px; width:100%}
+  .diario-table th, .diario-table td{padding:6px 7px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap}
+  .diario-table thead th{color:var(--muted); font-weight:700; font-size:11px; background:var(--paper); border-bottom:1px solid var(--line)}
+  .diario-table td.vend-name, .diario-table th.vend-name-h{text-align:left; font-weight:600; color:var(--ink);
+    position:sticky; left:0; background:var(--card); z-index:1; box-shadow:2px 0 4px rgba(0,0,0,.03)}
+  .diario-table thead th.vend-name-h{background:var(--paper)}
+  .diario-cell{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:6px; font-size:12px; font-weight:800}
+  .diario-cell.ok{background:var(--green-l); color:#215532}
+  .diario-cell.warn{background:var(--amber-l); color:#8a5a1a}
+  .diario-cell.zero{background:var(--brick-l); color:#7a2b1a}
+  .diario-cell.future{background:transparent; color:var(--neutral); font-weight:400}
+  .diario-summary{margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:13px; color:var(--ink); line-height:1.7}
+  .diario-summary b{color:var(--brick)}
+  .footpanel b{color:var(--ink)}
+  .hidden{display:none!important}
+
+  @media (max-width:900px){
+    .row2,.row3{grid-template-columns:1fr}
+  }
+
+  @media (max-width:640px){
+    .wrap{padding:14px 12px 40px}
+    header.top{gap:10px}
+    .brand img{height:34px}
+    .brand .sub{font-size:10px}
+    .controls{width:100%; gap:8px}
+    .resumo-wrap{flex:1 1 auto}
+    .resumo-wrap .btn{width:100%}
+    .btn{flex:1 1 auto; justify-content:center; padding:11px 12px; font-size:13px; white-space:nowrap}
+    .filterbar{flex-direction:column; align-items:stretch; gap:10px; padding:12px}
+    .filterbar .fld{justify-content:space-between}
+    .filterbar select{flex:1; max-width:62%}
+    .filename{margin-left:0; text-align:left; order:99}
+
+    .banner{flex-direction:column; align-items:stretch; gap:14px; padding:16px}
+    .banner .bcell{min-width:0}
+    .banner .bval{font-size:22px}
+    .banner .updated{margin-left:0; text-align:left; padding-top:6px; border-top:1px solid rgba(255,255,255,.15)}
+    .banner .meta-edit-row input{width:100%; max-width:150px}
+
+    .proj-banner{padding:16px}
+    .proj-banner .proj-val{font-size:30px}
+    .proj-banner .proj-bizdays{flex-direction:column; gap:6px}
+    .proj-banner .proj-bizdays input{width:100%; max-width:160px}
+
+    .panel{padding:14px 14px 16px}
+    .panel h2{font-size:14px}
+    .cbox.tall{height:240px} .cbox.mid{height:220px} .cbox.rank{height:360px} .cbox.short{height:200px} .cbox.donut{height:210px}
+    .kpistat .kval{font-size:22px}
+
+    select, .btn, input[type=text], input[type=number]{ font-size:16px } /* evita zoom automático do iOS ao focar */
+    .state{padding:28px 18px}
+    .state .big{width:44px; height:44px}
+    .state h2{font-size:17px}
+    .state p{font-size:13px}
+    .diario-table th, .diario-table td{padding:5px}
+    .diario-cell{width:20px; height:20px; font-size:11px}
+  }
+
+  @media (max-width:400px){
+    .banner .bval{font-size:19px}
+    .proj-banner .proj-val{font-size:26px}
+    .controls .btn{font-size:12px; padding:10px}
+  }
+
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img id="logoImg" alt="Naturalle Ice Up · Picolé Natural da Fruta">
+      <div><div class="sub">Painel Comercial · Performance de Vendas</div></div>
+    </div>
+    <div class="controls">
+      <button class="btn ghost hidden" id="btnPDF" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" stroke="#6E4C50" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v5h5" stroke="#6E4C50" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Gerar PDF
+      </button>
+      <div class="resumo-wrap hidden" id="resumoWrap">
+        <button class="btn ghost" id="btnResumo" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H4z" stroke="#6E4C50" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 14l4.5-4.5L11 12l3.5-3.5L20 14" stroke="#6E4C50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 19h6" stroke="#6E4C50" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Resumo do dia
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#6E4C50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="resumo-menu hidden" id="resumoMenu">
+          <button type="button" data-fmt="png">Baixar como imagem (PNG)</button>
+          <button type="button" data-fmt="pdf">Baixar como PDF</button>
+        </div>
+      </div>
+      <button class="btn ghost hidden" id="btnClear" type="button">Limpar dados salvos</button>
+      <button class="btn" id="btnFile" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5 5 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        Anexar planilha
+      </button>
+      <input type="file" id="file" accept=".xlsx,.xls" class="hidden">
+    </div>
+  </header>
+
+  <div class="filterbar hidden" id="filters">
+    <div class="fld"><label for="fAno">Ano</label><select id="fAno"></select></div>
+    <div class="fld"><label for="fMes">Mês</label><select id="fMes"></select></div>
+    <div class="fld"><label for="fGrupo">Grupo</label>
+      <select id="fGrupo"><option value="__all">Todos</option></select></div>
+    <div class="fld"><label for="fVend">Vendedor</label>
+      <select id="fVend"><option value="__all">Todos</option></select></div>
+    <div class="filename" id="fname"></div>
+  </div>
+
+  <div class="state" id="empty">
+    <svg class="big" viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="30" rx="4" stroke="#C97A2C" stroke-width="2"/><path d="M6 18h36M14 26h9M14 32h16" stroke="#C97A2C" stroke-width="2" stroke-linecap="round"/><circle cx="34" cy="28" r="7" fill="#FBF7F1" stroke="#8C6469" stroke-width="2"/><path d="M34 25v6m-3-3h6" stroke="#8C6469" stroke-width="2" stroke-linecap="round"/></svg>
+    <h2>Anexe a planilha Naturalle_Planilha_de_Vendas.xlsx</h2>
+    <p>Clique em <b>Anexar planilha</b> e selecione o arquivo. O painel lê a aba <code>Vendas</code> diretamente — os blocos por mês que o Rodrigo preenche todo dia. Da próxima vez que abrir este painel no mesmo navegador, ele carrega sozinho com os últimos dados anexados.</p>
+  </div>
+
+  <div class="state err hidden" id="error">
+    <svg class="big" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="19" stroke="#B0492F" stroke-width="2"/><path d="M24 15v13m0 5h.02" stroke="#B0492F" stroke-width="2.4" stroke-linecap="round"/></svg>
+    <h2>Não consegui ler a planilha</h2><p id="errmsg"></p>
+  </div>
+
+  <div id="dash" class="hidden">
+
+    <div class="pdf-context" id="pdfContext"></div>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="proj-banner" id="projBanner"></div>
+
+    <div class="tabnav">
+      <button type="button" id="tabBtnGeral" class="active">Visão geral</button>
+      <button type="button" id="tabBtnRankings">Rankings</button>
+      <button type="button" id="tabBtnConfig">Config</button>
+    </div>
+
+    <div id="tabGeral">
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Realizado acumulado x Meta x Projeção — por semana</h2>
+        <p class="desc" id="heroDesc"></p>
+        <div class="cbox tall"><canvas id="cAcum"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div class="panel"><div class="kpistat" id="kpiAno"></div></div>
+      <div class="panel"><div class="kpistat" id="kpiMes"></div></div>
+      <div class="panel"><div class="kpistat" id="kpiMedia"></div></div>
+    </div>
+
+    <div class="row2">
+      <div class="panel">
+        <h2>Comparação Ano a Ano — mesmo mês</h2>
+        <p class="desc">Faturamento do mês selecionado x mesmo mês do(s) ano(s) anterior(es) disponível(is).</p>
+        <div class="cbox mid" id="cYoYBox"><canvas id="cYoY"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Comparação Mês a Mês</h2>
+        <p class="desc">Faturamento do mês selecionado x mês imediatamente anterior.</p>
+        <div class="cbox mid" id="cMoMBox"><canvas id="cMoM"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="panel">
+        <h2>Realizado x Meta — por grupo</h2>
+        <p class="desc">Comparação sempre entre todos os grupos, independente do filtro de Grupo acima.</p>
+        <div class="cbox mid"><canvas id="cGrupoMeta"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Atingimento da meta em % — por grupo</h2>
+        <p class="desc">Linha tracejada = 100% da meta. Cinza = grupo sem meta definida.</p>
+        <div class="cbox mid"><canvas id="cAting"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Ranking de vendedores — mês</h2>
+        <p class="desc">Barra = faturamento do mês. Cor = atingimento da meta (verde ≥100%, âmbar ≥85%, vermelho &lt;85%, cinza = sem meta).</p>
+        <div class="cbox rank"><canvas id="cRank"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Desempenho diário — quem não bateu a meta do dia</h2>
+        <p class="desc">Vermelho = dia sem nenhuma venda. Âmbar = vendeu, mas abaixo da meta do dia. Verde = bateu a meta do dia. Fins de semana e feriados informados não entram na conta. Em "Todos", os canais (iFood, distribuidores) ficam de fora porque vendem por pedido; escolha o grupo "Outros Canais" para vê-los.</p>
+        <div id="diarioWrap"></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Evolução mensal — 2024 a 2026</h2>
+        <p class="desc">Faturamento total por mês, ano sobre ano. O ano do filtro acima aparece em destaque.</p>
+        <div class="cbox tall"><canvas id="cEvol"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="panel">
+        <h2>Faturamento por marca — Outros Canais <span class="badge-warn">cobertura parcial</span></h2>
+        <p class="desc" id="marcaDesc">Naturalle (JMJ) x Selecto (JSM). Só cobre o grupo Outros Canais (distribuidor/iFood) — a Equipe Comercial (Grupo 1 e 2) não tem marca identificada na fonte de dados.</p>
+        <div class="cbox donut" id="cMarcaBox"><canvas id="cMarca"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Faturamento por grupo</h2>
+        <p class="desc">Grupo 1 (casa) x Grupo 2 (representantes) x Outros Canais — mês selecionado.</p>
+        <div class="cbox donut"><canvas id="cGrupoShare"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p class="footpanel" id="note"></p>
+    </div>
+
+    </div><!-- /tabGeral -->
+
+    <div id="tabRankings" class="hidden">
+
+      <div class="grid">
+        <div class="panel">
+          <h2>1º Ranking — Atingimento da meta</h2>
+          <p class="desc">Só entram vendedores com meta cadastrada no mês. Ordenado do maior pro menor atingimento.</p>
+          <div id="rankMetaWrap"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>2º Ranking — Crescimento de faturamento, semana x semana</h2>
+          <p class="desc" id="rankCrescDesc">Compara a última semana com dado contra a semana anterior.</p>
+          <div id="rankCrescWrap"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>3º Ranking — Novos clientes (lojas)</h2>
+          <p class="desc">Ainda não dá pra calcular — veja o aviso abaixo.</p>
+          <div id="rankClientesWrap"></div>
+        </div>
+      </div>
+
+    </div><!-- /tabRankings -->
+
+    <div id="tabConfig" class="hidden">
+      <div class="grid">
+        <div class="panel">
+          <h2>Config — metas do painel</h2>
+          <p class="desc">Editando: <b id="cfgPeriodo"></b>. Pra editar outro mês, troque o filtro de Ano/Mês ali em cima — essa aba sempre edita o mês selecionado.</p>
+
+          <div class="cfg-section">
+            <h3>Meta geral do mês</h3>
+            <p class="desc">Meta da empresa inteira (todos os vendedores e canais somados). É a mesma usada no banner do topo.</p>
+            <div class="cfg-meta-geral"><span>R$</span><input type="text" id="cfgMetaGeral" placeholder="digitar"></div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Metas por vendedor</h3>
+            <p class="desc">Sobrescreve a meta que está na planilha, só pra essa visão — a planilha original não é alterada. Afeta os rankings, o painel diário e o atingimento. Deixe em branco pra voltar a usar o valor da planilha.</p>
+            <div id="cfgVendedoresWrap"></div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Por marca <span class="badge-warn">em breve</span></h3>
+            <div class="cfg-soon">Ainda não temos o faturamento quebrado por marca (Naturalle x Selecto) pra todo mundo — só pro grupo Outros Canais. Quando isso existir, a meta por marca entra aqui.</div>
+          </div>
+
+          <div class="cfg-section">
+            <h3>Por SKU <span class="badge-warn">em breve</span></h3>
+            <div class="cfg-soon">Ainda não temos venda quebrada por produto/SKU — só o total por vendedor. Quando existir, a meta por SKU entra aqui.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /tabConfig -->
+
+  </div>
+</div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const BRLk=v=>'R$'+(v/1000).toFixed(0)+'k';
+const PCT=n=>(n>=0?'+':'')+n.toFixed(1).replace('.',',')+'%';
+const C={orange:'#C97A2C',orangeD:'#A15F1D',orangeL:'#F3D9B8',mauve:'#8C6469',mauveD:'#6E4C50',mauveL:'#E7D6D8',
+  ink:'#2E2420',muted:'#7A6A62',line:'#EAE0D2',green:'#3F7D52',greenL:'#DCEADD',amber:'#C98A26',amberL:'#F5E4C4',
+  brick:'#B0492F',brickL:'#F5DCD4',neutral:'#C9BEB3'};
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESES_L=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const NORM=s=>String(s??'').trim().replace(/\s+/g,' ').toUpperCase();
+const LS_KEY='naturalle_dashboard_v3';
+
+/* utilitários usados por compute()/render() — precisam existir ANTES de qualquer chamada
+   síncrona (ex.: restauração automática de dados salvos, mais abaixo no arquivo) */
+const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
+const chronIdx=(ano,mes)=>ano*12+mes;
+/* dias úteis (seg-sex, sem excluir feriados) */
+function isBizDay(y,m,d){ const wd=new Date(y,m-1,d).getDay(); return wd!==0 && wd!==6; }
+/* divide os valores diários em 5 "semanas" cronológicas, só pra alimentar o gráfico semanal
+   que já existia — os dados diários de verdade (pro heatmap) ficam guardados à parte, em .dias */
+function synthesizeSemanasFromDias(dias, ano, mes){
+  const lastDate=new Date(ano,mes,0).getDate();
+  const semanas=[0,0,0,0,0];
+  const chunk=lastDate/5;
+  dias.forEach(d=>{
+    let idx=Math.floor((d.dia-1)/chunk);
+    if(idx>4) idx=4; if(idx<0) idx=0;
+    semanas[idx]+=d.valor;
+  });
+  return semanas;
+}
+function bizDayBuckets(y,m,numBuckets){
+  const lastDate=new Date(y,m,0).getDate();
+  const days=[]; for(let d=1; d<=lastDate; d++){ if(isBizDay(y,m,d)) days.push(d); }
+  const N=days.length;
+  const buckets=[];
+  for(let i=0;i<numBuckets;i++){
+    const start=Math.floor(i*N/numBuckets), end=Math.floor((i+1)*N/numBuckets);
+    buckets.push(end-start);
+  }
+  return buckets; // length = numBuckets, soma = N (usado só na linha pontilhada do gráfico, cosmético)
+}
+/* total de dias úteis do mês, excluindo os feriados informados pelo supervisor */
+function bizDaysTotalCalc(ano,mes,feriados){
+  let n=0; const lastDate=new Date(ano,mes,0).getDate();
+  for(let d=1; d<=lastDate; d++){ if(isBizDay(ano,mes,d) && !feriados.includes(d)) n++; }
+  return Math.max(1,n);
+}
+/* último dia do mês que já "aconteceu" pra fins de lançamento — até ONTEM, nunca hoje
+   (o lançamento do dia é sempre feito depois, então o dado de hoje ainda não existe) */
+function lastCountableDay(ano,mes){
+  const hoje=new Date();
+  const hojeAno=hoje.getFullYear(), hojeMes=hoje.getMonth()+1, hojeDia=hoje.getDate();
+  if(ano<hojeAno || (ano===hojeAno && mes<hojeMes)) return new Date(ano,mes,0).getDate(); // mês todo no passado
+  if(ano===hojeAno && mes===hojeMes) return hojeDia-1; // conta até ONTEM
+  return 0; // mês no futuro: nada decorrido ainda
+}
+/* dias úteis já decorridos, contados pela DATA REAL de hoje — MAS até ONTEM, não até hoje.
+   O lançamento do Rodrigo é sempre do dia anterior (ele fecha o dia e lança depois), então o
+   faturamento de hoje ainda não está na planilha — contar hoje como "decorrido" dilui a média
+   com um dia que na prática ainda não tem número, e derruba a projeção artificialmente.
+   Também exclui os feriados informados, senão eles entram como "dia útil com venda zero". */
+function bizDaysElapsedByDate(ano,mes,feriados){
+  const lastDay=lastCountableDay(ano,mes);
+  let n=0;
+  for(let d=1; d<=lastDay; d++){ if(isBizDay(ano,mes,d) && !feriados.includes(d)) n++; }
+  return Math.max(1, n);
+}
+/* feriados do mês informados pelo supervisor (dias do mês, ex: [7]) — persistem por mês */
+const FERIADOS_LS_KEY='naturalle_feriados_mes';
+function loadFeriados(){ try{ const raw=localStorage.getItem(FERIADOS_LS_KEY); return raw? JSON.parse(raw):{}; }catch(e){ return {}; } }
+let feriadosPorMes=loadFeriados();
+function saveFeriados(ano,mes,lista){
+  feriadosPorMes[ano+'_'+mes]=lista;
+  try{ localStorage.setItem(FERIADOS_LS_KEY, JSON.stringify(feriadosPorMes)); }catch(e){}
+}
+function parseFeriadosInput(str){
+  return String(str||'').split(',').map(s=>parseInt(s.trim(),10)).filter(n=>n>=1&&n<=31);
+}
+/* meta do mês digitada manualmente — sobrepõe a soma das metas individuais da planilha.
+   Chave inclui grupo/vendedor porque a meta "certa" depende do recorte que está sendo visto
+   (todos, um grupo específico, um vendedor específico). */
+const META_LS_KEY='naturalle_meta_overrides';
+function loadMetaOverrides(){ try{ const raw=localStorage.getItem(META_LS_KEY); return raw? JSON.parse(raw):{}; }catch(e){ return {}; } }
+let metaOverrides=loadMetaOverrides();
+function metaOverrideKey(ano,mes,grupo,vend){ return ano+'_'+mes+'_'+grupo+'_'+vend; }
+function getMetaOverride(ano,mes,grupo,vend){
+  const v=metaOverrides[metaOverrideKey(ano,mes,grupo,vend)];
+  return (v!=null && v>0)? v : null;
+}
+function saveMetaOverride(ano,mes,grupo,vend,valor){
+  const key=metaOverrideKey(ano,mes,grupo,vend);
+  if(valor==null) delete metaOverrides[key];
+  else metaOverrides[key]=valor;
+  try{ localStorage.setItem(META_LS_KEY, JSON.stringify(metaOverrides)); }catch(e){}
+}
+function parseMetaInput(str){
+  const digits=String(str||'').replace(/[^\d]/g,'');
+  return digits? parseInt(digits,10) : null;
+}
+const YEAR_PALETTE=[C.mauve, C.amber, C.orange, C.green, C.brick];
+const YEAR_BASE=2024;
+function colorForYear(ano){
+  const idx=((ano-YEAR_BASE)%YEAR_PALETTE.length+YEAR_PALETTE.length)%YEAR_PALETTE.length;
+  return YEAR_PALETTE[idx];
+}
+
+if(window.Chart && window.ChartDataLabels){ Chart.register(ChartDataLabels); Chart.defaults.set('plugins.datalabels',{display:false}); }
+Chart.defaults.font.family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+let RECS=null, charts={};
+const state={ano:null, mes:null, grupo:'__all', vend:'__all'};
+
+/* ---------- logo ---------- */
+$('#logoImg').src = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wgARCADIAMgDASIAAhEBAxEB/8QAHAABAAMBAQEBAQAAAAAAAAAAAAQFBgcDAgEI/8QAGgEBAAMBAQEAAAAAAAAAAAAAAAECBAUDBv/aAAwDAQACEAMQAAAB/qkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAh1mYiSwLQAAAAIxJePofQAAAM9lJO7+e7GO3NNSafHaMXj+vh65AylCnsDlvUZp+uXUcX7axtSr0jlPv4PS60mbv1b1yIddQ5k+QAHPN5ldZyOj8YPfZQy1fcxut4aKRZ4Z5/nVsRWEb5ufha/wAdt8UrWTZUheRLi/CmT0cWSvtrL5+pzAAOf9AxsX+c7QdoemPqZXmn6nUFpyN3RcHu+cVpN8onTsmjBb3l3UdmcOzzAAAAAGO2JPM4XWfmL82g9Y/DE++w/c/pgKTp/ryt/NdHX6jw9MP038/evzg3ZQAAAAFHeeZlZGhilD6XX2UkHYRTOWFr5lR62kgy9v6yjF3d34lJZSPUkgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8QAKxAAAgICAQAKAgIDAAAAAAAABAUCAwEGABESExQVIDAzNTYQITFwFiIm/9oACAEBAAEFAv6yuMoG5QXSV6uSacW23V0RjLE4+d2wyvDXa9k6pXXBY3/JBFYtKs/xITzl/c9y+LT/ABXn27+B8dFDICourWzrzIsdb8SMYgX6zPZKJHK0qCR4J85Y27mmTlOyN5mXa5FaHX/hkJYQEkBNi/ue5fFrLMUpRqydrJYLb9a4ITgwXybdyj2SPY1LkLi9mYP0nhgzD6lqnwrL/Xb+aV7iTH/VPWOVi8JES1HVC9z2sv7nuXxfRmWqa+uJOGu1gwiC0TuAXk2FfefyrHVquj1qteXXgckpYpjmFLl1XNfm9MFQ8UwfpLGXMGbBCOrqiV3FSskZ+4XeKAjSerKVS1hJ28TlyYkBHOU6WLSmU0rBOV3vYL+Y6ejy7JaxD5S67rr42HTqNVxqMUaLl1AFsYuZbMXcNOH7gaXdDYXDW4Bp1HJsVDm/JXq7Z8M0lnwMKOIB7tLPdg5vYiGrHDK/bfcr9th9nexxJ7xtjqbD6u2ftPhVJnrAGzWK6ricbYMBsVqioHZ4sDdlBmUMFs9UB8mQPfv54qdT2YOMFY9rVn6+Y4lz+OZxiXMYxj8TDotzXTXVxuuvKbYVBxzjHRj1XXx8MWikYNJiGZddCYpZBJRcrq2dJ0uw8QI6p7C2iyw++m+gjIiiV1wpi8mZVYnaCr7Dbh4d6vrmuKmTX6E4RsjOqFvIgDQzEAeEMB0RuxVDFkgB5YwEPjEFw1fJgD22RorjDCwSOKRqhudhX2dwVBE5Ajz5SNUNj+tP/8QAKxEAAQMDAgQEBwAAAAAAAAAAAQACEQMEIRIxEyBBURQiQmEwMlBggaGx/9oACAEDAQE/AfpABdgIgtMH4gqG2tWup7un9KqPEsNwNxE/xBoPVBo0yURC4eSFDe6aNJK9AWjpOeSs5ptaTQciVRe0WtVpOTCBzg4W7YRGoBEiXJu2N1I1fhelEkmQeRnzI+UShtKsmtdctn3Vi0Go+exVSo23pUi1gkhXrG+SowRqHODBla+61DaFSrcGoKjOiF1QYXOYzJ91Ufb8KlxM46K4r8d0xAG32P8A/8QAJxEAAgEDAwMDBQAAAAAAAAAAAQIDAAQREiGxBTBBExQjQlBRYHH/2gAIAQIBAT8B+0MwQZY0rBhlT3DEt5fOk26oBgf2oW9nKLQjZs6ecHuW6ML2dyNjp4qeNjewuBsNXHf6sxWzYqfxzXUmKxR4P1Coonup5leQ6QfBrp0j/JC5zoOM9q4gW5iMTeaaxuZQqSyAqpHjfaoo7v15jFgAnyOKtLUWqEZyTuT+j//EAD4QAAIBAwICBAkLAgcAAAAAAAECAwAEERIhEzEiQVFhBRQwMlJxcrHBECAjM0Jic4GCkdFAcEOSobLh8PH/2gAIAQEABj8C/tl9LKiHsJo8KVZMeifK8IyoJfQ1b1qkdY17WOKDKQynkR5DKfWP0VoXFzIw17gDnVxa5OHUFC3X8xpZW0ovM1x9OkFiAPIRetfdSfij3GrT8Jfd5C1/V8Kj9kVrcESIMq67EVMJn16MYz+dPM906of8MdVRT21wzITjBpbsTFYlQOIsc80k4u3iyT0QKgGo4yu3yXmpifN5/nV7b2rkPLIy5z5ozVyJLtpGmTTn0e+uldyF+3FSeDZpDKozpz1VF6191J+KPcat3bZVhBP7VK8kzQ2qckWkurW4Zo84ZWqKZeTrn5tr+r4VH7IqT2TV1+n41NGlwbe2j9Gkfxl5tT40tQ/BT4VH7Te+rcntT5L39Pxq+9cn+6mlT6wnSvrpbm5vpAZNwBQh1mTTnpHr6NRetfdSfij3Gtufi3wqQwXzWwVt0XP71ol8JvIvYwJ+NRQategc/mwcFNWnVnfHZSA8wKcDmRU/GXTqxjfPbUk1gqzRP9k0sUtokaqdW23xoWbnS3CCZ78UbeGBHTOQSR/NRXEBC3KDl21oNqrH0iP+auGuFCcTGBnPbV3cSR6YX16WyOs00OdLc1PfQt1tkmRfNJ3+NC+uohHnOd+7FR31lhnGMr3injukWG5D6kHUf+71Ha3MC+KqCNW2ffTy+DTxI2+wa0i2ji+9/wCmhnn843EE4jtxgaevNRXc54krbD7xzXHW4FvEfN301cTeEJhcLsIwDzNeMC5FtEfNA2pbLwgdYbzZKg4UrR5BzpNL6qiiWVhGSvRztUYVjwsAlO2uMH4KndUzivFLvz+QJ557PLP7S14KHV0/fUCr5oQY/arYdWo1CIYYeFoGnly/eopJoUBTkVYfzVt6jS+qofaSoAeR0+/5IivPKHyz+0KtVT65Msuevc7ULa8t3zHsDyOKlhihaN4umjN191C1vLZ+hsDyOKjhjtn0tzc9VJJGNTR9Q7KRJ0fWoxleuoJYwQupedQueShT/rWRrY9mmjeyriMHP8D+g3Gfk3Ga22+TLwxse0qK6CKnsjFQyLFri6OT+dZ8Wj/y1gbDyzbE9JdgfvCkbhmKB5ABE7aiDpbJ50t0TCySKCFAPRJxjfrG9JDKyu2uJw8YK4+kUEHell4P0RZo+XmgZ3593ZXEiJbhxAtF6Qyc/nRa3cOZJJX3XVkBvWMVcXKsmkWscwjZc459/dUiRaCyqjYbvbFKpKSKJFifTHjc9+e+pJfO4ZkwCfvGp+JLGX4SY0oeZYjzc1MJRho30HbHUD2ntpbiOICTZcu5IfLAVe8QxsYIhICFwOR7+6rwmVcB0VF0E8wvfUnEGHRynLHkdLDUOw0upQ2k6hnqNMRAnS2O1MghTS2MjHPsriiJRJ6WKMmkayMFqAMKYBJ5dvOgBCmAujl9nsrowIPyou8KM/PJFMgQBWySMc886OLdNxg7UeFGsernpHOhHoGgfZrVLCkjYx0hW8KHYLy6hyo8KNY87nSP7a//xAApEAEAAQMCBAcAAwEAAAAAAAABEQAhMUFRYXGRoRAgMIGxwfBAcNHh/9oACAEBAAE/If6yejZTHpXHlCRPVFomEJ+1X25EcT70eEJRInoMGhpNt2uIDsTdWi2DI3gf9enkAQeUqOO7ogYJ80+YHxxnzKzUAywfFS5AkLK+aVSbsE37sUABJASQItf6qV6davmEwjeh4sm1Qus7NGJxYxDzozhrVsU4atmOpOtJcRtgNXhYq3UMzKvYzxpQeG+J6/dQuyJTIJtwTTxB8PPJ7YJU4YIwOBG+7ScVf3BhKKKBR24eXCv+RtX5m3hGgA6WJgxlaWPVi2LLOeHiPQscGD4pw123yoTJpB0UfAinwLXoNFNi/MGmtuRSMtj18viD4TDS1hD5yFjQn4pKk3jFFXmitibz5T42umE2Z5UtpBHpSX0kOlWV6MJRwc6lPBeMTMJJjcqCQUouiNVvQuJcLgB9lOYbSA5Wd6hgUKY3EO41HR7RJ7QpWBEQq12OdSRRcUwpaZxRxeUbgG9W1IwoHMHehS8kTwoJaBq7hBNS+SKhRTDYDWF3oeI1SoRYtd0oWuUxMbI555qyU8AfJW1IXjzKikoBkeJ90j8RDDKj47VJUlkg8oF60KEEmKzaUmp+hZzPlBMc6OO0OZhnUneh8pNhOKahyijkdpuTm1R1UsGpmmCVgZY/b0xuyQoA1et+lvQdfG84VDDBw2hQB5s84t8tO4GWt0LUt17C2mafg8K7F4EBaQKe/wANZNkbyesGET/vRsQIbNR7qS+LpkI/NR2Eds8PBmpfwwvYQ550aazM27H+0oFKuZWfgokQEYSGuaZrDA3tU5MzjYVPF0ZhVrpfZTBy+v4BEEOJQAgIOFGQA2ShYANjwatWrNdl5opEwWogu7VGcvJQEAGA9YSskwpdDJVgWjiOEIJsRfE2oaRbEkSkwZMGKtw5bEUSzO977VM5KMJ2TNkSbuF4hMRw9obIk5RrUalFS1BwCIy0qZOckRt4dm21wdN0t542bUtxkQkOrOxgH/AET4AjBdsU9IpcGAZJdr/FFnViubCx7qRfMJEuhNnjpU7pzGXKStNZnKSYNla7La19ai7TIuRDiWM7+jGnKMGzJWIQwsGEoz1LZ3HJ760NMi2hno02piyswunC8+NC4jQLoYO9LpiCOVPU5oVBJI5fDhV7bsKXsIncOlNFCK9kw87F6RFWDLUONGAeIUkTpByijjIJtJbtbEZIWIZO9HswMttqEbx1gHtpRCA4IJd3+tf/2gAMAwEAAgADAAAAEPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOdfPPPPOcPPPPP0Bh9e59ljvfPEPYcui41373fPPj89X1/PPPPPPLbz1kE9fPPPPPPGIIBLMEEPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP/xAAkEQEAAgEDBAIDAQAAAAAAAAABABEhMUFRIGFxoRCBUGDB4f/aAAgBAwEBPxD8Q9Sr2lYae/VV9WD17O9KqiqMILu6E873VStDLxMsU3K48ktkaTMj6Skdo+yVu/giU0/IgFLl5LcXAQCVN2nNSgIEFNbN3AqJjEdQ7R74d0WovD7mAFljKAq+oqtvzoFStQyrBenbzCEDZY1NGBhv/KMWZil6f13dYWkyENB7ddVwlGw2XcxWw8xAmfbn1HThpwL4xHkFGhGOzHPAKHAfo/8A/8QAJBEBAAEDAwMFAQAAAAAAAAAAAREAIUEQMWEgMFFQYHGBkbH/2gAIAQIBAT8Q9IhkDysUGIjkudw1OCEiVf5RXAGjBdBiMJM226J1zU9C4QIMWYuhzGabShJixNkuJ7jqmwcizspYYXZfmjUbMgu8+CLG1Nk2oW6YnnsRow9h+ZH6aSaB5sJvR1d0tfnBpAyyjK+x/wD/xAAnEAEBAAIBAwIHAQEBAAAAAAABEQAhMUFRYYGhECAwcZGx8HBAwf/aAAgBAQABPxD/ADIy3FFE77XAKCUmninJ9WT0YuhSXeN8YOewVNWFQXTrxgGhFltiJpHv9AaFVFuLHwe6ZzAYYq4OeeZHU3h1IeO0SgD9nr+CgVYYIlGnjEe56edjuroDauFe4NoenkhWfMgYoPa/Jz3/AIHZizBBRp4+ZCzSpMk+CQOhOWkr/AROyl36TDnqQQ5KgPBzcOlrbIqmAZYclyeX+wg0zEOgSeuVYS0W8qBDWo98rB4ZolGeZeMe7QQzbbXGe0wYDDKxa84ZA+6Ai9iFCgs3Mj5RMxihqnVrjFqst/eIpwNgkDRq3ZS9jPN+HPfwfUdU/gwpb2KFqNAwVbyQjpBS4jrUC2onAjJ3JSM21ab9DT0+X3WH9zsz+335xz25gji2qI1F2w3PM32ahNZtvhx1+FyHw/sYSXfj1unvrPbfDKyAVKejL9LibUg0BaOsRO4ZVw26vJoK5hDWaEetLLbbxZz0+PPci1TQ5QK+1y4mPwlhdVs4wmRhMqcMZ1gtmGZ2uFZz3+Uxs/yEAvLjthwQNbEA4G8PWVUGB/mfwcmcMQsNUBwejXCWdqmDJDyFNm4i4MS0OBDj5APuYhnACMFSgMsHphkFysDDooY8N5JhQsbivKj7cfvB3gKqQ4dcuWZ2ZWQoXZgllW2lNOiKPa3LAiY2ugQnaLkUXTmqAUOnLhUUWhIBYJAluvOgs5HBUOBsueh0zfLu/jckWHhzig74MqjoAug9XG63uNOu86H4HGkIolUGbnzWB1kMFi64/wDGJLeMYEaIAUs4XXH7DQBDNWAdVb7uWg2/NSCNBbdC9MSx4AAZoyoSqs65p7eZRcIBfRij9kwhCg9xmznlxSKgr1Zi7SHgRDwbiSU9gsFSihk4hg6dmov53CaVDvazps09+919bkDqFXRBHsv5wvB0kRDGiZ/0gnswEPFZx26bSLjKKIBhttY5/X753/i0Z/B8YC5/uEQT4AenfxJ+g+sZoqwLkm3ZgAi8RI9w6YVyIdA1BjDQHgPvhnnJXdQhKNNu46mdI1XI4WgHAHic84M1Ad0SKCRQKiXA+PpQyg6opO1xotwaiCoRZsw1H0jcCoKe+D+ozrSZ5hkE32iXsro98YhfkYUS8kCv7P8AweHHEnvhgQcAgZ4SskwmUdCHwQD1Vp+6YehryfoAxTRud5Si7K7YFiWlQPR1h8xg4B2D6w3sZtc0MNim0N7cB7kIoLNxuhqE3EHQedXeAkuqDoEEioUQOkMHQSnJMaOnAITYhgKaVyvFdNEBwSC9XgKDqxYyglIo0NQB3Bh/EgtPNQv7GCr6klupCEBGMbp4yJGN1Vi4OkHlFcMTp4kYioAC9A8YH760hSGRYgWgwTkVMdTkU0SUvi6sBSo2igEdKO8tNcVXqhEIydBE0zkuCbUe3AFK6QbKCzR592gCk1CJex44PoLl1NBQSeEH7mc4+AOx4SV35cgw7JPspAWwc9bkrjktEiu2gfBqYpcDKVPUhR5Jq4B6yi8qPYVrzkMaPg4X23DhdtwkMikUszvezbiKggJCqeWKLxE4w2m4FT9FA5QCzD83EWFXA0q964I2JogAXnZDwSTCFASICEOWBt3gZTaFsDB4Ankwcg0S7UV5BVB4VTnCioqmqFHOwPYlJhxjCCQGjlgb5/zX/9k=";
+
+/* ---------- parser da aba Vendas (blocos por mês) ---------- */
+const MESES_PT_UP = ["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
+function stripAccents(s){ return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function mesFromName(name){
+  const n = stripAccents(NORM(name));
+  const idx = MESES_PT_UP.findIndex(m => stripAccents(m) === n);
+  return idx>=0 ? idx+1 : null;
+}
+/* ---------- classificação de grupo (casa / representantes / outros canais) ---------- */
+const GRUPO1_CASA = 'Grupo 1 — Vendedores da Casa';
+const GRUPO2_REP  = 'Grupo 2 — Representantes / Food Service';
+const GRUPO3_CANAIS = 'Outros Canais';
+const GRUPO1_NAMES = ['ALLYSON','ALLYSSON','GENESIA','LAUDEMIR','GLEICY','RODRIGO'];
+const GRUPO2_NAMES = ['RODRIGO SORVETES','RAIMUNDO JR','RAIMUNDO','PAULO SERGIO','PAULO SÉRGIO'];
+function classifyGrupo(vendedor, blockGrupo){
+  const vu = stripAccents(NORM(vendedor));
+  if(GRUPO1_NAMES.some(n=>stripAccents(n)===vu)) return GRUPO1_CASA;
+  if(GRUPO2_NAMES.some(n=>stripAccents(n)===vu)) return GRUPO2_REP;
+  if(blockGrupo==='Venda Direta / iFood') return GRUPO3_CANAIS;
+  return GRUPO1_CASA; // fallback: vendedor novo na Equipe Comercial ainda não classificado
+}
+function parseVendasBlocks(rows){
+  if(!rows.length) return {error:'A aba está vazia.'};
+  const recs=[]; let i=0; let foundAnyPeriodo=false;
+  const isPeriodo = a => /^PER[ÍI]ODO:\s*([A-ZÇÃÕ]+)\/(\d{4})/.exec(NORM(a));
+  while(i<rows.length){
+    const a0 = NORM((rows[i]||[])[0]);
+    const mP = isPeriodo(a0);
+    if(!mP){ i++; continue; }
+    foundAnyPeriodo=true;
+    const mes = mesFromName(mP[1]); const ano = +mP[2];
+    if(!mes){ i++; continue; }
+
+    // lê o cabeçalho da tabela pra descobrir se o bloco é por SEMANA (formato antigo) ou por DIA (novo)
+    const hdrRow=(rows[i+1]||[]).map(NORM);
+    const dayCols=[], weekCols=[]; let colMeta=-1;
+    hdrRow.forEach((h,idx)=>{
+      let m;
+      if((m=/^DIA\s+(\d{1,2})/.exec(h)) || (idx>0 && (m=/^(\d{1,2})$/.exec(h)))) dayCols.push({idx,dia:+m[1]});   // aceita "DIA 5" ou só "5"
+      else if((m=/^SEMANA\s+(\d)/.exec(h))) weekCols.push({idx,semana:+m[1]});
+      else if(h==='META') colMeta=idx;
+    });
+    const isDaily = dayCols.length>0;
+
+    let r = i+2; // pula o cabeçalho da tabela
+    let blockGrupo = 'Equipe Comercial';
+    for(; r<rows.length; r++){
+      const row = rows[r]||[];
+      const a = NORM(row[0]);
+      if(a==='') continue;
+      if(a.startsWith('PERÍODO')||a.startsWith('PERIODO')) break;
+      if(a.startsWith('TOTAL GERAL')){ r++; break; }
+      if(a.startsWith('TOTAL EQUIPE')){ blockGrupo='Venda Direta / iFood'; continue; }
+      if(a.startsWith('TOTAL VENDA DIRETA')||a.startsWith('TOTAL CANAL')) continue;
+      const vendedor = String(row[0]).trim();
+      let venda, semanas, dias=null;
+      if(isDaily){
+        dias = dayCols.map(c=>({dia:c.dia, valor:+row[c.idx]||0}));
+        venda = dias.reduce((s,d)=>s+d.valor,0);
+        semanas = synthesizeSemanasFromDias(dias, ano, mes); // alimenta o gráfico semanal já existente
+      } else {
+        const wc = weekCols.length? weekCols : [1,2,3,4,5].map((n,idx)=>({idx:idx+1,semana:n})); // compat: sem cabeçalho reconhecido, assume colunas B-F
+        semanas = wc.map(c=>+row[c.idx]||0);
+        while(semanas.length<5) semanas.push(0);
+        venda = semanas.reduce((s,v)=>s+v,0);
+      }
+      const metaRaw = colMeta>=0? row[colMeta] : row[7];
+      const meta = (metaRaw==null||metaRaw==='') ? null : (+metaRaw||0);
+      let marca='-';
+      if(blockGrupo==='Venda Direta / iFood'){
+        const vu=vendedor.toUpperCase();
+        if(vu.includes('JMJ')) marca='Naturalle (JMJ)';
+        else if(vu.includes('JSM')) marca='Selecto (JSM)';
+        else marca='Nao classificado';
+      }
+      const grupo = classifyGrupo(vendedor, blockGrupo);
+      recs.push({ano,mes,grupo,vendedor,venda,meta,semanas,dias,marca});
+    }
+    i=r;
+  }
+  if(!foundAnyPeriodo) return {error:'Não encontrei nenhum bloco "PERÍODO: MÊS/AAAA" nesta aba. Confira se anexou a aba <code>Vendas</code> da planilha «Naturalle_Planilha_de_Vendas.xlsx».'};
+  return {recs};
+}
+
+/* ---------- persistência local ---------- */
+function saveLocal(recs, filename){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({recs, filename, savedAt: Date.now()})); }
+  catch(e){ /* quota ou navegação privada: segue sem persistir, não é crítico */ }
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw) return null;
+    const parsed=JSON.parse(raw);
+    if(!parsed || !Array.isArray(parsed.recs) || !parsed.recs.length) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+let lastMeta={filename:null, savedAt:null};
+
+/* ---------- file handling ---------- */
+$('#btnFile').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{ const f=e.target.files[0]; if(f) readFile(f); };
+
+const TABS=['Geral','Rankings','Config'];
+function irParaAba(nome){
+  TABS.forEach(n=>{
+    $('#tab'+n).classList.toggle('hidden', n!==nome);
+    $('#tabBtn'+n).classList.toggle('active', n===nome);
+  });
+}
+TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
+$('#btnClear').onclick=()=>{
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  RECS=null; lastMeta={filename:null,savedAt:null};
+  $('#btnClear').classList.add('hidden');
+  $('#btnPDF').classList.add('hidden');
+  $('#resumoWrap').classList.add('hidden');
+  $('#dash').classList.add('hidden'); $('#filters').classList.add('hidden'); $('#error').classList.add('hidden');
+  $('#empty').classList.remove('hidden');
+};
+function showError(m){ $('#empty').classList.add('hidden'); $('#dash').classList.add('hidden');
+  $('#filters').classList.add('hidden'); $('#error').classList.remove('hidden'); $('#errmsg').innerHTML=m; }
+function readFile(file){
+  if(typeof XLSX==='undefined'){ showError('A biblioteca de leitura não carregou. Verifique a conexão e recarregue.'); return; }
+  const label='Arquivo: <b>'+file.name+'</b>';
+  const rd=new FileReader();
+  rd.onerror=()=>showError('Falha ao ler o arquivo. Salve novamente em .xlsx e reanexe.');
+  rd.onload=ev=>{ try{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:true});
+    const sn=wb.SheetNames.find(n=>NORM(n)==='VENDAS');
+    if(!sn){ showError('Não encontrei a aba <code>Vendas</code> neste arquivo. Abas disponíveis: '+wb.SheetNames.map(x=>'«'+x+'»').join(', ')+'. Use a planilha «Naturalle_Planilha_de_Vendas.xlsx».'); return; }
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,blankrows:true});
+    const {recs,error}=parseVendasBlocks(rows);
+    if(error){ showError(error); return; }
+    if(!recs.length){ showError('A aba Vendas não tem linhas de dados reconhecíveis.'); return; }
+    RECS=recs; lastMeta={filename:file.name, savedAt:Date.now()};
+    saveLocal(recs, file.name);
+    $('#fname').innerHTML=label;
+    $('#btnClear').classList.remove('hidden');
+    $('#btnPDF').classList.remove('hidden');
+    $('#resumoWrap').classList.remove('hidden');
+    boot();
+  }catch(err){ showError('Erro ao processar: '+err.message); } };
+  rd.readAsArrayBuffer(file);
+}
+
+/* ---------- exportar PDF ---------- */
+$('#btnPDF').onclick=()=>gerarPDF();
+async function gerarPDF(){
+  const btn=$('#btnPDF');
+  if(typeof html2canvas==='undefined' || !window.jspdf){
+    alert('As bibliotecas de PDF não carregaram. Verifique sua conexão e recarregue a página.');
+    return;
+  }
+  const original=btn.innerHTML;
+  btn.disabled=true; btn.innerHTML='Gerando PDF…';
+  const grupoLabel = $('#fGrupo').selectedOptions[0]? $('#fGrupo').selectedOptions[0].textContent : 'Todos';
+  const vendLabel = $('#fVend').selectedOptions[0]? $('#fVend').selectedOptions[0].textContent : 'Todos';
+  const mesLabel = MESES_L[state.mes-1];
+  $('#pdfContext').innerHTML = `<b>Naturalle — Painel Comercial</b> · Referência: ${mesLabel}/${state.ano} · `+
+    `Grupo: ${grupoLabel} · Vendedor: ${vendLabel} · Gerado em ${new Date().toLocaleDateString('pt-BR')} `+
+    `${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+  document.body.classList.add('pdf-exporting');
+  window.scrollTo(0,0);
+  await new Promise(r=>setTimeout(r,80)); // deixa o layout assentar e a rolagem se aplicar antes de capturar
+  try{
+    const target=document.getElementById('dash');
+    const canvas=await html2canvas(target,{
+      backgroundColor:'#FBF7F1',
+      scale:2,
+      useCORS:true,
+      scrollX:0,
+      scrollY:0,
+      windowWidth:document.documentElement.scrollWidth,
+      windowHeight:target.scrollHeight
+    });
+    const imgData=canvas.toDataURL('image/jpeg',0.92);
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const imgW=pageW;
+    const imgH=canvas.height*(imgW/canvas.width);
+    let heightLeft=imgH, position=0;
+    pdf.addImage(imgData,'JPEG',0,position,imgW,imgH);
+    heightLeft-=pageH;
+    while(heightLeft>0.5){
+      position=heightLeft-imgH;
+      pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,position,imgW,imgH);
+      heightLeft-=pageH;
+    }
+    pdf.save('Naturalle_Painel_'+MESES[state.mes-1]+'_'+state.ano+'.pdf');
+  }catch(err){
+    alert('Não consegui gerar o PDF: '+err.message);
+  }finally{
+    document.body.classList.remove('pdf-exporting');
+    btn.disabled=false; btn.innerHTML=original;
+  }
+}
+
+/* ---------- resumo do dia (PNG ou PDF curto, pra mandar no grupo) ---------- */
+$('#btnResumo').onclick=e=>{ e.stopPropagation(); $('#resumoMenu').classList.toggle('hidden'); };
+document.addEventListener('click',e=>{ if(!$('#resumoWrap').contains(e.target)) $('#resumoMenu').classList.add('hidden'); });
+$('#resumoMenu').querySelectorAll('button').forEach(b=>b.onclick=()=>{ $('#resumoMenu').classList.add('hidden'); gerarResumo(b.dataset.fmt); });
+async function gerarResumo(formato){
+  if(typeof html2canvas==='undefined' || (formato==='pdf' && !window.jspdf)){
+    alert('As bibliotecas de exportação não carregaram. Verifique sua conexão e recarregue a página.');
+    return;
+  }
+  const btn=$('#btnResumo'); const original=btn.innerHTML;
+  btn.disabled=true; btn.innerHTML='Gerando…';
+  const grupoLabel = $('#fGrupo').selectedOptions[0]? $('#fGrupo').selectedOptions[0].textContent : 'Todos';
+  const vendLabel = $('#fVend').selectedOptions[0]? $('#fVend').selectedOptions[0].textContent : 'Todos';
+  const mesLabel = MESES_L[state.mes-1];
+  const agora=new Date();
+  $('#pdfContext').innerHTML = `<b>Naturalle — Resumo do dia</b> · ${mesLabel}/${state.ano} · `+
+    `Grupo: ${grupoLabel} · Vendedor: ${vendLabel} · ${agora.toLocaleDateString('pt-BR')} `+
+    `${agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+  document.body.classList.add('resumo-exporting');
+  window.scrollTo(0,0);
+  await new Promise(r=>setTimeout(r,80));
+  try{
+    const target=document.getElementById('dash');
+    const canvas=await html2canvas(target,{
+      backgroundColor:'#FBF7F1',
+      scale:2,
+      useCORS:true,
+      scrollX:0,
+      scrollY:0,
+      windowWidth:document.documentElement.scrollWidth,
+      windowHeight:target.scrollHeight
+    });
+    const nomeArq='Naturalle_Resumo_'+MESES[state.mes-1]+'_'+state.ano+'_'+agora.toISOString().slice(0,10);
+    if(formato==='png'){
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=nomeArq+'.png';
+      a.click();
+    } else {
+      const imgData=canvas.toDataURL('image/jpeg',0.95);
+      const {jsPDF}=window.jspdf;
+      const imgW=canvas.width, imgH=canvas.height;
+      const pdf=new jsPDF({orientation: imgH>=imgW?'portrait':'landscape', unit:'pt', format:[imgW*0.375,imgH*0.375]});
+      pdf.addImage(imgData,'JPEG',0,0,imgW*0.375,imgH*0.375);
+      pdf.save(nomeArq+'.pdf');
+    }
+  }catch(err){
+    alert('Não consegui gerar o resumo: '+err.message);
+  }finally{
+    document.body.classList.remove('resumo-exporting');
+    btn.disabled=false; btn.innerHTML=original;
+  }
+}
+
+/* ---------- carregar dados salvos ao abrir ---------- */
+(function initFromStorage(){
+  const saved=loadLocal();
+  if(saved){
+    try{
+      RECS=saved.recs; lastMeta={filename:saved.filename, savedAt:saved.savedAt};
+      const d=new Date(saved.savedAt);
+      $('#fname').innerHTML='Última atualização: <b>'+(saved.filename||'planilha')+'</b> · '+
+        d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      $('#btnClear').classList.remove('hidden');
+      $('#btnPDF').classList.remove('hidden');
+      $('#resumoWrap').classList.remove('hidden');
+      boot();
+    }catch(err){
+      // dado salvo corrompido/incompatível: limpa e volta pro estado vazio, em vez de travar a página
+      try{ localStorage.removeItem(LS_KEY); }catch(e){}
+      RECS=null; lastMeta={filename:null,savedAt:null};
+      console.error('Falha ao restaurar dados salvos, cache limpo:', err);
+    }
+  }
+})();
+
+/* ---------- boot ---------- */
+function boot(){
+  $('#empty').classList.add('hidden'); $('#error').classList.add('hidden');
+  $('#filters').classList.remove('hidden'); $('#dash').classList.remove('hidden');
+  const anos=[...new Set(RECS.map(r=>r.ano))].sort((a,b)=>a-b);
+  const grupos=[...new Set(RECS.map(r=>r.grupo))];
+  const vends=[...new Set(RECS.map(r=>r.vendedor))].sort();
+  const selA=$('#fAno'); selA.innerHTML='';
+  anos.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; selA.appendChild(o); });
+  fill($('#fGrupo'),grupos); fill($('#fVend'),vends);
+
+  // periodo mais recente disponivel
+  const periods=[...new Set(RECS.map(r=>r.ano*100+r.mes))].sort((a,b)=>a-b);
+  const lastP=periods[periods.length-1];
+  state.ano=Math.floor(lastP/100); state.mes=lastP%100; state.grupo='__all'; state.vend='__all';
+  selA.value=state.ano;
+  fillMeses(state.ano);
+  $('#fMes').value=state.mes;
+  $('#fGrupo').value='__all'; $('#fVend').value='__all';
+
+  selA.onchange=e=>{ state.ano=+e.target.value; fillMeses(state.ano);
+    const mesesDisp=[...new Set(RECS.filter(r=>r.ano===state.ano).map(r=>r.mes))];
+    if(!mesesDisp.includes(state.mes)) state.mes=Math.max(...mesesDisp);
+    $('#fMes').value=state.mes; render(); };
+  $('#fMes').onchange=e=>{state.mes=+e.target.value; render();};
+  $('#fGrupo').onchange=e=>{state.grupo=e.target.value; render();};
+  $('#fVend').onchange=e=>{state.vend=e.target.value; render();};
+  render();
+}
+function fillMeses(ano){
+  const sel=$('#fMes'); sel.innerHTML='';
+  const meses=[...new Set(RECS.filter(r=>r.ano===ano).map(r=>r.mes))].sort((a,b)=>a-b);
+  meses.forEach(m=>{ const o=document.createElement('option'); o.value=m;
+    o.textContent=MESES_L[m-1][0].toUpperCase()+MESES_L[m-1].slice(1); sel.appendChild(o); });
+}
+function fill(sel,arr){ sel.querySelectorAll('option:not([value="__all"])').forEach(o=>o.remove());
+  arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); }); }
+
+/* ---------- compute ---------- */
+function statsFor(rowsArr, weeksTotal, weeksElapsed, isOpenMonth, bizDaysElapsed, bizDaysTotal, metaOverride){
+  const realizado=sum(rowsArr,r=>r.venda);
+  let realizadoComMeta, meta, naMeta, nComMeta;
+  if(metaOverride!=null){
+    // com meta informada manualmente, compara o TOTAL do escopo contra ela (não só quem tinha meta individual)
+    meta=metaOverride;
+    realizadoComMeta=realizado;
+    naMeta = realizado>=metaOverride ? 1 : 0;
+    nComMeta = 1;
+  } else {
+    const comMeta=rowsArr.filter(r=>r.meta!=null);
+    realizadoComMeta=sum(comMeta,r=>r.venda);
+    meta=sum(comMeta,r=>r.meta);
+    naMeta=comMeta.filter(r=>r.venda>=r.meta).length;
+    nComMeta=comMeta.length;
+  }
+  const weekly=Array(weeksTotal).fill(0);
+  rowsArr.forEach(r=>r.semanas.forEach((v,i)=>{ if(i<weeksTotal) weekly[i]+=v; }));
+  const weeklyComMeta=Array(weeksTotal).fill(0);
+  const comMetaRows = metaOverride!=null ? rowsArr : rowsArr.filter(r=>r.meta!=null);
+  comMetaRows.forEach(r=>r.semanas.forEach((v,i)=>{ if(i<weeksTotal) weeklyComMeta[i]+=v; }));
+  // projeção só faz sentido para o mês em andamento; meses já fechados = projeção igual ao realizado
+  // (evita distorção quando o histórico antigo tem semanas com dado concentrado numa única coluna)
+  // base = dias úteis (não semanas), porque a 1ª e a última semana do mês raramente têm 5 dias de trabalho
+  const proj = (isOpenMonth && bizDaysElapsed) ? realizado/bizDaysElapsed*bizDaysTotal : realizado;
+  const pct = meta>0? realizadoComMeta/meta*100 : null;
+  return {realizado, realizadoComMeta, meta, pct, weekly, weeklyComMeta, proj, naMeta, nComMeta, metaIsOverride: metaOverride!=null};
+}
+
+function compute(){
+  const {ano,mes,grupo,vend}=state;
+  const scope=r=>(grupo==='__all'||r.grupo===grupo)&&(vend==='__all'||r.vendedor===vend);
+  const scopeVendOnly=r=>(vend==='__all'||r.vendedor===vend);
+
+  const monthScoped=RECS.filter(r=>scope(r)&&r.ano===ano&&r.mes===mes);
+  const monthAllUnfiltered=RECS.filter(r=>r.ano===ano&&r.mes===mes);
+  const weeksTotal=Math.max(1,...monthAllUnfiltered.map(r=>r.semanas.length));
+  const weekAllMonth=Array(weeksTotal).fill(0);
+  monthAllUnfiltered.forEach(r=>r.semanas.forEach((v,i)=>{ if(i<weeksTotal) weekAllMonth[i]+=v; }));
+  const weeksElapsed=Math.max(1, weekAllMonth.filter(v=>v>0).length);
+
+  // dias úteis: exclui os feriados informados pelo supervisor (persistem por mês);
+  // decorridos são contados pela DATA REAL de hoje, até ONTEM (o lançamento de hoje ainda não existe)
+  const bizBuckets=bizDayBuckets(ano, mes, weeksTotal); // só para distribuir a linha pontilhada do gráfico por semana
+  const feriados=feriadosPorMes[ano+'_'+mes]||[];
+  const bizDaysTotal=bizDaysTotalCalc(ano, mes, feriados);
+  const bizDaysElapsed=bizDaysElapsedByDate(ano, mes, feriados);
+  const feriadosStr=feriados.join(', ');
+
+  // mes "em andamento" = o mais recente presente nos dados (unico caso em que projetar faz sentido)
+  const latestPeriod = RECS.reduce((mx,r)=>{ const idx=r.ano*12+r.mes; return idx>mx.idx? {idx,ano:r.ano,mes:r.mes}:mx; }, {idx:-1,ano:0,mes:0});
+  const isOpenMonth = (ano===latestPeriod.ano && mes===latestPeriod.mes);
+
+  const S = statsFor(monthScoped, weeksTotal, weeksElapsed, isOpenMonth, bizDaysElapsed, bizDaysTotal,
+    getMetaOverride(ano,mes,grupo,vend));
+
+  // por grupo (ignora filtro de Grupo, respeita Vendedor)
+  const monthByGrupoBase=RECS.filter(r=>scopeVendOnly(r)&&r.ano===ano&&r.mes===mes);
+  const gruposPres=[...new Set(monthByGrupoBase.map(r=>r.grupo))];
+  const byGrupo=gruposPres.map(g=>({label:g, ...statsFor(monthByGrupoBase.filter(r=>r.grupo===g), weeksTotal, weeksElapsed, isOpenMonth, bizDaysElapsed, bizDaysTotal,
+    getMetaOverride(ano,mes,g,vend))}));
+  const totalG=statsFor(monthByGrupoBase, weeksTotal, weeksElapsed, isOpenMonth, bizDaysElapsed, bizDaysTotal,
+    getMetaOverride(ano,mes,'__all',vend));
+
+  // hero semanal
+  const hasMeta=S.meta>0;
+  const baseWeekly = hasMeta? S.weeklyComMeta : S.weekly;
+  const baseTotal  = hasMeta? S.realizadoComMeta : S.realizado;
+  const metaSemana = hasMeta? S.meta/weeksTotal : 0;
+  const labels=[],realLine=[],metaLine=[],projLine=[];
+  let accR=0,accM=0;
+  for(let i=0;i<weeksTotal;i++){ labels.push('Sem '+(i+1));
+    accM+=metaSemana; metaLine.push(hasMeta?accM:null);
+    if(i<weeksElapsed){ accR+=baseWeekly[i]; realLine.push(accR); } else realLine.push(null);
+  }
+  // ritmo diário (R$/dia útil) com base no realizado até agora ÷ dias úteis já decorridos;
+  // a linha pontilhada de projeção cresce por semana proporcional aos dias úteis daquele slot
+  const dailyRate=bizDaysElapsed? baseTotal/bizDaysElapsed : 0;
+  let run=accR;
+  for(let i=0;i<weeksTotal;i++){
+    if(i<weeksElapsed-1) projLine.push(null);
+    else if(i===weeksElapsed-1) projLine.push(run);
+    else { run+=dailyRate*bizBuckets[i]; projLine.push(run); }
+  }
+  const gap=S.meta-S.realizadoComMeta;
+  const bizDaysRest=bizDaysTotal-bizDaysElapsed;
+  const ritmo=gap>0&&bizDaysRest>0? gap/bizDaysRest:0;
+
+  // mapa de totais por mes (ano_mes) no escopo atual (grupo+vendedor, todos os anos)
+  const monthMap={};
+  RECS.filter(scope).forEach(r=>{ const k=r.ano+'_'+r.mes; monthMap[k]=(monthMap[k]||0)+r.venda; });
+
+  // YoY - ate 2 anos anteriores disponiveis
+  const yoy=[];
+  for(const back of [2,1]){
+    const ay=ano-back;
+    const v=monthMap[ay+'_'+mes];
+    if(v!=null) yoy.push({ano:ay, venda:v, back});
+  }
+  yoy.push({ano, venda:S.realizado, back:0});
+
+  // MoM
+  const pm = mes===1? {ano:ano-1,mes:12} : {ano,mes:mes-1};
+  const pmVenda = monthMap[pm.ano+'_'+pm.mes];
+  const mom = pmVenda!=null? {ano:pm.ano,mes:pm.mes,venda:pmVenda} : null;
+
+  // acumulado no ano + media mensal do ano
+  let accAno=0, cntAno=0;
+  for(let mm=1; mm<=mes; mm++){ const v=monthMap[ano+'_'+mm]; if(v!=null){ accAno+=v; cntAno++; } }
+  const mediaAno = cntAno? accAno/cntAno : 0;
+
+  // media movel 3 meses (cronologico, cruzando anos)
+  const curIdx=chronIdx(ano,mes);
+  const allKeys=Object.keys(monthMap).map(k=>{ const [a,m]=k.split('_').map(Number); return {ano:a,mes:m,idx:chronIdx(a,m)}; })
+    .filter(k=>k.idx<=curIdx && k.idx>curIdx-3).sort((a,b)=>a.idx-b.idx);
+  const media3m = allKeys.length? sum(allKeys,k=>monthMap[k.ano+'_'+k.mes])/allKeys.length : 0;
+
+  // evolucao mensal multi-ano (todos os anos disponiveis, escopo atual)
+  const anosDisp=[...new Set(RECS.filter(scope).map(r=>r.ano))].sort((a,b)=>a-b);
+  const evolPorAno=anosDisp.map(a=>({ano:a, valores:MESES.map((_,i)=> monthMap[a+'_'+(i+1)] ?? null)}));
+
+  // marca (venda direta/ifood) do mes selecionado, respeitando filtro de vendedor
+  const marcaRows=RECS.filter(r=>scopeVendOnly(r)&&r.ano===ano&&r.mes===mes&&r.grupo===GRUPO3_CANAIS);
+  const marcaAgg={};
+  marcaRows.forEach(r=>{ marcaAgg[r.marca]=(marcaAgg[r.marca]||0)+r.venda; });
+
+  // ranking
+  const rank=monthScoped.map(r=>{
+    const metaEff = getMetaOverride(ano,mes,'__all',r.vendedor) ?? r.meta;
+    return {v:r.vendedor,grupo:r.grupo,venda:r.venda,meta:metaEff,
+      pct:metaEff? r.venda/metaEff*100:null, semanas:r.semanas};
+  }).sort((a,b)=>b.venda-a.venda);
+
+  // desempenho diário — só existe pra meses lançados no formato novo (por dia).
+  // Ignora fim de semana e os feriados informados; e só avalia dias que já "aconteceram" (até ontem).
+  const temDadosDiarios = monthScoped.some(r=>r.dias!=null);
+  let diario=null;
+  if(temDadosDiarios){
+    const lastDay=lastCountableDay(ano,mes);
+    const diasSet=new Set();
+    monthScoped.forEach(r=>{ if(r.dias) r.dias.forEach(d=>diasSet.add(d.dia)); });
+    const diasUteisDoMes=[...diasSet].filter(d=>isBizDay(ano,mes,d) && !feriados.includes(d)).sort((a,b)=>a-b);
+    const soVendedores = state.grupo==='__all' && state.vend==='__all';   // canais só aparecem ao escolher o grupo "Outros Canais" ou um vendedor
+    const linhas=monthScoped.filter(r=>r.dias!=null && !(soVendedores && r.grupo===GRUPO3_CANAIS)).map(r=>{
+      const metaEff = getMetaOverride(ano,mes,'__all',r.vendedor) ?? r.meta;
+      const metaDia=(metaEff!=null && bizDaysTotal>0)? metaEff/bizDaysTotal : null;
+      const porDia={}; r.dias.forEach(d=>{ porDia[d.dia]=d.valor; });
+      let diasZerados=0, diasAbaixo=0, diasAvaliados=0;
+      diasUteisDoMes.forEach(d=>{
+        if(d>lastDay) return; // dia futuro, ainda não aconteceu
+        diasAvaliados++;
+        const v=porDia[d]||0;
+        if(v===0) diasZerados++;
+        else if(metaDia!=null && v<metaDia) diasAbaixo++;
+      });
+      return {vendedor:r.vendedor, grupo:r.grupo, metaDia, porDia, diasZerados, diasAbaixo, diasAvaliados};
+    }).sort((a,b)=> (b.diasZerados-a.diasZerados) || (b.diasAbaixo-a.diasAbaixo));
+    diario={dias:diasUteisDoMes, lastDay, linhas};
+  }
+
+  return {ano,mes,weeksTotal,weeksElapsed,bizDaysElapsed,bizDaysTotal,bizDaysRest,feriadosStr,isOpenMonth,S,byGrupo,totalG,hasMeta,metaSemana,
+    labels,realLine,metaLine,projLine,gap,ritmo,yoy,mom,accAno,cntAno,mediaAno,media3m,
+    evolPorAno,anosDisp,marcaAgg,rank,diario};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const k=compute();
+  renderBanner(k);
+  renderProjecao(k);
+  renderKpiStats(k);
+  drawAcum(k); drawYoY(k); drawMoM(k); drawGrupoMeta(k); drawAting(k);
+  drawRank(k); drawEvol(k); drawMarca(k); drawGrupoShare(k);
+  renderDiario(k);
+  renderRankMeta(k); renderRankCresc(k); renderRankClientes(k);
+  renderConfig(k);
+  $('#heroDesc').innerHTML = k.hasMeta
+    ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
+    : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';
+  const mesLabel=MESES_L[k.mes-1];
+  $('#note').innerHTML=
+    '<b>Como ler este painel.</b> Referência: '+mesLabel+'/'+k.ano+
+    ' · '+k.weeksElapsed+' de '+k.weeksTotal+' semanas com dados ('+k.bizDaysElapsed+' de '+k.bizDaysTotal+' dias úteis do mês).<br>'+
+    '• A projeção de fechamento usa o ritmo por dia útil (seg-sex, contando até ontem — o dado de hoje ainda não foi lançado — e excluindo os feriados que você informar no quadro de projeção), não por semana.<br>'+
+    '• Os gráficos "por grupo" e a marca sempre comparam Grupo 1, Grupo 2 e Outros Canais juntos, independente do filtro de Grupo (que afeta ranking e banner).<br>'+
+    '• Atingimento, gap e projeção "com meta" usam apenas quem tem meta definida; o faturamento total inclui todos.<br>'+
+    '• A marca (Naturalle/Selecto) só é identificável no grupo Outros Canais — a Equipe Comercial (Grupo 1 e 2) não tem essa marcação na fonte de dados.<br>'+
+    '• Comparação Ano a Ano usa até 2 anos anteriores, quando disponíveis nos dados anexados.';
+}
+
+function renderBanner(k){
+  const {S}=k;
+  const atMeta = k.hasMeta ? S.pct.toFixed(0)+'%' : '—';
+  const pillClass = !k.hasMeta ? 'mut' : (S.pct>=100?'up':'down');
+  const pillTxt = !k.hasMeta ? 'sem meta' : (S.pct>=100?'▲ meta batida':'▼ abaixo da meta');
+  const gapTxt = !k.hasMeta ? '' :
+    (k.gap>0 ? (k.bizDaysRest>0? `Faltam ${BRL.format(k.gap)} · ritmo ${BRL.format(k.ritmo)}/dia útil`:'Faltam '+BRL.format(k.gap)+' · mês fechado')
+             : `Meta superada em ${BRL.format(-k.gap)}`);
+  const barPct = k.hasMeta? Math.min(S.pct,100):0;
+  const upd = lastMeta.savedAt? new Date(lastMeta.savedAt).toLocaleDateString('pt-BR')+' '+new Date(lastMeta.savedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+  const metaValStr = S.meta>0? Number(Math.round(S.meta)).toLocaleString('pt-BR') : '';
+  $('#banner').innerHTML = `
+    <div class="bcell"><div class="bcap">Mês de referência</div><div class="bval">${MESES_L[k.mes-1][0].toUpperCase()+MESES_L[k.mes-1].slice(1)}/${k.ano}</div></div>
+    <div class="bcell"><div class="bcap">Faturamento do mês</div><div class="bval">${BRL.format(S.realizado)}</div></div>
+    <div class="bcell"><div class="bcap">Acumulado no ano</div><div class="bval">${BRL.format(k.accAno)}</div></div>
+    <div class="bcell">
+      <div class="bcap">Meta do mês <span class="meta-edit-hint">(editável)</span></div>
+      <div class="meta-edit-row"><span class="meta-prefix">R$</span><input type="text" id="metaInput" placeholder="digitar" value="${metaValStr}"></div>
+      <div class="bval" style="margin-top:6px">${atMeta} <span class="pill ${pillClass}">${pillTxt}</span></div>
+      ${k.hasMeta?`<div class="track"><span style="width:${barPct}%"></span></div>`:''}
+      <div style="font-size:11.5px;color:#D9C3B4;margin-top:6px">${gapTxt}</div>
+    </div>
+    <div class="updated">${lastMeta.filename?('Dados de: <b style="color:#F3D9B8">'+lastMeta.filename+'</b><br>'+upd):''}</div>
+  `;
+  const inp=$('#metaInput');
+  if(inp) inp.onchange=e=>{
+    const v=parseMetaInput(e.target.value);
+    saveMetaOverride(k.ano,k.mes,state.grupo,state.vend,v);
+    render();
+  };
+}
+
+function renderProjecao(k){
+  const proj = k.S.proj;
+  let sub = 'Baseado no ritmo por dia útil já lançado neste mês';
+  if(k.hasMeta && k.S.meta){
+    const pct = proj/k.S.meta*100;
+    sub = (pct>=100? '▲ ' : '▼ ') + pct.toFixed(0)+'% da meta do mês ('+BRL.format(k.S.meta)+')';
+  }
+  const bizField = k.isOpenMonth ? `
+    <div class="proj-bizdays">
+      <label for="feriadosInput">Feriados este mês (dia do mês, ex: 7):</label>
+      <input type="text" id="feriadosInput" placeholder="ex: 7, 15" value="${k.feriadosStr}">
+      <span class="proj-bizdays-sub">${k.bizDaysTotal} dias úteis no mês · ${k.bizDaysElapsed} decorridos até ontem</span>
+    </div>` : '';
+  $('#projBanner').innerHTML = `
+    <div class="proj-cap">Projeção de fechamento — ${MESES_L[k.mes-1]}/${k.ano}</div>
+    <div class="proj-val num">${BRL.format(proj)}</div>
+    <div class="proj-sub">${sub}</div>
+    ${bizField}
+  `;
+  if(k.isOpenMonth){
+    const inp=$('#feriadosInput');
+    if(inp) inp.onchange=e=>{
+      const lista=parseFeriadosInput(e.target.value);
+      e.target.value=lista.join(', ');
+      saveFeriados(k.ano,k.mes,lista);
+      render();
+    };
+  }
+}
+
+function renderKpiStats(k){
+  $('#kpiAno').innerHTML = `<div class="kcap">Acumulado no ano (${k.cntAno} ${k.cntAno===1?'mês':'meses'})</div>
+    <div class="kval num">${BRL.format(k.accAno)}</div>
+    <div class="ksub">Jan a ${MESES[k.mes-1]}/${k.ano}</div>`;
+  $('#kpiMedia').innerHTML = `<div class="kcap">Média mensal do ano</div>
+    <div class="kval num">${BRL.format(k.mediaAno)}</div>
+    <div class="ksub">Acumulado ÷ meses com dado</div>`;
+  const m3 = k.media3m;
+  $('#kpiMes').innerHTML = `<div class="kcap">Média móvel — 3 meses</div>
+    <div class="kval num">${BRL.format(m3)}</div>
+    <div class="ksub">Últimos 3 meses até ${MESES[k.mes-1]}/${k.ano}</div>`;
+}
+
+function baseOpts(extra){
+  const merged = Object.assign({responsive:true,maintainAspectRatio:false,animation:{duration:380}}, extra||{});
+  merged.plugins = Object.assign(
+    {legend:{display:false}, tooltip:{backgroundColor:'#2E2420',padding:10,cornerRadius:8}, datalabels:{display:false}},
+    (extra&&extra.plugins)||{}
+  );
+  return merged;
+}
+const money=v=>BRL.format(v);
+function kill(id){
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  // defensivo: se a página foi restaurada de um cache do navegador (voltar/duplicar aba)
+  // o Chart.js pode ainda ter uma instância presa a este canvas que nosso objeto "charts"
+  // não conhece — sem isso, "new Chart(...)" abaixo lança "Canvas is already in use".
+  const canvas=document.getElementById(id);
+  if(canvas && typeof Chart.getChart==='function'){
+    const existing=Chart.getChart(canvas);
+    if(existing) existing.destroy();
+  }
+}
+
+function drawAcum(k){ kill('cAcum');
+  const ds=[{label:'Realizado',data:k.realLine,borderColor:C.orange,backgroundColor:C.orange,
+    borderWidth:3,pointRadius:2,pointBackgroundColor:C.orange,tension:.15,
+    datalabels:{display:ctx=>ctx.dataIndex===k.weeksElapsed-1,align:'top',offset:8,
+      backgroundColor:C.orange,color:'#fff',borderRadius:6,padding:{top:4,bottom:4,left:7,right:7},
+      font:{weight:'700',size:11},formatter:v=>money(v)}}];
+  if(k.hasMeta){
+    ds.unshift({label:'Meta acum.',data:k.metaLine,borderColor:C.mauveL,backgroundColor:'rgba(140,100,105,.10)',
+      fill:true,borderWidth:1.5,pointRadius:0,tension:.05,borderDash:[4,4]});
+    ds.push({label:'Projeção',data:k.projLine,borderColor:C.amber,borderDash:[6,4],borderWidth:2,pointRadius:0,tension:.15,
+      datalabels:{display:ctx=>ctx.dataIndex===k.weeksTotal-1,align:'right',offset:6,
+        color:C.amber,font:{weight:'700',size:11},formatter:v=>v==null?'':money(v)}});
+  }
+  charts.cAcum=new Chart($('#cAcum'),{type:'line',data:{labels:k.labels,datasets:ds},
+    options:baseOpts({interaction:{mode:'index',intersect:false},
+      layout:{padding:{top:10,right:56}},
+      scales:{x:{grid:{display:false},ticks:{color:C.muted,font:{size:11}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.muted,boxWidth:12,boxHeight:12,font:{size:11},usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y==null?'—':money(c.parsed.y))}}}})});
+}
+
+function grupoAll(k){ return [...k.byGrupo, {label:'Total', ...k.totalG}]; }
+
+function drawYoY(k){ kill('cYoY');
+  if(k.yoy.length<2){
+    const box=document.getElementById('cYoYBox');
+    if(box) box.innerHTML='<div class="na">Sem dados do mesmo mês em anos anteriores neste recorte.</div>';
+    return;
+  }
+  const box=document.getElementById('cYoYBox');
+  if(box && !document.getElementById('cYoY')) box.innerHTML='<canvas id="cYoY"></canvas>';
+  const labels=k.yoy.map(y=>MESES[k.mes-1]+'/'+String(y.ano).slice(2));
+  const cores=k.yoy.map(y=>colorForYear(y.ano));
+  charts.cYoY=new Chart($('#cYoY'),{type:'bar',
+    data:{labels,datasets:[{label:'Faturamento',data:k.yoy.map(y=>y.venda),backgroundColor:cores,borderRadius:6,maxBarThickness:52,
+      datalabels:{anchor:'end',align:'top',color:C.ink,font:{weight:'700',size:11},formatter:v=>money(v)}}]},
+    options:baseOpts({layout:{padding:{top:22}},
+      scales:{x:{grid:{display:false},ticks:{color:C.ink,font:{size:12,weight:'600'}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{
+        const y=k.yoy[c.dataIndex];
+        if(y.back===0) return 'Mês selecionado: '+money(y.venda);
+        const cur=k.yoy.find(x=>x.back===0).venda;
+        const varr=((cur/y.venda-1)*100).toFixed(1);
+        return ['Realizado: '+money(y.venda), 'Variação vs este ano: '+(cur>=y.venda?'▲ +':'▼ ')+varr+'%'];
+      }}}}})});
+}
+
+function drawMoM(k){ kill('cMoM');
+  const box=document.getElementById('cMoMBox');
+  if(!k.mom){
+    if(box) box.innerHTML='<div class="na">Sem dados do mês anterior neste recorte.</div>';
+    return;
+  }
+  if(box && !document.getElementById('cMoM')) box.innerHTML='<canvas id="cMoM"></canvas>';
+  const labels=[MESES[k.mom.mes-1]+'/'+String(k.mom.ano).slice(2), MESES[k.mes-1]+'/'+String(k.ano).slice(2)];
+  const vals=[k.mom.venda, k.S.realizado];
+  const varr=((vals[1]/vals[0]-1)*100);
+  charts.cMoM=new Chart($('#cMoM'),{type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:[C.mauveL,C.orange],borderRadius:6,maxBarThickness:52,
+      datalabels:{anchor:'end',align:'top',color:C.ink,font:{weight:'700',size:11},formatter:v=>money(v)}}]},
+    options:baseOpts({layout:{padding:{top:22}},
+      scales:{x:{grid:{display:false},ticks:{color:C.ink,font:{size:12,weight:'600'}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}}},
+      plugins:{tooltip:{callbacks:{label:c=>c.dataIndex===1?
+        'Variação: '+(varr>=0?'▲ +':'▼ ')+varr.toFixed(1)+'%' : 'Mês anterior: '+money(c.parsed.y)}}}})});
+}
+
+function drawGrupoMeta(k){ kill('cGrupoMeta');
+  const gs=grupoAll(k);
+  const labels=gs.map(g=>g.label);
+  const realizado=gs.map(g=>g.realizadoComMeta);
+  const meta=gs.map(g=>g.meta||0);
+  charts.cGrupoMeta=new Chart($('#cGrupoMeta'),{type:'bar',
+    data:{labels,datasets:[
+      {label:'Meta',data:meta,backgroundColor:C.mauveL,borderRadius:6,maxBarThickness:46,
+        datalabels:{display:v=>v.dataset.data[v.dataIndex]>0,anchor:'end',align:'top',color:C.mauveD,
+          font:{weight:'700',size:11},formatter:v=>v>0?money(v):''}},
+      {label:'Realizado (c/ meta)',data:realizado,backgroundColor:C.orange,borderRadius:6,maxBarThickness:46,
+        datalabels:{anchor:'end',align:'top',color:C.orangeD,font:{weight:'700',size:11},
+          formatter:(v,ctx)=>{ const g=gs[ctx.dataIndex]; return g.meta? money(v) : 'sem meta'; }}},
+    ]},
+    options:baseOpts({layout:{padding:{top:22}},
+      scales:{x:{grid:{display:false},ticks:{color:C.ink,font:{size:12,weight:'600'}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.muted,boxWidth:12,font:{size:11},usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>{ const g=gs[c.dataIndex];
+          if(c.dataset.label==='Realizado (c/ meta)') return ['Realizado (c/ meta): '+money(g.realizadoComMeta),'Realizado total: '+money(g.realizado)];
+          return c.dataset.label+': '+money(c.parsed.y); }}}}})});
+}
+
+function drawAting(k){ kill('cAting');
+  const gs=grupoAll(k);
+  const labels=gs.map(g=>g.label);
+  const pct=gs.map(g=>g.pct);
+  const col=g=> g.pct==null?C.neutral : g.pct>=100?C.green : g.pct>=85?C.amber : C.brick;
+  const line100={ id:'line100_'+Math.random().toString(36).slice(2), afterDatasetsDraw(chart){
+    const {ctx,chartArea,scales}=chart; if(!scales.y) return;
+    const y=scales.y.getPixelForValue(100);
+    ctx.save(); ctx.strokeStyle=C.ink; ctx.globalAlpha=.35; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(chartArea.left,y); ctx.lineTo(chartArea.right,y); ctx.stroke(); ctx.restore();
+  }};
+  charts.cAting=new Chart($('#cAting'),{type:'bar',
+    data:{labels,datasets:[{data:gs.map(g=>g.pct==null?0:g.pct),
+      backgroundColor:gs.map(col),borderRadius:6,maxBarThickness:46,
+      datalabels:{anchor:'end',align:'top',color:C.ink,font:{weight:'700',size:12},
+        formatter:(v,ctx)=>{ const g=gs[ctx.dataIndex]; return g.pct==null?'sem meta':g.pct.toFixed(0)+'%'; }}}]},
+    plugins:[line100],
+    options:baseOpts({layout:{padding:{top:22}},
+      scales:{x:{grid:{display:false},ticks:{color:C.ink,font:{size:12,weight:'600'}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:v=>v+'%'},
+          suggestedMax:Math.max(120,...pct.filter(v=>v!=null))}},
+      plugins:{
+        tooltip:{callbacks:{label:c=>{ const g=gs[c.dataIndex];
+          return g.pct==null? 'Sem meta definida' : ['Realizado: '+money(g.realizadoComMeta),'Meta: '+money(g.meta),'Atingimento: '+g.pct.toFixed(1)+'%']; }}}}})});
+}
+
+function drawRank(k){ kill('cRank');
+  const col=r=> r.pct==null?C.neutral : r.pct>=100?C.green : r.pct>=85?C.amber : C.brick;
+  charts.cRank=new Chart($('#cRank'),{type:'bar',
+    data:{labels:k.rank.map(r=>r.v),datasets:[{data:k.rank.map(r=>r.venda),
+      backgroundColor:k.rank.map(col),borderRadius:6,maxBarThickness:26,
+      datalabels:{anchor:'end',align:'end',color:C.ink,font:{weight:'700',size:11},
+        formatter:(v,ctx)=>{ const r=k.rank[ctx.dataIndex]; return money(v)+(r.pct!=null?'  ('+r.pct.toFixed(0)+'%)':''); }}}]},
+    options:baseOpts({indexAxis:'y',layout:{padding:{right:110}},
+      scales:{x:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}},
+        y:{grid:{display:false},ticks:{color:C.ink,font:{size:12,weight:'600'}}}},
+      plugins:{tooltip:{callbacks:{label:c=>{const r=k.rank[c.dataIndex];
+        const base=['Faturamento: '+money(r.venda)];
+        if(r.meta!=null){ base.push('Meta: '+money(r.meta)); base.push('Atingimento: '+r.pct.toFixed(0)+'%'); }
+        else base.push('Sem meta definida');
+        return base;}}}}})});
+}
+
+function renderDiario(k){
+  const wrap=$('#diarioWrap');
+  if(!wrap) return;
+  if(!k.diario){
+    wrap.innerHTML='<div class="na">Este mês ainda não tem lançamento diário. O acompanhamento dia a dia só existe a partir do mês em que a planilha passar a receber os números por dia — meses anteriores continuam em formato semanal, sem essa granularidade.</div>';
+    return;
+  }
+  const {dias,lastDay,linhas}=k.diario;
+  if(!dias.length || !linhas.length){
+    wrap.innerHTML='<div class="na">Sem dias úteis avaliáveis ainda neste mês.</div>';
+    return;
+  }
+  const thead='<tr><th class="vend-name-h">Vendedor</th>'+dias.map(d=>`<th>${d}</th>`).join('')+'</tr>';
+  const rowsHtml=linhas.map(l=>{
+    const cells=dias.map(d=>{
+      if(d>lastDay) return '<td><span class="diario-cell future">–</span></td>';
+      const v=l.porDia[d]||0;
+      let cls='ok', symbol='●';
+      if(v===0){ cls='zero'; symbol='✕'; }
+      else if(l.metaDia!=null && v<l.metaDia){ cls='warn'; }
+      const title='Dia '+d+': '+BRL.format(v)+(l.metaDia!=null?' · meta do dia: '+BRL.format(l.metaDia):'');
+      return `<td><span class="diario-cell ${cls}" title="${title}">${symbol}</span></td>`;
+    }).join('');
+    return `<tr><td class="vend-name">${l.vendedor}</td>${cells}</tr>`;
+  }).join('');
+  let html=`<div class="diario-scroll"><table class="diario-table"><thead>${thead}</thead><tbody>${rowsHtml}</tbody></table></div>`;
+
+  const flagged=linhas.filter(l=>l.diasZerados>0).sort((a,b)=>b.diasZerados-a.diasZerados);
+  if(flagged.length){
+    html+=`<div class="diario-summary"><b>${flagged.length} vendedor(es)</b> com dia(s) sem nenhuma venda este mês: `+
+      flagged.map(l=>l.vendedor+' ('+l.diasZerados+')').join(', ')+'.</div>';
+  } else {
+    html+='<div class="diario-summary">Nenhum vendedor ficou um dia sem vender até agora neste mês.</div>';
+  }
+  wrap.innerHTML=html;
+}
+
+/* ---------- 1º ranking: atingimento da meta ---------- */
+const MEDALHAS=['🥇','🥈','🥉'];
+function podioHTML(linhas, valLabel){
+  // ordem visual de pódio: 2º / 1º / 3º (igual pódio de corrida)
+  const ordem=[1,0,2].filter(i=>linhas[i]);
+  return '<div class="podio">'+ordem.map(i=>{
+    const r=linhas[i];
+    return `<div class="podio-slot s${i+1}">
+      <div class="podio-medal">${MEDALHAS[i]}</div>
+      <div class="podio-nome">${esc(r.v)}</div>
+      <div class="podio-val">${valLabel(r)}</div>
+      <div class="podio-stand">${i+1}º</div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+/* ---------- 1º ranking: atingimento da meta (com pódio) ---------- */
+function renderRankMeta(k){
+  const wrap=$('#rankMetaWrap');
+  const linhas=k.rank.filter(r=>r.meta!=null && r.meta>0).sort((a,b)=>b.pct-a.pct);
+  if(!linhas.length){ wrap.innerHTML='<div class="na">Ninguém com meta cadastrada neste recorte.</div>'; return; }
+  let html = linhas.length>=2 ? podioHTML(linhas, r=>r.pct.toFixed(0)+'%') : '';
+  html+='<table class="rank-table"><thead><tr><th>#</th><th>Vendedor</th><th class="num">Realizado</th><th class="num">Meta</th><th class="num">Atingimento</th></tr></thead><tbody>';
+  linhas.forEach((r,i)=>{
+    const cls = r.pct>=100?'rank-up':(r.pct<85?'rank-down':'');
+    html+=`<tr><td><span class="rank-pos">${i+1}</span></td><td>${esc(r.v)}</td><td class="num">${BRL.format(r.venda)}</td>`+
+      `<td class="num">${BRL.format(r.meta)}</td><td class="num ${cls}">${r.pct.toFixed(0)}%</td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+/* ---------- 2º ranking: crescimento de faturamento, TODAS as semanas do mês ---------- */
+function renderRankCresc(k){
+  const wrap=$('#rankCrescWrap');
+  if(k.weeksElapsed<2){
+    wrap.innerHTML='<div class="na">Esse mês ainda não tem 2 semanas com dado — o comparativo semana x semana só aparece a partir da 2ª semana do mês.</div>';
+    $('#rankCrescDesc').innerHTML='Compara todas as semanas do mês, uma com a anterior.';
+    return;
+  }
+  const nSem=k.weeksElapsed; // só semanas que já têm dado
+  const linhas=k.rank.map(r=>{
+    const sem=(r.semanas||[]).slice(0,nSem);
+    const variacoes=[]; // uma por par de semanas consecutivas
+    for(let i=1;i<nSem;i++){
+      const ant=sem[i-1]||0, atu=sem[i]||0;
+      if(ant>0) variacoes.push((atu-ant)/ant*100);
+      else if(atu>0) variacoes.push(Infinity);
+      else variacoes.push(null);
+    }
+    const finitos=variacoes.filter(v=>v!=null && v!==Infinity);
+    const temNovo=variacoes.includes(Infinity);
+    const maiorSwing=temNovo? Infinity : (finitos.length? Math.max(...finitos.map(Math.abs)) : 0);
+    return {v:r.v, sem, variacoes, maiorSwing, temDado:sem.some(x=>x>0)};
+  }).filter(r=>r.temDado)
+    .sort((a,b)=>{ const av=a.maiorSwing===Infinity?1e9:a.maiorSwing, bv=b.maiorSwing===Infinity?1e9:b.maiorSwing; return bv-av; });
+  if(!linhas.length){ wrap.innerHTML='<div class="na">Sem dado suficiente pra comparar.</div>'; return; }
+  $('#rankCrescDesc').innerHTML=`Semana 1 a ${nSem} deste mês · ordenado por quem tem a maior oscilação entre duas semanas seguidas (sinal de inconsistência, bom ou ruim).`;
+  let html='<table class="rank-table"><thead><tr><th>#</th><th>Vendedor</th>'+
+    Array.from({length:nSem},(_,i)=>'<th class="num">Sem '+(i+1)+'</th>').join('')+
+    '<th class="num">Maior oscilação</th></tr></thead><tbody>';
+  linhas.forEach((r,i)=>{
+    const cels=r.sem.map((v,j)=>{
+      if(j===0) return `<td class="num">${BRL.format(v)}</td>`;
+      const vr=r.variacoes[j-1];
+      const txt = vr===Infinity?' <span class="rank-up">novo</span>':(vr==null?'':' <span class="'+(vr>=0?'rank-up':'rank-down')+'">'+(vr>=0?'▲':'▼')+Math.abs(vr).toFixed(0)+'%</span>');
+      return `<td class="num">${BRL.format(v)}${txt}</td>`;
+    }).join('');
+    const swingTxt = r.maiorSwing===Infinity? 'novo' : r.maiorSwing.toFixed(0)+'%';
+    html+=`<tr><td><span class="rank-pos">${i+1}</span></td><td>${esc(r.v)}</td>${cels}<td class="num rank-down">${swingTxt}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+/* ---------- 3º ranking: novos clientes (ainda não calculável — ver aviso) ---------- */
+function renderRankClientes(k){
+  $('#rankClientesWrap').innerHTML =
+    '<div class="na">Esse ranking ainda não dá pra montar. A aba Vendas guarda só o total por vendedor — não sabe quais '+
+    'clientes compraram. Essa informação existe nos relatórios do Questor (coluna "Cliente"), mas as abas onde eles são '+
+    'colados guardam só o mês atual: quando o mês vira, o conteúdo anterior é substituído, e sem um histórico de clientes '+
+    'já vistos não dá pra saber se um cliente é novo ou só não comprou nos dias já cobertos. Pra funcionar de verdade, '+
+    'precisaria de uma lista de clientes acompanhada mês a mês dentro da planilha.</div>';
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- aba Config: metas do mês (geral + por vendedor) ---------- */
+function renderConfig(k){
+  $('#cfgPeriodo').textContent = MESES_L[k.mes-1][0].toUpperCase()+MESES_L[k.mes-1].slice(1)+'/'+k.ano;
+
+  const metaGeral = getMetaOverride(k.ano,k.mes,'__all','__all');
+  const inpGeral = $('#cfgMetaGeral');
+  inpGeral.value = metaGeral!=null ? Number(Math.round(metaGeral)).toLocaleString('pt-BR') : '';
+  inpGeral.onchange = e=>{
+    const v=parseMetaInput(e.target.value);
+    saveMetaOverride(k.ano,k.mes,'__all','__all',v);
+    render();
+  };
+
+  // um vendedor por nome, juntando todos os grupos/meses iguais a este ano/mes (ignora o filtro de grupo/vendedor do topo)
+  const vendsMes = RECS.filter(r=>r.ano===k.ano && r.mes===k.mes);
+  const porVend = {};
+  vendsMes.forEach(r=>{ if(!porVend[r.vendedor]) porVend[r.vendedor]=r; });
+  const nomes = Object.keys(porVend).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  let html='<table class="cfg-table"><thead><tr><th>Vendedor</th><th>Meta</th></tr></thead><tbody>';
+  nomes.forEach(nome=>{
+    const override = getMetaOverride(k.ano,k.mes,'__all',nome);
+    const daPlanilha = porVend[nome].meta;
+    const efetiva = override ?? daPlanilha;
+    const valStr = efetiva!=null ? Number(Math.round(efetiva)).toLocaleString('pt-BR') : '';
+    const fonte = override!=null ? 'editado aqui' : (daPlanilha!=null ? 'da planilha' : 'sem meta');
+    html+=`<tr><td>${esc(nome)}</td><td><input type="text" data-vend="${esc(nome)}" value="${valStr}" placeholder="digitar"><span class="fonte">${fonte}</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  const wrap=$('#cfgVendedoresWrap');
+  wrap.innerHTML = nomes.length? html : '<div class="na">Nenhum vendedor encontrado para esse mês.</div>';
+  wrap.querySelectorAll('input[data-vend]').forEach(inp=>{
+    inp.onchange = e=>{
+      const v=parseMetaInput(e.target.value);
+      saveMetaOverride(k.ano,k.mes,'__all',e.target.dataset.vend,v);
+      render();
+    };
+  });
+}
+
+function drawEvol(k){ kill('cEvol');
+  const ds=k.evolPorAno.map(e=>{
+    const cor=colorForYear(e.ano);
+    const isSel = e.ano===k.ano;
+    return {
+      label:String(e.ano),
+      data:e.valores,
+      borderColor:cor,
+      backgroundColor:cor,
+      borderWidth: isSel? 3.5 : 2,
+      borderDash: isSel? [] : [5,4],
+      pointRadius: isSel? 3 : 2.5,
+      pointBackgroundColor:cor,
+      tension:.15,
+      spanGaps:false,
+      datalabels:{display:false}
+    };
+  });
+  charts.cEvol=new Chart($('#cEvol'),{type:'line',data:{labels:MESES,datasets:ds},
+    options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{x:{grid:{display:false},ticks:{color:C.muted,font:{size:11}}},
+        y:{grid:{color:'#F2EBDE'},ticks:{color:C.muted,font:{size:11},callback:BRLk}}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.muted,boxWidth:12,font:{size:11},usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y==null?'sem dado':money(c.parsed.y))}}}})});
+}
+
+function drawMarca(k){ kill('cMarca');
+  const box=document.getElementById('cMarcaBox');
+  const entries=Object.entries(k.marcaAgg).filter(([,v])=>v>0);
+  if(!entries.length){
+    if(box) box.innerHTML='<div class="na">Sem dados de Outros Canais neste mês/recorte.</div>';
+    return;
+  }
+  if(box && !document.getElementById('cMarca')) box.innerHTML='<canvas id="cMarca"></canvas>';
+  const colorMap={'Naturalle (JMJ)':C.orange,'Selecto (JSM)':C.mauve,'Nao classificado':C.neutral};
+  charts.cMarca=new Chart($('#cMarca'),{type:'doughnut',
+    data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),
+      backgroundColor:entries.map(e=>colorMap[e[0]]||C.neutral),borderColor:'#fff',borderWidth:2}]},
+    options:baseOpts({cutout:'58%',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.muted,boxWidth:12,font:{size:11.5},usePointStyle:true,padding:14}},
+        datalabels:{display:true,color:'#fff',font:{weight:'700',size:12},
+          formatter:(v,ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return (v/t*100).toFixed(0)+'%'; }},
+        tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);
+          return c.label+': '+money(c.parsed)+' ('+(c.parsed/t*100).toFixed(0)+'%)';}}}}})});
+}
+
+function drawGrupoShare(k){ kill('cGrupoShare');
+  const gs=k.byGrupo;
+  charts.cGrupoShare=new Chart($('#cGrupoShare'),{type:'doughnut',
+    data:{labels:gs.map(g=>g.label),datasets:[{data:gs.map(g=>g.realizado),
+      backgroundColor:[C.orange,C.mauve,C.amber,C.green],borderColor:'#fff',borderWidth:2}]},
+    options:baseOpts({cutout:'58%',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.muted,boxWidth:12,font:{size:11.5},usePointStyle:true,padding:14}},
+        datalabels:{display:true,color:'#fff',font:{weight:'700',size:12},
+          formatter:(v,ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return (v/t*100).toFixed(0)+'%'; }},
+        tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);
+          return c.label+': '+money(c.parsed)+' ('+(c.parsed/t*100).toFixed(0)+'%)';}}}}})});
+}
+</script>
