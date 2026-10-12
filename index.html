@@ -50,6 +50,8 @@
   .filename b{color:var(--orange-d)}
   .badge-warn{display:inline-block; font-size:10.5px; font-weight:700; color:#8a5a1a; background:var(--amber-l);
     border-radius:6px; padding:2px 7px; margin-left:6px; vertical-align:middle}
+  .state-note{font-size:12.5px; color:#8a5a1a; background:var(--amber-l); border:1px solid #E6CFA0;
+    border-radius:10px; padding:10px 14px; margin:-6px 0 18px; line-height:1.5}
 
   /* modo de exportação de PDF: esconde controles interativos, mantém conteúdo */
   body.pdf-exporting .controls,
@@ -290,8 +292,16 @@
       <select id="fGrupo"><option value="__all">Todos</option></select></div>
     <div class="fld"><label for="fVend">Vendedor</label>
       <select id="fVend"><option value="__all">Todos</option></select></div>
+    <div class="fld"><label for="fEmpresa">Empresa</label>
+      <select id="fEmpresa">
+        <option value="__all">Todos</option>
+        <option value="naturalle">Naturalle (JMJ)</option>
+        <option value="selecto">Selecto (JSM)</option>
+      </select></div>
     <div class="filename" id="fname"></div>
   </div>
+
+  <div class="state-note hidden" id="empresaNote"></div>
 
   <div class="state" id="empty">
     <svg class="big" viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="30" rx="4" stroke="#C97A2C" stroke-width="2"/><path d="M6 18h36M14 26h9M14 32h16" stroke="#C97A2C" stroke-width="2" stroke-linecap="round"/><circle cx="34" cy="28" r="7" fill="#FBF7F1" stroke="#8C6469" stroke-width="2"/><path d="M34 25v6m-3-3h6" stroke="#8C6469" stroke-width="2" stroke-linecap="round"/></svg>
@@ -585,8 +595,19 @@ function colorForYear(ano){
 if(window.Chart && window.ChartDataLabels){ Chart.register(ChartDataLabels); Chart.defaults.set('plugins.datalabels',{display:false}); }
 Chart.defaults.font.family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
-let RECS=null, charts={};
-const state={ano:null, mes:null, grupo:'__all', vend:'__all'};
+/* RECS_ALL = aba "Vendas" (combinada, como sempre foi). RECS_NAT/RECS_SEL = abas "Vendas Naturalle"/"Vendas Selecto"
+   (novas, opcionais) — mesma estrutura de blocos, só que cada uma já vem filtrada por empresa na própria planilha.
+   null = fonte ainda não configurada/publicada; [] = configurada mas sem linhas pro período. */
+let RECS_ALL=null, RECS_NAT=null, RECS_SEL=null, charts={};
+const state={ano:null, mes:null, grupo:'__all', vend:'__all', empresa:'__all'};
+/* a partir daqui a Equipe Comercial (Grupo 1 e 2) passou a ter abertura por marca nas abas Naturalle/Selecto;
+   antes disso, só o grupo Outros Canais tem marca identificável (ver classifyGrupo/marca) */
+const EMPRESA_CUTOFF_IDX = chronIdx(2026,10);
+function pickRecs(){
+  if(state.empresa==='naturalle') return RECS_NAT;
+  if(state.empresa==='selecto') return RECS_SEL;
+  return RECS_ALL;
+}
 
 /* ---------- logo ---------- */
 $('#logoImg').src = "data:image/jpeg;base64,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";
@@ -681,6 +702,10 @@ let lastMeta={filename:null, savedAt:null};
 /* ---------- busca ao vivo no Google Sheets ---------- */
 // Troque pelo link gerado em Arquivo > Compartilhar > Publicar na Web (aba "Vendas", formato CSV).
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUDDG4aeEzQ7qbLoaGBFuMiTaKnkE58hIP3BvPVt8rbo4YK2LINJaShafVIUepCtgJ3EIjbaNxnqfU/pub?gid=1377431723&single=true&output=csv';
+// Mesma ideia, mas para as novas abas "Vendas Naturalle" e "Vendas Selecto" (filtro Empresa).
+// Enquanto ficarem como 'COLE_AQUI...', o filtro Empresa aparece mas avisa que a fonte não foi configurada.
+const SHEET_CSV_URL_NATURALLE = 'COLE_AQUI_O_LINK_PUBLICADO_DA_ABA_VENDAS_NATURALLE';
+const SHEET_CSV_URL_SELECTO = 'COLE_AQUI_O_LINK_PUBLICADO_DA_ABA_VENDAS_SELECTO';
 const AUTO_REFRESH_MS = 5*60*1000; // atualiza sozinho a cada 5 minutos
 
 function parseCSV(text){
@@ -736,7 +761,18 @@ async function carregarDados(manual){
     const {recs,error} = parseVendasBlocks(rows);
     if(error){ showError(error); return; }
     if(!recs.length){ showError('A aba Vendas não retornou nenhum dado reconhecível.'); return; }
-    RECS=recs; lastMeta={filename:'Google Sheets (ao vivo)', savedAt:Date.now()};
+    RECS_ALL=recs;
+
+    // abas por empresa (Naturalle/Selecto) são opcionais: se não estiverem configuradas, ou a busca falhar,
+    // o painel principal continua funcionando normal — só o filtro "Empresa" fica indisponível.
+    const [natRes, selRes] = await Promise.allSettled([
+      fetchVendasCSV(SHEET_CSV_URL_NATURALLE),
+      fetchVendasCSV(SHEET_CSV_URL_SELECTO)
+    ]);
+    RECS_NAT = natRes.status==='fulfilled' ? natRes.value : null;
+    RECS_SEL = selRes.status==='fulfilled' ? selRes.value : null;
+
+    lastMeta={filename:'Google Sheets (ao vivo)', savedAt:Date.now()};
     $('#fname').innerHTML='Fonte: <b>Google Sheets</b> · atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     $('#btnPDF').classList.remove('hidden');
     $('#resumoWrap').classList.remove('hidden');
@@ -748,6 +784,20 @@ async function carregarDados(manual){
   }finally{
     if(manual) btn.disabled=false;
   }
+}
+// busca uma aba "Vendas X" opcional (mesmo formato de blocos da aba Vendas principal).
+// retorna null se a URL ainda não foi configurada; lança erro se a busca/parse falhar.
+async function fetchVendasCSV(url){
+  if(!url || url.indexOf('COLE_AQUI')===0) return null;
+  const u = url + (url.includes('?')?'&':'?') + '_=' + Date.now();
+  const resp = await fetch(u, {cache:'no-store'});
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const text = await resp.text();
+  if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('recebeu HTML em vez de CSV');
+  const rows = normalizarLinhasCSV(parseCSV(text));
+  const {recs,error} = parseVendasBlocks(rows);
+  if(error) throw new Error(error);
+  return recs||[];
 }
 $('#btnRefresh').onclick=()=>carregarDados(true);
 setInterval(()=>carregarDados(false), AUTO_REFRESH_MS);
@@ -767,7 +817,8 @@ function readFileManual(file){
     const {recs,error}=parseVendasBlocks(rows);
     if(error){ showError(error); return; }
     if(!recs.length){ showError('A aba Vendas não tem linhas de dados reconhecíveis.'); return; }
-    RECS=recs; lastMeta={filename:file.name, savedAt:Date.now()};
+    RECS_ALL=recs; RECS_NAT=null; RECS_SEL=null; // fallback manual não traz as abas por empresa
+    lastMeta={filename:file.name, savedAt:Date.now()};
     $('#fname').innerHTML='Arquivo anexado manualmente: <b>'+file.name+'</b>';
     $('#btnPDF').classList.remove('hidden');
     $('#resumoWrap').classList.remove('hidden');
@@ -901,34 +952,37 @@ carregarDados(false);
 function boot(){
   $('#empty').classList.add('hidden'); $('#error').classList.add('hidden');
   $('#filters').classList.remove('hidden'); $('#dash').classList.remove('hidden');
-  const anos=[...new Set(RECS.map(r=>r.ano))].sort((a,b)=>a-b);
-  const grupos=[...new Set(RECS.map(r=>r.grupo))];
-  const vends=[...new Set(RECS.map(r=>r.vendedor))].sort();
+  // os filtros Ano/Mês/Grupo/Vendedor sempre listam a partir da aba combinada (RECS_ALL), pra não
+  // mudar de opções quando o filtro Empresa troca — só os VALORES calculados mudam (ver compute()/pickRecs()).
+  const anos=[...new Set(RECS_ALL.map(r=>r.ano))].sort((a,b)=>a-b);
+  const grupos=[...new Set(RECS_ALL.map(r=>r.grupo))];
+  const vends=[...new Set(RECS_ALL.map(r=>r.vendedor))].sort();
   const selA=$('#fAno'); selA.innerHTML='';
   anos.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; selA.appendChild(o); });
   fill($('#fGrupo'),grupos); fill($('#fVend'),vends);
 
   // periodo mais recente disponivel
-  const periods=[...new Set(RECS.map(r=>r.ano*100+r.mes))].sort((a,b)=>a-b);
+  const periods=[...new Set(RECS_ALL.map(r=>r.ano*100+r.mes))].sort((a,b)=>a-b);
   const lastP=periods[periods.length-1];
-  state.ano=Math.floor(lastP/100); state.mes=lastP%100; state.grupo='__all'; state.vend='__all';
+  state.ano=Math.floor(lastP/100); state.mes=lastP%100; state.grupo='__all'; state.vend='__all'; state.empresa='__all';
   selA.value=state.ano;
   fillMeses(state.ano);
   $('#fMes').value=state.mes;
-  $('#fGrupo').value='__all'; $('#fVend').value='__all';
+  $('#fGrupo').value='__all'; $('#fVend').value='__all'; $('#fEmpresa').value='__all';
 
   selA.onchange=e=>{ state.ano=+e.target.value; fillMeses(state.ano);
-    const mesesDisp=[...new Set(RECS.filter(r=>r.ano===state.ano).map(r=>r.mes))];
+    const mesesDisp=[...new Set(RECS_ALL.filter(r=>r.ano===state.ano).map(r=>r.mes))];
     if(!mesesDisp.includes(state.mes)) state.mes=Math.max(...mesesDisp);
     $('#fMes').value=state.mes; render(); };
   $('#fMes').onchange=e=>{state.mes=+e.target.value; render();};
   $('#fGrupo').onchange=e=>{state.grupo=e.target.value; render();};
   $('#fVend').onchange=e=>{state.vend=e.target.value; render();};
+  $('#fEmpresa').onchange=e=>{state.empresa=e.target.value; render();};
   render();
 }
 function fillMeses(ano){
   const sel=$('#fMes'); sel.innerHTML='';
-  const meses=[...new Set(RECS.filter(r=>r.ano===ano).map(r=>r.mes))].sort((a,b)=>a-b);
+  const meses=[...new Set(RECS_ALL.filter(r=>r.ano===ano).map(r=>r.mes))].sort((a,b)=>a-b);
   meses.forEach(m=>{ const o=document.createElement('option'); o.value=m;
     o.textContent=MESES_L[m-1][0].toUpperCase()+MESES_L[m-1].slice(1); sel.appendChild(o); });
 }
@@ -966,7 +1020,19 @@ function statsFor(rowsArr, weeksTotal, weeksElapsed, isOpenMonth, bizDaysElapsed
 }
 
 function compute(){
-  const {ano,mes,grupo,vend}=state;
+  const {ano,mes,grupo,vend,empresa}=state;
+  // tudo daqui pra baixo lê "RECS" — essa const local escolhe a fonte certa (combinada/Naturalle/Selecto)
+  // conforme o filtro Empresa, e assim TODO o resto do painel (projeção, crescimento, rankings etc.)
+  // recalcula sozinho a partir dela, igual Power BI — sem precisar tocar em cada gráfico individualmente.
+  const RECS = pickRecs() || [];
+  // aviso de disponibilidade: a aba "Vendas" por empresa ainda não existe pra todo o histórico —
+  // ver nota no topo do arquivo / mensagem passada a Pedro sobre o corte em Outubro/2026.
+  let empresaInfo=null;
+  if(empresa!=='__all'){
+    const fonte = empresa==='naturalle'? RECS_NAT : RECS_SEL;
+    if(fonte==null) empresaInfo={tipo:'nao-configurado'};
+    else if(chronIdx(ano,mes) < EMPRESA_CUTOFF_IDX) empresaInfo={tipo:'antes-corte'};
+  }
   const scope=r=>(grupo==='__all'||r.grupo===grupo)&&(vend==='__all'||r.vendedor===vend);
   const scopeVendOnly=r=>(vend==='__all'||r.vendedor===vend);
 
@@ -1098,12 +1164,28 @@ function compute(){
 
   return {ano,mes,weeksTotal,weeksElapsed,bizDaysElapsed,bizDaysTotal,bizDaysRest,feriadosStr,isOpenMonth,S,byGrupo,totalG,hasMeta,metaSemana,
     labels,realLine,metaLine,projLine,gap,ritmo,yoy,mom,accAno,cntAno,mediaAno,media3m,
-    evolPorAno,anosDisp,marcaAgg,rank,diario};
+    evolPorAno,anosDisp,marcaAgg,rank,diario,empresa,empresaInfo};
 }
 
 /* ---------- render ---------- */
+const EMPRESA_LABEL={naturalle:'Naturalle (JMJ)', selecto:'Selecto (JSM)'};
+function renderEmpresaNote(k){
+  const el=$('#empresaNote');
+  if(!k.empresaInfo){ el.classList.add('hidden'); return; }
+  const nome=EMPRESA_LABEL[k.empresa]||k.empresa;
+  if(k.empresaInfo.tipo==='nao-configurado'){
+    el.innerHTML='A fonte de dados da aba "Vendas '+nome.split(' ')[0]+'" ainda não foi publicada/configurada neste painel — os valores abaixo estão zerados para esse filtro. Veja o passo a passo de configuração com o Pedro.';
+  } else {
+    el.innerHTML='<b>Atenção:</b> a abertura por empresa para a Equipe Comercial (Grupo 1 e 2) só existe a partir de Outubro/2026 — '+
+      'antes disso, os valores abaixo mostram só o que já era identificável por marca (canal Outros Canais: iFood/distribuidores). '+
+      'A Equipe Comercial deste período está fora deste recorte.';
+  }
+  el.classList.remove('hidden');
+}
+
 function render(){
   const k=compute();
+  renderEmpresaNote(k);
   renderBanner(k);
   renderProjecao(k);
   renderKpiStats(k);
@@ -1494,8 +1576,9 @@ function renderConfig(k){
     render();
   };
 
-  // um vendedor por nome, juntando todos os grupos/meses iguais a este ano/mes (ignora o filtro de grupo/vendedor do topo)
-  const vendsMes = RECS.filter(r=>r.ano===k.ano && r.mes===k.mes);
+  // um vendedor por nome, juntando todos os grupos/meses iguais a este ano/mes (ignora o filtro de grupo/vendedor
+  // E o filtro Empresa do topo — meta é da empresa inteira, ainda não existe meta por marca)
+  const vendsMes = RECS_ALL.filter(r=>r.ano===k.ano && r.mes===k.mes);
   const porVend = {};
   vendsMes.forEach(r=>{ if(!porVend[r.vendedor]) porVend[r.vendedor]=r; });
   const nomes = Object.keys(porVend).sort((a,b)=>a.localeCompare(b,'pt-BR'));
