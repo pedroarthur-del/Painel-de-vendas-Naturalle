@@ -1046,9 +1046,9 @@ async function gerarResumo(formato){
      "Baixar base do mês (fechamento)" desta aba e importada na planilha na virada do mês.
    Se nenhum dos 3 links estiver configurado, a aba mostra o passo a passo e o resto do painel segue normal.
    ===================================================================================== */
-const SHEET_CSV_URL_SEMIMP_NATURALLE   = 'COLE_AQUI_o_link_CSV_da_aba_Sem_Imposto_Naturalle';
-const SHEET_CSV_URL_SEMIMP_SELECTO     = 'COLE_AQUI_o_link_CSV_da_aba_Sem_Imposto_Selecto';
-const SHEET_CSV_URL_CARTEIRA_ANTERIOR  = 'COLE_AQUI_o_link_CSV_da_aba_Carteira_Mes_Anterior';
+const SHEET_CSV_URL_SEMIMP_NATURALLE   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUDDG4aeEzQ7qbLoaGBFuMiTaKnkE58hIP3BvPVt8rbo4YK2LINJaShafVIUepCtgJ3EIjbaNxnqfU/pub?gid=1621725325&single=true&output=csv';
+const SHEET_CSV_URL_SEMIMP_SELECTO     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUDDG4aeEzQ7qbLoaGBFuMiTaKnkE58hIP3BvPVt8rbo4YK2LINJaShafVIUepCtgJ3EIjbaNxnqfU/pub?gid=910135482&single=true&output=csv';
+const SHEET_CSV_URL_CARTEIRA_ANTERIOR  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUDDG4aeEzQ7qbLoaGBFuMiTaKnkE58hIP3BvPVt8rbo4YK2LINJaShafVIUepCtgJ3EIjbaNxnqfU/pub?gid=890785856&single=true&output=csv';
 
 // posição das colunas nas abas "Sem Imposto" (0 = coluna A): Z = cliente; AY..BE = colunas verdes de fórmula
 const SI_COL = {cliente:25, doc:50, data:51, vend:54, flag:55, valor:56}; // Z, AY, AZ, BC, BD, BE
