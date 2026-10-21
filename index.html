@@ -248,6 +248,35 @@
     .controls .btn{font-size:12px; padding:10px}
   }
 
+
+  /* ---------- aba Carteira (clientes mês atual x mês anterior) ---------- */
+  .row4{display:grid; gap:14px; grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:14px}
+  #tabCarteira .grid{grid-template-columns:minmax(0,1fr)} #tabCarteira .panel{min-width:0}
+  @media (max-width:900px){ .row4{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:520px){ .row4{grid-template-columns:minmax(0,1fr)} }
+  .cart-take{font-size:13.5px; color:var(--ink); margin:2px 0 0; line-height:1.55}
+  .kpistat .kval.bad{color:var(--brick)} .kpistat .kval.good{color:var(--green)}
+  .kpistat .ksub .bad{color:var(--brick); font-weight:700} .kpistat .ksub .good{color:var(--green); font-weight:700}
+  .cart-scroll{max-height:560px; overflow:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line-2); border-radius:10px}
+  .cart-scroll .rank-table{min-width:760px}
+  .cart-scroll .rank-table th{position:sticky; top:0; background:var(--card); z-index:1}
+  .rank-table th button{font:inherit; color:inherit; text-transform:inherit; letter-spacing:inherit; background:none; border:none; padding:0; cursor:pointer}
+  .rank-table th.num, .rank-table th.num button{text-align:right}
+  .rank-table tr.cart-click{cursor:pointer}
+  .rank-table tr.cart-click:hover td{background:var(--paper)}
+  .rank-table tr.cart-sel td{background:var(--orange-l)}
+  .rank-table td.sub{font-size:11.5px; color:var(--muted)}
+  #tabCarteira .rank-table td.num{white-space:nowrap}
+  .cart-subtabs{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px}
+  .cart-subtabs button{font:inherit; font-size:12.5px; font-weight:700; color:var(--mauve-d); background:var(--paper);
+    border:1px solid var(--line); border-radius:999px; padding:7px 14px; cursor:pointer}
+  .cart-subtabs button.active{background:var(--mauve-d); color:#fff; border-color:var(--mauve-d)}
+  .cart-tools{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px}
+  .cart-tools input{font:inherit; font-size:13px; border:1px solid var(--line); border-radius:9px; padding:8px 11px; min-width:220px; flex:0 1 320px}
+  .cart-tools .desc{margin:0}
+  .cart-fech{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between}
+  @media (max-width:640px){ .cart-tools input{min-width:0; flex:1 1 100%} .cart-tools input{font-size:16px} }
+
   @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
 </style>
 
@@ -326,6 +355,7 @@
       <button type="button" id="tabBtnGeral" class="active">Visão geral</button>
       <button type="button" id="tabBtnRankings">Rankings</button>
       <button type="button" id="tabBtnConfig">Config</button>
+      <button type="button" id="tabBtnCarteira">Carteira</button>
       <button type="button" id="tabBtnCampanha">Campanha</button>
     </div>
 
@@ -481,6 +511,65 @@
         </div>
       </div>
     </div><!-- /tabCampanha -->
+
+    <div id="tabCarteira" class="hidden">
+      <div class="state-note hidden" id="cartAviso"></div>
+      <div id="cartConteudo">
+
+      <div class="grid">
+        <div class="panel">
+          <h2 id="cartTitulo">Carteira de clientes</h2>
+          <p class="cart-take" id="cartTake"></p>
+        </div>
+      </div>
+
+      <div class="row4">
+        <div class="panel"><div class="kpistat" id="cartKpiFat"></div></div>
+        <div class="panel"><div class="kpistat" id="cartKpiRitmo"></div></div>
+        <div class="panel"><div class="kpistat" id="cartKpiCli"></div></div>
+        <div class="panel"><div class="kpistat" id="cartKpiNC"></div></div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>De onde vem a diferença</h2>
+          <p class="desc" id="cartPonteDesc">Faturamento do mês anterior até o mês atual, no mesmo período, decomposto por tipo de cliente. Vermelho tira, verde soma.</p>
+          <div class="cbox tall"><canvas id="cCartPonte"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>Por vendedor</h2>
+          <p class="desc">Clique numa linha para filtrar o painel por aquele vendedor. Vendedor = quem atendeu o cliente no mês atual; se ainda não comprou, quem atendeu no mês anterior.</p>
+          <div class="cart-scroll" id="cartVendWrap"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <div class="cart-subtabs" id="cartSubtabs">
+            <button type="button" data-lista="nc" class="active">Não compraram ainda</button>
+            <button type="button" data-lista="cm">Comprando menos</button>
+            <button type="button" data-lista="nv">Novos no mês</button>
+          </div>
+          <div class="cart-tools">
+            <input type="search" id="cartBusca" placeholder="Buscar cliente ou vendedor…" aria-label="Buscar cliente">
+            <p class="desc" id="cartListaDesc"></p>
+          </div>
+          <div class="cart-scroll" id="cartListaWrap"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="cart-fech">
+          <p class="footpanel" id="cartNota" style="margin:0; flex:1 1 420px"></p>
+          <button class="btn ghost" id="btnCartFechamento" type="button" title="Use no último dia do mês, antes de colar os relatórios do mês novo">Baixar base do mês (fechamento)</button>
+        </div>
+      </div>
+
+      </div>
+    </div><!-- /tabCarteira -->
 
   </div>
 </div>
@@ -765,9 +854,11 @@ async function carregarDados(manual){
 
     // abas por empresa (Naturalle/Selecto) são opcionais: se não estiverem configuradas, ou a busca falhar,
     // o painel principal continua funcionando normal — só o filtro "Empresa" fica indisponível.
+    // a aba Carteira também é opcional: carrega em paralelo e, se falhar, só ela mostra o aviso
     const [natRes, selRes] = await Promise.allSettled([
       fetchVendasCSV(SHEET_CSV_URL_NATURALLE),
-      fetchVendasCSV(SHEET_CSV_URL_SELECTO)
+      fetchVendasCSV(SHEET_CSV_URL_SELECTO),
+      carregarCarteira()
     ]);
     RECS_NAT = natRes.status==='fulfilled' ? natRes.value : null;
     RECS_SEL = selRes.status==='fulfilled' ? selRes.value : null;
@@ -827,12 +918,13 @@ function readFileManual(file){
   rd.readAsArrayBuffer(file);
 }
 
-const TABS=['Geral','Rankings','Config','Campanha'];
+const TABS=['Geral','Rankings','Carteira','Config','Campanha'];
 function irParaAba(nome){
   TABS.forEach(n=>{
     $('#tab'+n).classList.toggle('hidden', n!==nome);
     $('#tabBtn'+n).classList.toggle('active', n===nome);
   });
+  if(nome==='Carteira'){ try{ renderCarteira(); }catch(e){ console.error(e); } } // redesenha o gráfico já visível
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 
@@ -944,6 +1036,370 @@ async function gerarResumo(formato){
     btn.disabled=false; btn.innerHTML=original;
   }
 }
+
+/* =====================================================================================
+   ABA CARTEIRA — clientes do mês atual x mesmo período do mês anterior
+   Fontes (todas publicadas na web como CSV, mesma planilha):
+   • "Sem Imposto Naturalle" e "Sem Imposto Selecto": os relatórios do Questor do mês atual, com as colunas
+     verdes de fórmula (AY..BE) que já trazem documento, data, vendedor e valor sem duplicar notas.
+   • "Carteira Mês Anterior": base do mês que fechou (uma linha por nota), gerada pelo botão
+     "Baixar base do mês (fechamento)" desta aba e importada na planilha na virada do mês.
+   Se nenhum dos 3 links estiver configurado, a aba mostra o passo a passo e o resto do painel segue normal.
+   ===================================================================================== */
+const SHEET_CSV_URL_SEMIMP_NATURALLE   = 'COLE_AQUI_o_link_CSV_da_aba_Sem_Imposto_Naturalle';
+const SHEET_CSV_URL_SEMIMP_SELECTO     = 'COLE_AQUI_o_link_CSV_da_aba_Sem_Imposto_Selecto';
+const SHEET_CSV_URL_CARTEIRA_ANTERIOR  = 'COLE_AQUI_o_link_CSV_da_aba_Carteira_Mes_Anterior';
+
+// posição das colunas nas abas "Sem Imposto" (0 = coluna A): Z = cliente; AY..BE = colunas verdes de fórmula
+const SI_COL = {cliente:25, doc:50, data:51, vend:54, flag:55, valor:56}; // Z, AY, AZ, BC, BD, BE
+// feriados nacionais de data fixa (somam-se aos que o supervisor informa no quadro de projeção)
+const FERIADOS_NACIONAIS = {1:[1], 4:[21], 5:[1], 9:[7], 10:[12], 11:[2,15,20], 12:[25]};
+const CART_EXCLUIR = ['CONSUMIDOR FINAL','CLIENTES DIVERSOS']; // iFood, 99, balcão: não são carteira
+
+let CARTEIRA = {status:'nao-configurado'}; // 'ok' | 'erro' | 'nao-configurado'
+const cartUI = {lista:'nc', sort:{nc:['ant','desc'], cm:['var_rs','asc'], nv:['atu','desc'], vend:['ant','desc']}};
+
+function cartConfigurada(u){ return u && u.indexOf('COLE_AQUI')!==0; }
+async function fetchCSVRows(url){
+  if(!cartConfigurada(url)) return null;
+  const u = url + (url.includes('?')?'&':'?') + '_=' + Date.now();
+  const resp = await fetch(u, {cache:'no-store'});
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const text = await resp.text();
+  if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('recebeu HTML em vez de CSV');
+  return normalizarLinhasCSV(parseCSV(text));
+}
+function cartData(v){
+  if(v==null || v==='') return null;
+  const s=String(v).trim(); let m;
+  if((m=/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s))){ let y=+m[3]; if(y<100) y+=2000; return {ano:y, mes:+m[2], dia:+m[1]}; }
+  if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s))) return {ano:+m[1], mes:+m[2], dia:+m[3]};
+  const n=+s;
+  if(isFinite(n) && n>30000 && n<80000){ const d=new Date(Date.UTC(1899,11,30)+Math.floor(n)*864e5);
+    return {ano:d.getUTCFullYear(), mes:d.getUTCMonth()+1, dia:d.getUTCDate()}; }
+  return null;
+}
+const cartInt = v => { const s=String(v??'').replace(/[^\d-]/g,''); return s? parseInt(s,10) : 0; };
+function cartVend(v){ const s=String(v??'').trim(); return (!s || s.startsWith('#')) ? 'SEM VENDEDOR' : s; }
+
+function parseSemImposto(rows, marca){
+  const out=[];
+  (rows||[]).forEach(r=>{
+    if(!r || Number(r[SI_COL.flag])!==1) return;
+    const dt=cartData(r[SI_COL.data]); if(!dt) return;
+    out.push({marca, ano:dt.ano, mes:dt.mes, dia:dt.dia, doc:String(r[SI_COL.doc]??'').trim(),
+      cliente:String(r[SI_COL.cliente]??'').trim(), vendedor:cartVend(r[SI_COL.vend]), valor:+r[SI_COL.valor]||0});
+  });
+  return out;
+}
+function parseCarteiraAnterior(rows){
+  const h=(rows[0]||[]).map(x=>stripAccents(NORM(x)));
+  const I={marca:h.indexOf('MARCA'), ano:h.indexOf('ANO'), mes:h.indexOf('MES'), dia:h.indexOf('DIA'), doc:h.indexOf('DOCUMENTO'),
+    cli:h.indexOf('CLIENTE'), vend:h.indexOf('VENDEDOR'), cent:h.indexOf('VALOR_CENTAVOS')};
+  if(Object.values(I).some(i=>i<0)) throw new Error('a aba "Carteira Mês Anterior" não tem o cabeçalho esperado (MARCA, ANO, MES, DIA, DOCUMENTO, CLIENTE, VENDEDOR, VALOR_CENTAVOS)');
+  return rows.slice(1).filter(r=>r && cartInt(r[I.ano])>2000).map(r=>({
+    marca:NORM(r[I.marca]), ano:cartInt(r[I.ano]), mes:cartInt(r[I.mes]), dia:cartInt(r[I.dia]), doc:String(r[I.doc]??'').trim(),
+    cliente:String(r[I.cli]??'').trim(), vendedor:cartVend(r[I.vend]), valor:cartInt(r[I.cent])/100}));
+}
+async function carregarCarteira(){
+  const urls=[SHEET_CSV_URL_SEMIMP_NATURALLE, SHEET_CSV_URL_SEMIMP_SELECTO, SHEET_CSV_URL_CARTEIRA_ANTERIOR];
+  if(!urls.some(cartConfigurada)){ CARTEIRA={status:'nao-configurado'}; return; }
+  const [n,s,a]=await Promise.allSettled(urls.map(fetchCSVRows));
+  const falhas=[];
+  [['Sem Imposto Naturalle',n,urls[0]],['Sem Imposto Selecto',s,urls[1]],['Carteira Mês Anterior',a,urls[2]]].forEach(([nome,res,u])=>{
+    if(!cartConfigurada(u)) falhas.push(nome+' (link não configurado)');
+    else if(res.status==='rejected') falhas.push(nome+' ('+res.reason.message+')');
+  });
+  if(falhas.length){ CARTEIRA={status:'erro', msg:'Não consegui ler: '+falhas.join('; ')+'.'}; return; }
+  try{
+    CARTEIRA={status:'ok',
+      atual:[...parseSemImposto(n.value,'NATURALLE'), ...parseSemImposto(s.value,'SELECTO')],
+      anterior:parseCarteiraAnterior(a.value)};
+    if(!CARTEIRA.atual.length) CARTEIRA={status:'erro', msg:'As abas "Sem Imposto" não trouxeram nenhuma nota (coluna BD = 1). Confira se os relatórios do mês foram colados.'};
+  }catch(e){ CARTEIRA={status:'erro', msg:e.message}; }
+}
+
+/* ---------- cálculo ---------- */
+function cartNomeLimpo(c){ return String(c).replace(/^\s*\d+\s*-?\s*/,'').trim(); }
+function cartChave(c){ return stripAccents(NORM(cartNomeLimpo(c))).replace(/[^A-Z0-9 ]/g,'').replace(/\s+/g,' ').trim(); }
+function cartDiasUteis(ano,mes,ate){
+  const fer=new Set([...(FERIADOS_NACIONAIS[mes]||[]), ...((feriadosPorMes[ano+'_'+mes])||[])]);
+  let n=0; for(let d=1; d<=ate; d++){ if(isBizDay(ano,mes,d) && !fer.has(d)) n++; } return Math.max(1,n);
+}
+function cartTop(m){ let best=null, bv=-Infinity; m.forEach((v,k)=>{ if(v>bv){bv=v; best=k;} }); return best; }
+
+function computeCarteira(){
+  const A=CARTEIRA.atual, P=CARTEIRA.anterior;
+  // mês atual = mês com mais notas nas abas Sem Imposto
+  const cnt={}; A.forEach(d=>{ const k=d.ano*100+d.mes; cnt[k]=(cnt[k]||0)+1; });
+  const cur=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  const ano=Math.floor(cur/100), mes=cur%100;
+  const pAno = mes===1? ano-1 : ano, pMes = mes===1? 12 : mes-1;
+  const marcaOk = d => state.empresa==='__all' || d.marca===(state.empresa==='naturalle'?'NATURALLE':'SELECTO');
+  const atualMes=A.filter(d=>d.ano===ano && d.mes===mes);
+  const antMes=P.filter(d=>d.ano===pAno && d.mes===pMes);
+  const corte=Math.max(...atualMes.map(d=>d.dia));
+  const corteAnt=Math.min(corte, new Date(pAno,pMes,0).getDate());
+  const mesesAnt=[...new Set(P.map(d=>d.ano*100+d.mes))].sort();
+  const aviso = !antMes.length
+    ? `A aba "Carteira Mês Anterior" está com ${mesesAnt.length? mesesAnt.map(p=>MESES_L[p%100-1]+'/'+Math.floor(p/100)).join(', ') : 'nada'} — para comparar com ${MESES_L[mes-1]}/${ano} ela precisa ter ${MESES_L[pMes-1]}/${pAno}. Faça o fechamento do mês (passo a passo no rodapé desta aba).`
+    : null;
+
+  // grupo de cada vendedor (pela aba Vendas, mês mais recente em que aparece)
+  const vendGrupo={};
+  (RECS_ALL||[]).slice().sort((a,b)=>chronIdx(a.ano,a.mes)-chronIdx(b.ano,b.mes)).forEach(r=>{ vendGrupo[r.vendedor]=r.grupo; });
+
+  // total faturado no período (inclui consumidor final) — conciliação com a aba Vendas
+  const totAtu=sum(atualMes.filter(d=>marcaOk(d) && d.dia<=corte), d=>d.valor);
+  const totAnt=sum(antMes.filter(d=>marcaOk(d) && d.dia<=corteAnt), d=>d.valor);
+
+  // junta por loja (Naturalle + Selecto pelo nome; o relatório corta nomes longos, então prefixo ≥18 letras também junta)
+  const docs=[...atualMes.map(d=>({...d, per:'atu'})), ...antMes.map(d=>({...d, per:'ant'}))]
+    .filter(d=>marcaOk(d) && !CART_EXCLUIR.includes(cartChave(d.cliente)));
+  const chaves=[...new Set(docs.map(d=>cartChave(d.cliente)))].sort((a,b)=>b.length-a.length);
+  const canon={}, canonList=[];
+  chaves.forEach(c=>{ const hit=canonList.find(x=>c.length>=18 && (x.startsWith(c)||c.startsWith(x))); canon[c]=hit||c; if(!hit) canonList.push(c); });
+  const L={};
+  docs.forEach(d=>{
+    const k=canon[cartChave(d.cliente)];
+    const l=L[k] || (L[k]={id:k, nome:cartNomeLimpo(d.cliente), ant:0, atu:0, antN:0, antS:0, atuN:0, atuS:0,
+      pedAnt:new Set(), pedAtu:new Set(), ultAnt:0, ultAtu:0, vAnt:new Map(), vAntMes:new Map(), vAtu:new Map()});
+    if(cartNomeLimpo(d.cliente).length>l.nome.length) l.nome=cartNomeLimpo(d.cliente);
+    const nat = d.marca==='NATURALLE';
+    if(d.per==='ant'){
+      l.ultAnt=Math.max(l.ultAnt, d.dia);
+      l.vAntMes.set(d.vendedor,(l.vAntMes.get(d.vendedor)||0)+d.valor);
+      if(d.dia<=corteAnt){ l.ant+=d.valor; nat? l.antN+=d.valor : l.antS+=d.valor; l.pedAnt.add(d.marca+d.doc);
+        l.vAnt.set(d.vendedor,(l.vAnt.get(d.vendedor)||0)+d.valor); }
+    } else if(d.dia<=corte){
+      l.atu+=d.valor; nat? l.atuN+=d.valor : l.atuS+=d.valor; l.pedAtu.add(d.marca+d.doc); l.ultAtu=Math.max(l.ultAtu,d.dia);
+      l.vAtu.set(d.vendedor,(l.vAtu.get(d.vendedor)||0)+d.valor);
+    }
+  });
+  const dataRef=new Date(ano,mes-1,corte);
+  const clientes=Object.values(L).filter(l=>l.ant>0 || l.atu>0).map(l=>{
+    const vendAtu=cartTop(l.vAtu), vendAnt=cartTop(l.vAnt.size? l.vAnt : l.vAntMes);
+    const vendedor = l.atu>0 ? vendAtu : vendAnt;
+    let status;
+    if(l.ant>0 && l.atu===0) status='nc'; else if(l.ant===0) status='nv'; else if(l.atu<l.ant) status='cm'; else status='cr';
+    const obs=[];
+    if(l.antN>0 && l.atuN===0 && l.atuS>0) obs.push('Parou Naturalle (segue Selecto)');
+    if(l.antS>0 && l.atuS===0 && l.atuN>0) obs.push('Parou Selecto (segue Naturalle)');
+    if(l.atu>0 && l.ant>0 && vendAnt && vendAtu!==vendAnt) obs.push('Vendedor mudou (antes: '+vendAnt+')');
+    const ult = l.ultAtu ? new Date(ano,mes-1,l.ultAtu) : (l.ultAnt ? new Date(pAno,pMes-1,l.ultAnt) : null);
+    return {id:l.id, nome:l.nome, vendedor, grupo:vendGrupo[vendedor]||null, status, ant:l.ant, atu:l.atu, var_rs:l.atu-l.ant,
+      var_pct:l.ant? (l.atu/l.ant-1)*100 : null, antN:l.antN, antS:l.antS, atuN:l.atuN, atuS:l.atuS,
+      pedAnt:l.pedAnt.size, pedAtu:l.pedAtu.size, ultAnt:l.ultAnt, ultAtu:l.ultAtu,
+      dias: ult? Math.round((dataRef-ult)/864e5) : null, obs:obs.join(' · ')};
+  });
+  const grupoOk = c => state.grupo==='__all' || c.grupo===state.grupo;
+  const doGrupo = clientes.filter(grupoOk);
+  const escopo = doGrupo.filter(c=>state.vend==='__all' || c.vendedor===state.vend);
+
+  const resumo = arr => {
+    const r={ant:0, atu:0, cliAnt:0, cliAtu:0, nc_n:0, nc_rs:0, cm_n:0, cm_rs:0, cr_n:0, cr_rs:0, nv_n:0, nv_rs:0};
+    arr.forEach(c=>{ r.ant+=c.ant; r.atu+=c.atu; if(c.ant>0) r.cliAnt++; if(c.atu>0) r.cliAtu++;
+      if(c.status==='nc'){ r.nc_n++; r.nc_rs+=c.ant; } else if(c.status==='cm'){ r.cm_n++; r.cm_rs+=c.var_rs; }
+      else if(c.status==='cr'){ r.cr_n++; r.cr_rs+=c.var_rs; } else { r.nv_n++; r.nv_rs+=c.atu; } });
+    r.var_pct = r.ant? (r.atu/r.ant-1)*100 : null;
+    return r;
+  };
+  // o dia de hoje ainda está sendo lançado: não conta como dia útil completo (mesma regra da projeção)
+  const hoje=new Date(), corteEhHoje = hoje.getFullYear()===ano && hoje.getMonth()+1===mes && hoje.getDate()===corte;
+  const duAtu=cartDiasUteis(ano,mes,corteEhHoje? corte-1 : corte), duAnt=cartDiasUteis(pAno,pMes,corteAnt);
+  const R=resumo(escopo);
+  R.ritmo_pct = R.ant? ((R.atu/duAtu)/(R.ant/duAnt)-1)*100 : null;
+  const porVend={};
+  doGrupo.forEach(c=>{ (porVend[c.vendedor]=porVend[c.vendedor]||[]).push(c); });
+  const vendRows=Object.entries(porVend).map(([v,arr])=>({vendedor:v, ...resumo(arr)}));
+  return {ano, mes, pAno, pMes, corte, corteAnt, duAtu, duAnt, aviso, R, vendRows, lista:escopo, totAtu, totAnt,
+    cartAtu:sum(clientes,c=>c.atu), cartAnt:sum(clientes,c=>c.ant)};
+}
+
+/* ---------- render ---------- */
+const cartMil = v => 'R$ '+(v/1000).toLocaleString('pt-BR',{minimumFractionDigits:1, maximumFractionDigits:1})+' mil';
+const cartPct = v => v==null||!isFinite(v) ? '—' : (v>0?'+':'')+v.toLocaleString('pt-BR',{minimumFractionDigits:1, maximumFractionDigits:1})+'%';
+const cartCls = v => v==null ? '' : (v<0?'bad':(v>0?'good':''));
+const cartDia = (d,m) => d? String(d).padStart(2,'0')+'/'+String(m).padStart(2,'0') : '—';
+
+function renderCarteira(){
+  const aviso=$('#cartAviso'), cont=$('#cartConteudo');
+  if(CARTEIRA.status!=='ok'){
+    kill('cCartPonte'); cont.classList.add('hidden'); aviso.classList.remove('hidden');
+    aviso.innerHTML = CARTEIRA.status==='erro'
+      ? '<b>A aba Carteira não carregou.</b> '+esc(CARTEIRA.msg)+' O resto do painel segue funcionando normalmente.'
+      : '<b>A aba Carteira ainda não foi ligada à planilha.</b> Ela precisa de 3 abas publicadas na web como CSV: '+
+        '"Sem Imposto Naturalle", "Sem Imposto Selecto" e "Carteira Mês Anterior". Depois de publicar, cole os 3 links nas constantes '+
+        '<code>SHEET_CSV_URL_SEMIMP_NATURALLE</code>, <code>SHEET_CSV_URL_SEMIMP_SELECTO</code> e <code>SHEET_CSV_URL_CARTEIRA_ANTERIOR</code> do código.';
+    return;
+  }
+  const K=computeCarteira();
+  cont.classList.remove('hidden');
+  aviso.classList.toggle('hidden', !K.aviso);
+  if(K.aviso) aviso.innerHTML='<b>Atenção:</b> '+esc(K.aviso);
+  const R=K.R, mA=MESES[K.mes-1], mP=MESES[K.pMes-1];
+  const per=`01 a ${String(K.corte).padStart(2,'0')}`;
+  const quem = state.vend!=='__all' ? state.vend : (state.grupo!=='__all' ? state.grupo : 'A carteira');
+  $('#cartTitulo').textContent = `Carteira de clientes — ${MESES_L[K.pMes-1]} x ${MESES_L[K.mes-1]} (${per})`;
+  $('#cartTake').innerHTML = R.ant===0 && R.atu===0 ? 'Nenhum cliente neste recorte.' :
+    `${esc(quem)} faturou <b>${cartMil(R.atu)}</b> de ${per}/${mA}, <b class="${cartCls(R.var_pct)==='bad'?'rank-down':'rank-up'}">${cartPct(R.var_pct)}</b> contra o mesmo período de ${mP} `+
+    `(por dia útil, ${cartPct(R.ritmo_pct)}). <b>${R.nc_n}</b> ${R.nc_n===1?'cliente que comprou':'clientes que compraram'} em ${mP} ainda não ${R.nc_n===1?'comprou':'compraram'} `+
+    `(${cartMil(R.nc_rs)} no período de ${mP}) e <b>${R.cm_n}</b> ${R.cm_n===1?'está':'estão'} comprando menos (${cartMil(Math.abs(R.cm_rs))} de queda).`;
+
+  $('#cartKpiFat').innerHTML=`<div class="kcap">Faturamento da carteira · ${per}/${mA}</div>
+    <div class="kval num">${cartMil(R.atu)}</div>
+    <div class="ksub"><span class="${cartCls(R.var_pct)}">${cartPct(R.var_pct)}</span> vs ${per}/${mP} (${cartMil(R.ant)})</div>`;
+  $('#cartKpiRitmo').innerHTML=`<div class="kcap">Ritmo por dia útil</div>
+    <div class="kval num ${cartCls(R.ritmo_pct)}">${cartPct(R.ritmo_pct)}</div>
+    <div class="ksub">${K.duAtu} dias úteis em ${mA} x ${K.duAnt} em ${mP}</div>`;
+  $('#cartKpiCli').innerHTML=`<div class="kcap">Clientes que compraram · ${per}</div>
+    <div class="kval num">${R.cliAtu}</div>
+    <div class="ksub">em ${mA} x ${R.cliAnt} em ${mP}</div>`;
+  $('#cartKpiNC').innerHTML=`<div class="kcap">Compraram em ${mP} e não em ${mA}</div>
+    <div class="kval num bad">${R.nc_n}</div>
+    <div class="ksub"><span class="bad">${cartMil(R.nc_rs)}</span> faturados em ${per}/${mP}</div>`;
+
+  drawCartPonte(R, mP, mA);
+  renderCartVend(K);
+  renderCartLista(K);
+  $('#cartNota').innerHTML =
+    `<b>Como ler.</b> Mesmo período nos dois meses: dia 01 até o último dia com nota no mês atual (${String(K.corte).padStart(2,'0')}/${String(K.mes).padStart(2,'0')}). `+
+    `Valores sem imposto, Naturalle + Selecto somados por loja (respeita o filtro Empresa). Consumidor final e clientes diversos (iFood, 99, balcão) ficam fora da carteira: `+
+    `o total faturado no período é ${BRL.format(K.totAnt)} em ${mP} e ${BRL.format(K.totAtu)} em ${mA}. Dias úteis descontam fins de semana, feriados nacionais e os feriados informados no quadro de projeção.<br>`+
+    `<b>Virada do mês.</b> No último dia do mês, depois do último lançamento: clique em "Baixar base do mês (fechamento)" e importe o arquivo na aba "Carteira Mês Anterior" `+
+    `(Arquivo → Importar → Upload → "Substituir página atual", desmarcando "Converter texto em números, datas e fórmulas"). Só depois cole os relatórios do mês novo.`;
+}
+
+function drawCartPonte(R, mP, mA){
+  kill('cCartPonte');
+  const steps=[
+    {k:mP+' (período)', a:0, b:R.ant, v:R.ant, t:'tot'},
+    {k:'Não compraram', v:-R.nc_rs, n:R.nc_n, t:'neg'},
+    {k:'Compraram menos', v:R.cm_rs, n:R.cm_n, t:'neg'},
+    {k:'Compraram mais', v:R.cr_rs, n:R.cr_n, t:'pos'},
+    {k:'Novos', v:R.nv_rs, n:R.nv_n, t:'pos'},
+    {k:mA+' (período)', a:0, b:R.atu, v:R.atu, t:'tot'}];
+  let acc=0;
+  steps.forEach(s=>{ if(s.t==='tot'){ acc=s.b; } else { s.a=acc; s.b=acc+s.v; acc=s.b; } });
+  const cor={tot:C.orange, neg:C.brick, pos:C.green};
+  charts.cCartPonte=new Chart($('#cCartPonte'),{type:'bar',
+    data:{labels:steps.map(s=>s.k), datasets:[{data:steps.map(s=>[Math.min(s.a,s.b), Math.max(s.a,s.b)]),
+      backgroundColor:steps.map(s=>cor[s.t]), borderRadius:6, borderSkipped:false, maxBarThickness:70,
+      datalabels:{display:true, anchor:'end', align:'top', color:C.ink, font:{weight:'700',size:11},
+        formatter:(v,ctx)=>{ const s=steps[ctx.dataIndex]; return s.t==='tot'? cartMil(s.v) : (s.v>=0?'+':'−')+cartMil(Math.abs(s.v)); }}}]},
+    options:baseOpts({layout:{padding:{top:24}},
+      scales:{x:{grid:{display:false}, ticks:{color:C.ink, font:{size:11.5, weight:'600'}, maxRotation:0, autoSkip:false,
+          callback:function(v){ const l=this.getLabelForValue(v); return l.length>12? l.split(' ') : l; }}},
+        y:{beginAtZero:true, grid:{color:'#F2EBDE'}, ticks:{color:C.muted, font:{size:11}, callback:BRLk}}},
+      plugins:{tooltip:{callbacks:{label:c=>{ const s=steps[c.dataIndex];
+        return s.t==='tot'? money(s.v) : (s.v>=0?'+':'−')+money(Math.abs(s.v))+' · '+s.n+' '+(s.n===1?'cliente':'clientes'); }}}}})});
+}
+
+function cartTabela(wrap, rows, cols, sortKey, onRow){
+  const [key,dir]=cartUI.sort[sortKey];
+  const col=cols.find(c=>c.f===key)||cols[0];
+  rows=rows.slice().sort((a,b)=>{ const x=a[col.f], y=b[col.f];
+    const d = col.num ? (Number(x??-Infinity)-Number(y??-Infinity)) : String(x??'').localeCompare(String(y??''),'pt-BR');
+    return dir==='desc'? -d : d; });
+  let h='<table class="rank-table"><thead><tr>'+cols.map(c=>
+    `<th class="${c.num?'num':''}" aria-sort="${c.f===key?(dir==='desc'?'descending':'ascending'):'none'}"><button type="button" data-f="${c.f}">${c.h}${c.f===key?(dir==='desc'?' ▼':' ▲'):''}</button></th>`).join('')+'</tr></thead><tbody>';
+  if(!rows.length) h+=`<tr><td colspan="${cols.length}" class="sub">Nenhum cliente nesta situação para o filtro escolhido.</td></tr>`;
+  rows.forEach(r=>{
+    const sel = onRow && state.vend!=='__all' && r.vendedor===state.vend;
+    h+=`<tr${onRow?` class="cart-click${sel?' cart-sel':''}" data-key="${esc(r.vendedor)}"`:''}>`+cols.map(c=>{
+      const v=r[c.f]; const txt=c.fmt? c.fmt(v,r) : esc(v??'');
+      const cls=[c.num?'num':'', c.cls? c.cls(v,r):''].join(' ').trim();
+      return `<td class="${cls}">${txt}</td>`; }).join('')+'</tr>';
+  });
+  wrap.innerHTML=h+'</tbody></table>';
+  wrap.querySelectorAll('th button').forEach(b=>b.onclick=()=>{
+    const f=b.dataset.f, cur=cartUI.sort[sortKey];
+    cartUI.sort[sortKey] = [f, cur[0]===f && cur[1]==='desc' ? 'asc' : 'desc']; renderCarteira(); });
+  if(onRow) wrap.querySelectorAll('tr[data-key]').forEach(tr=>tr.onclick=()=>onRow(tr.dataset.key));
+}
+const cartMoney = v => BRL.format(v||0);
+const cartMoneyOrDash = v => v? BRL.format(v) : '—';
+const cartUpDown = v => v<0?'rank-down':(v>0?'rank-up':'');
+
+function renderCartVend(K){
+  cartTabela($('#cartVendWrap'), K.vendRows, [
+    {f:'vendedor', h:'Vendedor', fmt:v=>esc(v)},
+    {f:'ant', h:'Mês ant.', num:1, fmt:cartMoney},
+    {f:'atu', h:'Mês atual', num:1, fmt:cartMoney},
+    {f:'var_pct', h:'Var.', num:1, fmt:cartPct, cls:cartUpDown},
+    {f:'cliAnt', h:'Clientes ant.', num:1},
+    {f:'cliAtu', h:'Clientes atual', num:1},
+    {f:'nc_n', h:'Não compraram', num:1},
+    {f:'nc_rs', h:'R$ deles', num:1, fmt:cartMoney},
+    {f:'cm_n', h:'Comprando menos', num:1},
+    {f:'cm_rs', h:'Queda R$', num:1, fmt:cartMoney, cls:cartUpDown},
+    {f:'nv_n', h:'Novos', num:1},
+    {f:'nv_rs', h:'R$ novos', num:1, fmt:cartMoney},
+  ], 'vend', v=>{
+    const novo = state.vend===v ? '__all' : v;
+    const sel=$('#fVend');
+    if(novo!=='__all' && ![...sel.options].some(o=>o.value===novo)){ const o=document.createElement('option'); o.value=novo; o.textContent=novo; sel.appendChild(o); }
+    state.vend=novo; sel.value=novo; render();
+  });
+}
+
+function renderCartLista(K){
+  const q=stripAccents(NORM($('#cartBusca').value||''));
+  const tipo=cartUI.lista;
+  const rows=K.lista.filter(c=>c.status===tipo).filter(c=>!q || stripAccents(NORM(c.nome+' '+c.vendedor)).includes(q));
+  const mP=MESES[K.pMes-1], mA=MESES[K.mes-1];
+  const desc={nc:`Compraram de 01 a ${K.corteAnt}/${mP} e ainda não compraram em ${mA}. "Dias sem comprar" conta da última compra (qualquer dia de ${mP}) até ${K.corte}/${mA}.`,
+    cm:`Compraram nos dois meses, mas menos em ${mA} no mesmo período. Ordenado pela maior queda em reais.`,
+    nv:`Compraram em ${mA} e não tinham comprado de 01 a ${K.corteAnt}/${mP} (podem ter comprado depois do dia ${K.corteAnt}).`}[tipo];
+  $('#cartListaDesc').textContent = rows.length+(rows.length===1?' cliente · ':' clientes · ')+desc;
+  const base=[{f:'vendedor', h:'Vendedor', fmt:v=>esc(v)}, {f:'nome', h:'Cliente', fmt:v=>esc(v)}];
+  const cols = tipo==='nc' ? [...base,
+      {f:'ant', h:'Período '+mP, num:1, fmt:cartMoney},
+      {f:'antN', h:'Naturalle', num:1, fmt:cartMoneyOrDash},
+      {f:'antS', h:'Selecto', num:1, fmt:cartMoneyOrDash},
+      {f:'pedAnt', h:'Pedidos', num:1},
+      {f:'ultAnt', h:'Última compra', num:1, fmt:v=>cartDia(v,K.pMes)},
+      {f:'dias', h:'Dias sem comprar', num:1, cls:v=>v>=30?'rank-down':''}]
+    : tipo==='cm' ? [...base,
+      {f:'ant', h:'Período '+mP, num:1, fmt:cartMoney},
+      {f:'atu', h:'Período '+mA, num:1, fmt:cartMoney},
+      {f:'var_rs', h:'Var. R$', num:1, fmt:cartMoney, cls:cartUpDown},
+      {f:'var_pct', h:'Var. %', num:1, fmt:cartPct, cls:cartUpDown},
+      {f:'pedAnt', h:'Ped. '+mP, num:1},
+      {f:'pedAtu', h:'Ped. '+mA, num:1},
+      {f:'obs', h:'Observação', fmt:v=>`<span class="sub">${esc(v)}</span>`}]
+    : [...base,
+      {f:'atu', h:'Período '+mA, num:1, fmt:cartMoney},
+      {f:'atuN', h:'Naturalle', num:1, fmt:cartMoneyOrDash},
+      {f:'atuS', h:'Selecto', num:1, fmt:cartMoneyOrDash},
+      {f:'pedAtu', h:'Pedidos', num:1},
+      {f:'ultAtu', h:'Última compra', num:1, fmt:v=>cartDia(v,K.mes)}];
+  cartTabela($('#cartListaWrap'), rows, cols, tipo, null);
+}
+
+$('#cartSubtabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  cartUI.lista=b.dataset.lista;
+  $('#cartSubtabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  if(CARTEIRA.status==='ok') renderCarteira();
+});
+$('#cartBusca').addEventListener('input', ()=>{ if(CARTEIRA.status==='ok') renderCarteira(); });
+
+/* ---------- fechamento do mês: baixa a base do mês atual no formato da aba "Carteira Mês Anterior" ---------- */
+$('#btnCartFechamento').onclick=()=>{
+  if(CARTEIRA.status!=='ok'){ alert('A aba Carteira ainda não carregou os dados da planilha.'); return; }
+  const K=computeCarteira();
+  const docs=CARTEIRA.atual.filter(d=>d.ano===K.ano && d.mes===K.mes)
+    .sort((a,b)=>a.dia-b.dia || a.marca.localeCompare(b.marca) || a.doc.localeCompare(b.doc,'pt-BR',{numeric:true}));
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const linhas=[['MARCA','ANO','MES','DIA','DOCUMENTO','CLIENTE','VENDEDOR','VALOR_CENTAVOS'].join(',')]
+    .concat(docs.map(d=>[d.marca, d.ano, d.mes, d.dia, q(d.doc), q(d.cliente), q(d.vendedor), Math.round(d.valor*100)].join(',')));
+  const blob=new Blob(['﻿'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Carteira_Mes_Anterior_'+MESES_L[K.mes-1]+'_'+K.ano+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  alert(`Base de ${MESES_L[K.mes-1]}/${K.ano} baixada (${docs.length} notas, ${BRL.format(sum(docs,d=>d.valor))}). `+
+    'Importe esse arquivo na aba "Carteira Mês Anterior" (Arquivo → Importar → Upload → Substituir página atual, sem converter texto) antes de colar os relatórios do mês novo.');
+};
 
 /* ---------- carregar dados salvos ao abrir ---------- */
 carregarDados(false);
@@ -1194,6 +1650,7 @@ function render(){
   renderDiario(k);
   renderRankMeta(k); renderRankCresc(k); renderRankClientes(k);
   renderConfig(k);
+  try{ renderCarteira(); }catch(e){ console.error('aba Carteira:', e); }
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
     : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';
