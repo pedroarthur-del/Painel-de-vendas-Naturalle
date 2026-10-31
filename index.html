@@ -2223,7 +2223,7 @@ async function gerarRMR(opt){
       if(D.ritmo.ant[0]!=null) ser.push({name:mP.replace(/^./,c=>c.toUpperCase()), labels:D.ritmo.dias, values:D.ritmo.ant});
       s.addChart(p.ChartType.line, ser, {x:XL, y:1.85, w:7.1, h:2.75, ...eixo, chartColors:[RC.marca, RC.cinzaL, RC.mauve].slice(0,ser.length),
         lineSize:2.5, lineDataSymbol:'none', showLegend:true, legendPos:'t', catAxisLabelFontSize:8, valAxisHidden:false, valAxisLabelFontSize:8,
-        valAxisLabelColor:'9A9A9A', valAxisLabelFormatCode:'#,##0', valGridLine:{color:'EDE7DA', size:0.5}, lineDash:['solid', 'dash', 'solid'].slice(0,ser.length)});
+        valAxisLabelColor:'9A9A9A', valAxisLabelFormatCode:'#,##0', valGridLine:{color:'EDE7DA', size:0.5}});
       const sm=D.semanas||[];
       if(sm.length){
         subt(s,`Semana a semana — ${mA} x ${mP}`,XL,4.7,7.1);
