@@ -1,0 +1,99 @@
+rules_version = '2';
+// =====================================================================
+// REGRAS DE ACESSO · Plataforma Comercial Naturalle
+// Cole este arquivo em Firebase › Firestore › Regras › Publicar.
+// Quem decide o acesso é o servidor: mesmo que alguém mexa no navegador,
+// só lê e grava o que o papel e as abas liberadas permitem.
+// Papéis: admin · gestor · membro · leitor   Abas: vendas · encaminhamentos · planejamento · remuneracao
+// =====================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Mesma lista de config.js → adminsIniciais
+    function adminsIniciais() { return ['pedroarthur@gomesdematos.com.br']; }
+
+    function logado() { return request.auth != null && request.auth.token.email != null; }
+    function email() { return request.auth.token.email.lower(); }
+    function inicial() { return logado() && email() in adminsIniciais(); }
+    function temAcesso() { return exists(/databases/$(database)/documents/acessos/$(email())); }
+    function acc() { return get(/databases/$(database)/documents/acessos/$(email())).data; }
+    function ativo() { return inicial() || (logado() && temAcesso() && acc().get('ativo', true) != false); }
+    function papel() { return inicial() ? 'admin' : acc().get('papel', 'leitor'); }
+    function admin() { return inicial() || (ativo() && papel() == 'admin'); }
+    function aba(a) { return admin() || (ativo() && acc().get('abas', {}).get(a, false) == true); }
+    function gestor(a) { return admin() || (aba(a) && papel() == 'gestor'); }
+    function escreve(a) { return gestor(a) || (aba(a) && papel() == 'membro'); }
+    function soMuda(campos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos); }
+
+    // Cadastro de acesso de cada e-mail
+    match /acessos/{e} {
+      allow read: if logado() && (e == email() || admin());
+      allow create, delete: if admin();
+      allow update: if admin() || (logado() && e == email() && soMuda(['ultimoAcesso']));
+    }
+
+    // Pessoas (responsáveis e quem recebe lembretes)
+    match /pessoas/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+      allow update: if gestor('encaminhamentos') && soMuda(['convidadoEm']);
+    }
+
+    // Configurações gerais
+    match /config/{id} {
+      allow read: if ativo();
+      allow write: if admin()
+        || (id == 'automacoes' && gestor('encaminhamentos'))
+        || (id == 'remuneracao' && gestor('remuneracao'));
+    }
+
+    // Chave que abre os links da planilha de vendas
+    match /segredos/{id} {
+      allow read: if aba('vendas') || aba('remuneracao') || aba('planejamento');
+      allow write: if admin();
+    }
+
+    // Encaminhamentos (quadro)
+    match /tarefas/{id} {
+      allow read: if aba('encaminhamentos');
+      allow create: if escreve('encaminhamentos');
+      allow update: if gestor('encaminhamentos')
+        || (escreve('encaminhamentos') && (resource.data.get('respEmail', '') == email() || resource.data.get('criadoPorEmail', '') == email()))
+        || (escreve('encaminhamentos') && soMuda(['comentarios']));
+      allow delete: if gestor('encaminhamentos');
+    }
+
+    // Reuniões e atas
+    match /reunioes/{id} {
+      allow read: if aba('encaminhamentos');
+      allow write: if gestor('encaminhamentos');
+    }
+
+    // Planejamento comercial
+    match /frentes/{id} {
+      allow read: if aba('planejamento');
+      allow write: if gestor('planejamento');
+    }
+    match /iniciativas/{id} {
+      allow read: if aba('planejamento');
+      allow write: if gestor('planejamento');
+    }
+    match /metas/{ano} {
+      allow read: if ativo();
+      allow write: if gestor('planejamento');
+    }
+
+    // Fila de e-mails: o navegador só coloca na fila; quem lê e envia é o robô (Google Apps Script),
+    // que entra pela conta dona do projeto e não passa por estas regras.
+    match /mail/{id} {
+      allow create: if ativo() && papel() != 'leitor'
+        && request.resource.data.status == 'pendente'
+        && request.resource.data.por == email()
+        && request.resource.data.para is string && request.resource.data.para.matches('^[^@ ]+@[^@ ]+$');
+      allow read, update, delete: if false;
+    }
+
+    // Qualquer outra coleção fica fechada
+    match /{doc=**} { allow read, write: if false; }
+  }
+}
