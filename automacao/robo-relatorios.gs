@@ -38,16 +38,21 @@ function instalar() {
   const raiz = DriveApp.getRootFolder();
   const pasta = pegarPasta_(raiz, ROBO.PASTA);
   pegarPasta_(pasta, 'Processados'); pegarPasta_(pasta, 'Com erro');
-  const ss = SpreadsheetApp.getActive();
+  let ss = SpreadsheetApp.getActive();
   aba_(ss, ROBO.ABA_LOG, ['DATA/HORA', 'ARQUIVO', 'RELATÓRIO', 'MARCA', 'DATAS NO ARQUIVO', 'LINHAS', 'RESULTADO']);
   if (!ss.getSheetByName(ROBO.ABA_ITENS)) {
     // cria a aba com o id que o painel já conhece
     Sheets.Spreadsheets.batchUpdate({ requests: [{ addSheet: { properties: { sheetId: ROBO.GID_ITENS, title: ROBO.ABA_ITENS } } }] }, ss.getId());
-    const sh = ss.getSheetByName(ROBO.ABA_ITENS);
-    sh.getRange(1, 1, 1, ROBO.CAB_ITENS.length).setValues([ROBO.CAB_ITENS]).setFontWeight('bold'); sh.setFrozenRows(1);
+    SpreadsheetApp.flush();
+    ss = SpreadsheetApp.openById(ss.getId()); // reabre para enxergar a aba criada pela API
   }
-  if (ss.getSheetByName(ROBO.ABA_ITENS).getSheetId() !== ROBO.GID_ITENS)
-    Logger.log('ATENÇÃO: a aba Itens já existia com outro id (' + ss.getSheetByName(ROBO.ABA_ITENS).getSheetId() + '). Apague-a e rode instalar() de novo, ou troque o link no painel.');
+  const itens = ss.getSheetByName(ROBO.ABA_ITENS);
+  if (!itens) throw new Error('não consegui criar a aba Itens; rode instalar() de novo');
+  if (!String(itens.getRange(1, 1).getValue()).trim()) {
+    itens.getRange(1, 1, 1, ROBO.CAB_ITENS.length).setValues([ROBO.CAB_ITENS]).setFontWeight('bold'); itens.setFrozenRows(1);
+  }
+  if (itens.getSheetId() !== ROBO.GID_ITENS)
+    Logger.log('ATENÇÃO: a aba Itens já existia com outro id (' + itens.getSheetId() + '). Apague-a e rode instalar() de novo, ou troque o link no painel.');
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'processarPasta').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('processarPasta').timeBased().everyMinutes(10).create();
   log_(['', 'Robô instalado', '', '', '', '', 'Pasta: ' + pasta.getUrl()]);
