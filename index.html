@@ -512,6 +512,19 @@
     .raia{height:64px} .corredor .boneco{width:30px; height:48px} .placa b{font-size:11px} .placa span{font-size:11px}
     .camp-placar div{min-width:0; padding:6px 10px} .camp-placar b{font-size:20px}
   }
+  /* ---------- aba Produtos ---------- */
+  .prod-head{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap}
+  .prod-head h2{margin:0 0 4px}
+  .prod-met{display:inline-flex; background:var(--track); border-radius:99px; padding:3px; gap:2px; flex:none}
+  .prod-met button{border:0; background:transparent; font:800 12.5px var(--body); color:var(--muted); padding:7px 14px; border-radius:99px; cursor:pointer; min-height:34px}
+  .prod-met button.on{background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(46,36,32,.12)}
+  .prod-met button:focus-visible{outline:2px solid var(--marca); outline-offset:2px}
+  #tabProdutos .row2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #tabProdutos .rk .nm{white-space:normal}
+  #prodVend{overflow-x:auto}
+  #prodVend td small.sub{color:var(--muted); font-weight:700}
+  .prod-fonte{font-size:11.5px; color:var(--muted); margin:10px 2px 0}
+  @media (max-width:900px){ #tabProdutos .row2{grid-template-columns:minmax(0,1fr)} }
   /* ---------- acesso por senha ---------- */
   html:not(.aberto) .wrap{display:none}
   html.aberto .login{display:none}
@@ -700,6 +713,7 @@
       <button type="button" id="tabBtnRankings">Rankings</button>
       <button type="button" id="tabBtnConfig">Config</button>
       <button type="button" id="tabBtnCarteira">Carteira</button>
+      <button type="button" id="tabBtnProdutos">Produtos</button>
       <button type="button" id="tabBtnCampanha">Campanhas</button>
     </div>
 
@@ -865,6 +879,73 @@
         <div id="campBody"><div class="camp-vazio">Carregando a campanha…</div></div>
       </div>
     </div><!-- /tabCampanha -->
+
+    <div id="tabProdutos" class="hidden">
+      <div class="state-note hidden" id="prodAviso"></div>
+      <div id="prodConteudo" class="hidden">
+      <div class="grid">
+        <div class="panel">
+          <div class="prod-head">
+            <div><h2 id="prodTitulo">Produtos</h2></div>
+            <div class="prod-met" id="prodMetrica" role="group" aria-label="Medir por">
+              <button type="button" data-m="valor" class="on">R$</button><button type="button" data-m="qtde">Unidades</button>
+            </div>
+          </div>
+          <p class="cart-take" id="prodTake"></p>
+        </div>
+      </div>
+      <div class="row4 row6">
+        <div class="panel"><div class="kpistat" id="prodKpiFat"></div></div>
+        <div class="panel"><div class="kpistat" id="prodKpiUn"></div></div>
+        <div class="panel"><div class="kpistat" id="prodKpiPreco"></div></div>
+        <div class="panel"><div class="kpistat" id="prodKpiSku"></div></div>
+        <div class="panel"><div class="kpistat" id="prodKpiMix"></div></div>
+        <div class="panel"><div class="kpistat" id="prodKpiConc"></div></div>
+      </div>
+      <div class="row2">
+        <div class="panel">
+          <h2>Os 15 produtos que mais vendem</h2>
+          <p class="desc" id="prodTopDesc"></p>
+          <ul class="rk" id="prodTop"></ul>
+        </div>
+        <div class="panel">
+          <h2>Venda por linha de produto</h2>
+          <p class="desc">Picolé tradicional, zero/diet, funcional, gelatos por tamanho. Mostra para onde o mix está indo.</p>
+          <div class="cbox" id="cProdLinhaBox"><canvas id="cProdLinha"></canvas></div>
+          <h2 style="margin-top:22px">Curva ABC dos produtos</h2>
+          <p class="desc">A = produtos que fazem 80% da venda; B = os próximos 15%; C = os últimos 5%.</p>
+          <div id="prodAbc"></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="panel">
+          <h2>Em alta</h2>
+          <p class="desc" id="prodAltaDesc"></p>
+          <ul class="rk" id="prodAlta"></ul>
+        </div>
+        <div class="panel">
+          <h2>Em queda</h2>
+          <p class="desc" id="prodQuedaDesc"></p>
+          <ul class="rk" id="prodQueda"></ul>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h2>Evolução dos campeões de venda</h2>
+          <p class="desc" id="prodEvolDesc"></p>
+          <div class="cbox tall"><canvas id="cProdEvol"></canvas></div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h2>Mix por vendedor</h2>
+          <p class="desc">Quantos produtos diferentes cada vendedor coloca por loja e quanto da venda vem das linhas zero e funcional. Clique numa linha para filtrar o painel pelo vendedor.</p>
+          <div id="prodVend"></div>
+          <p class="prod-fonte" id="prodFonte"></p>
+        </div>
+      </div>
+      </div>
+    </div><!-- /tabProdutos -->
 
     <div id="tabCarteira" class="hidden">
       <div class="state-note hidden" id="cartAviso"></div>
@@ -1286,7 +1367,8 @@ async function carregarDados(manual){
       fetchVendasCSV(SHEET_CSV_URL_NATURALLE),
       fetchVendasCSV(SHEET_CSV_URL_SELECTO),
       carregarCarteira(),
-      carregarCorridinha()
+      carregarCorridinha(),
+      carregarProdutos()
     ]);
     RECS_NAT = natRes.status==='fulfilled' ? natRes.value : null;
     RECS_SEL = selRes.status==='fulfilled' ? selRes.value : null;
@@ -1347,7 +1429,7 @@ function readFileManual(file){
   rd.readAsArrayBuffer(file);
 }
 
-const TABS=['Geral','Rankings','Carteira','Config','Campanha'];
+const TABS=['Geral','Rankings','Carteira','Produtos','Config','Campanha'];
 function irParaAba(nome){
   TABS.forEach(n=>{
     $('#tab'+n).classList.toggle('hidden', n!==nome);
@@ -1356,6 +1438,7 @@ function irParaAba(nome){
   const painel=$('#tab'+nome); painel.classList.remove('rise-in'); void painel.offsetWidth; painel.classList.add('rise-in');
   if(nome==='Carteira'){ try{ renderCarteira(); }catch(e){ console.error(e); } } // redesenha o gráfico já visível
   if(nome==='Campanha'){ try{ renderCampanha(); }catch(e){ console.error(e); } }
+  if(nome==='Produtos'){ try{ renderProdutos(); }catch(e){ console.error(e); } }
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 
@@ -1482,6 +1565,7 @@ let SHEET_CSV_URL_SEMIMP_NATURALLE = ''; // preenchido só depois da senha (ver 
 let SHEET_CSV_URL_SEMIMP_SELECTO = ''; // preenchido só depois da senha (ver ACESSO)
 let SHEET_CSV_URL_CARTEIRA_ANTERIOR = ''; // preenchido só depois da senha (ver ACESSO)
 let SHEET_CSV_URL_CORRIDINHA = ''; // aba "Corridinha do Sorvete" (campanha)
+let SHEET_CSV_URL_ITENS = ''; // aba "Itens" (produtos, preenchida pelo robô de relatórios)
 
 // posição das colunas nas abas "Sem Imposto" (0 = coluna A): Z = cliente; AY..BE = colunas verdes de fórmula
 const SI_COL = {cliente:25, doc:50, data:51, vend:54, flag:55, valor:56}; // Z, AY, AZ, BC, BD, BE
@@ -2731,11 +2815,252 @@ function renderCampanha(){
 const numBRc=(v,d)=>(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
 $('#campSel').onchange=e=>{ campUI.id=e.target.value; campUI.mes=null; renderCampanha(); };
 
+/* ---------- ABA PRODUTOS (aba "Itens" da planilha, alimentada pelo robô de relatórios) ---------- */
+let PRODUTOS = {status:'nao-configurado'}; // 'ok' | 'erro' | 'nao-configurado'
+const prodUI = {metrica:'valor'};
+const PROD_OUTROS = /^(TAXA|EMBALAGEM|CARRINHO|FRETE|SACOLA|CAIXA)/;
+function prodNum(v){
+  if(typeof v==='number') return v;
+  let t=String(v??'').replace(/[R$\s]/g,'');
+  if(!t) return 0;
+  if(t.includes(',')) t=t.replace(/\./g,'').replace(',','.');
+  const n=+t; return isFinite(n)? n : 0;
+}
+function prodLinha(nome){
+  const p=stripAccents(NORM(nome));
+  if(PROD_OUTROS.test(p)) return 'Outros (taxas, embalagens)';
+  if(p.startsWith('GELATO')){ const m=/GELATO\s+([\d,\.]+\s*L)/.exec(p); return 'Gelato '+(m? m[1].replace(/\s+/g,' ') : ''); }
+  if(p.startsWith('SORBET')) return 'Sorbet';
+  if(p.startsWith('SORVETE')) return 'Sorvete (pote)';
+  if(p.startsWith('PICOLE')){
+    if(/\b(ZERO|DIET)\b/.test(p)) return 'Picolé zero / diet';
+    if(/WHEY|COLAGENO|PROTEIN/.test(p)) return 'Picolé funcional (whey, colágeno)';
+    if(/ELETROICE/.test(p)) return 'Picolé Eletroice';
+    return 'Picolé tradicional';
+  }
+  return 'Outras linhas';
+}
+function prodNome(nome){ // nome curto para leitura: tira a marca repetida
+  const s=String(nome||'').replace(/\s+/g,' ').trim().replace(/^PICOLE (NATURALLE|SELECTO) /i,'Picolé ');
+  return s.toLowerCase().replace(/(^|[\s\/(-])([a-zà-ú])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\bC\/ /g,'c/ ').replace(/\bL\b/g,'L');
+}
+function parseItens(rows){
+  const h=(rows[0]||[]).map(x=>stripAccents(NORM(x)));
+  const I={}; ['MARCA','ANO','MES','DIA','DOCUMENTO','ORIGEM','COD_CLIENTE','CLIENTE','COD_PRODUTO','PRODUTO','QTDE','VALOR','VENDEDOR'].forEach(k=>I[k]=h.indexOf(k));
+  if(['MARCA','ANO','MES','DIA','PRODUTO','QTDE','VALOR'].some(k=>I[k]<0)) throw new Error('a aba "Itens" não tem o cabeçalho esperado (MARCA, ANO, MES, DIA, PRODUTO, QTDE, VALOR…)');
+  const out=[];
+  rows.slice(1).forEach(r=>{
+    if(!r) return; const ano=cartInt(r[I.ANO]); if(ano<=2000) return;
+    const prod=String(r[I.PRODUTO]??'').trim(); if(!prod) return;
+    out.push({marca:NORM(r[I.MARCA]), ano, mes:cartInt(r[I.MES]), dia:cartInt(r[I.DIA]), doc:String(r[I.DOCUMENTO]??'').trim(),
+      cli:I.COD_CLIENTE>=0 && String(r[I.COD_CLIENTE]??'').trim() ? String(r[I.COD_CLIENTE]).trim() : String(r[I.CLIENTE]??'').trim(),
+      cod:String(r[I.COD_PRODUTO]??'').trim(), produto:prod, qtde:prodNum(r[I.QTDE]), valor:prodNum(r[I.VALOR]),
+      vendedor:cartVend(I.VENDEDOR>=0? r[I.VENDEDOR] : '')});
+  });
+  return out;
+}
+async function carregarProdutos(){
+  if(!cartConfigurada(SHEET_CSV_URL_ITENS)){ PRODUTOS={status:'nao-configurado'}; return; }
+  try{
+    const itens=parseItens(await fetchCSVRows(SHEET_CSV_URL_ITENS));
+    PRODUTOS = itens.length? {status:'ok', itens} : {status:'erro', msg:'a aba "Itens" está vazia — o robô ainda não importou nenhum relatório de produtos.'};
+  }catch(e){ PRODUTOS={status:'erro', msg:'Não consegui ler a aba "Itens" ('+e.message+').'}; }
+}
+
+function computeProdutos(opt){
+  opt=opt||{};
+  const all=opt.itens||PRODUTOS.itens||[];
+  const marcaOk = d => state.empresa==='__all' || d.marca===(state.empresa==='naturalle'?'NATURALLE':'SELECTO');
+  const vendGrupo={};
+  (RECS_ALL||[]).slice().sort((a,b)=>chronIdx(a.ano,a.mes)-chronIdx(b.ano,b.mes)).forEach(r=>{ vendGrupo[r.vendedor]=r.grupo; });
+  const vendOk = d => (state.vend==='__all' || d.vendedor===state.vend) && (state.grupo==='__all' || vendGrupo[d.vendedor]===state.grupo);
+  const base=all.filter(marcaOk);
+  const meses=[...new Set(base.map(d=>d.ano*100+d.mes))].sort((a,b)=>a-b);
+  if(!meses.length) return {vazio:true};
+  // mês: o escolhido no filtro de período, se a aba Itens tiver; senão o mais recente
+  const pedido = state.ano? state.ano*100+state.mes : null;
+  const cur = opt.ano ? opt.ano*100+opt.mes : (pedido && meses.includes(pedido) ? pedido : meses[meses.length-1]);
+  const ano=Math.floor(cur/100), mes=cur%100;
+  const pAno = mes===1? ano-1 : ano, pMes = mes===1? 12 : mes-1;
+  const atuAll=base.filter(d=>d.ano===ano && d.mes===mes);
+  const corte=Math.max(...atuAll.map(d=>d.dia));
+  const fimMes=new Date(ano,mes,0).getDate(), hoje=new Date();
+  const fechado = corte>=fimMes || cur < hoje.getFullYear()*100+hoje.getMonth()+1;
+  const corteAnt=fechado ? 31 : Math.min(corte, new Date(pAno,pMes,0).getDate()); // mês fechado compara com o mês anterior inteiro
+  const atu=atuAll.filter(vendOk);
+  const ant=base.filter(d=>d.ano===pAno && d.mes===pMes && d.dia<=corteAnt && vendOk(d));
+  const temAnt=base.some(d=>d.ano===pAno && d.mes===pMes);
+
+  const ag=(lista)=>{ const P={};
+    lista.forEach(d=>{ const k=d.marca+'|'+(d.cod||d.produto);
+      const p=P[k]||(P[k]={k, produto:d.produto, nome:prodNome(d.produto), marca:d.marca, linha:prodLinha(d.produto), valor:0, qtde:0, lojas:new Set()});
+      p.valor+=d.valor; p.qtde+=d.qtde; p.lojas.add(d.cli); });
+    return P; };
+  const PA=ag(atu), PP=ag(ant);
+  const prods=Object.values(PA).map(p=>{ const q=PP[p.k]; return {...p, nLojas:p.lojas.size, ant:q?q.valor:0, antQ:q?q.qtde:0,
+    var_rs:p.valor-(q?q.valor:0), var_pct:q&&q.valor? (p.valor/q.valor-1)*100 : null}; });
+  Object.values(PP).forEach(q=>{ if(!PA[q.k]) prods.push({...q, valor:0, qtde:0, nLojas:0, ant:q.valor, antQ:q.qtde, var_rs:-q.valor, var_pct:-100}); });
+  const vend=prods.filter(p=>!/^Outros/.test(p.linha));
+  const M=prodUI.metrica==='qtde'?'qtde':'valor', MA=M==='qtde'?'antQ':'ant';
+
+  const tot=sum(atu,d=>d.valor), totAnt=sum(ant,d=>d.valor), un=sum(atu.filter(d=>!PROD_OUTROS.test(stripAccents(NORM(d.produto)))),d=>d.qtde);
+  const unAnt=sum(ant.filter(d=>!PROD_OUTROS.test(stripAccents(NORM(d.produto)))),d=>d.qtde);
+  const ativos=vend.filter(p=>p.valor>0).sort((a,b)=>b.valor-a.valor);
+  const totProd=sum(ativos,p=>p.valor);
+  // curva ABC por faturamento
+  let acc=0; ativos.forEach(p=>{ acc+=p.valor; const sh=totProd? acc/totProd : 0; p.abc = sh<=0.8 || acc===p.valor ? 'A' : (sh<=0.95 ? 'B' : 'C'); });
+  const abc={A:{n:0,v:0},B:{n:0,v:0},C:{n:0,v:0}}; ativos.forEach(p=>{ abc[p.abc].n++; abc[p.abc].v+=p.valor; });
+  const top5=sum(ativos.slice(0,5),p=>p.valor);
+  // linhas
+  const L={}; [...atu.map(d=>({...d,per:'atu'})), ...ant.map(d=>({...d,per:'ant'}))].forEach(d=>{ const l=prodLinha(d.produto); const x=L[l]||(L[l]={linha:l, atu:0, ant:0}); x[d.per]+=d.valor; });
+  const linhas=Object.values(L).filter(x=>x.atu>0||x.ant>0).sort((a,b)=>b.atu-a.atu);
+  // evolução mensal (meses completos disponíveis + atual), top 5 do mês
+  const evMeses=meses.filter(p=>p<=cur).slice(-6);
+  const evol=ativos.slice(0,5).map(p=>({nome:p.nome, k:p.k, serie:evMeses.map(pm=>sum(base.filter(d=>d.ano*100+d.mes===pm && vendOk(d) && d.marca+'|'+(d.cod||d.produto)===p.k), d=>d[M]))}));
+  // produto x vendedor
+  const V={}; atu.forEach(d=>{ const x=V[d.vendedor]||(V[d.vendedor]={vendedor:d.vendedor, valor:0, prods:{}, zero:0, lojas:new Set()});
+    x.valor+=d.valor; x.lojas.add(d.cli); if(PROD_OUTROS.test(stripAccents(NORM(d.produto)))) return;
+    x.prods[d.produto]=(x.prods[d.produto]||0)+d.valor; if(/zero|funcional/i.test(prodLinha(d.produto))) x.zero+=d.valor; });
+  const porVend=Object.values(V).map(x=>{ const ps=Object.entries(x.prods).sort((a,b)=>b[1]-a[1]);
+    return {vendedor:x.vendedor, valor:x.valor, skus:ps.length, lojas:x.lojas.size, top:ps[0]? prodNome(ps[0][0]) : '—', topSh:ps[0]&&x.valor? ps[0][1]/x.valor*100 : 0,
+      zeroSh:x.valor? x.zero/x.valor*100 : 0, mixLoja:x.lojas.size? ps.length/x.lojas.size : 0}; }).sort((a,b)=>b.valor-a.valor);
+  const semVend=sum(atu.filter(d=>d.vendedor==='SEM VENDEDOR'),d=>d.valor);
+  const lojas=new Set(atu.map(d=>d.cli)).size, lojasAnt=new Set(ant.map(d=>d.cli)).size;
+  const skuLoja = (()=>{ const m={}; atu.forEach(d=>{ if(PROD_OUTROS.test(stripAccents(NORM(d.produto)))) return; (m[d.cli]||(m[d.cli]=new Set())).add(d.produto); });
+    const v=Object.values(m); return v.length? sum(v,s=>s.size)/v.length : 0; })();
+  const skuLojaAnt = (()=>{ const m={}; ant.forEach(d=>{ if(PROD_OUTROS.test(stripAccents(NORM(d.produto)))) return; (m[d.cli]||(m[d.cli]=new Set())).add(d.produto); });
+    const v=Object.values(m); return v.length? sum(v,s=>s.size)/v.length : 0; })();
+  const mesesTxt=meses.map(p=>MESES[p%100-1]+'/'+String(Math.floor(p/100)).slice(2));
+  return {ano, mes, pAno, pMes, corte, corteAnt, fechado, temAnt, pedidoSemDado: pedido && pedido!==cur, mesesTxt,
+    tot, totAnt, un, unAnt, lojas, lojasAnt, skuLoja, skuLojaAnt, ativos, vend, abc, top5, totProd, linhas, evol, evMeses, porVend, semVend, M, MA};
+}
+
+function renderProdutos(){
+  const aviso=$('#prodAviso'), cont=$('#prodConteudo');
+  const fora=()=>{ ['cProdLinha','cProdEvol'].forEach(kill); cont.classList.add('hidden'); aviso.classList.remove('hidden'); };
+  if(PRODUTOS.status!=='ok'){
+    fora();
+    aviso.innerHTML = PRODUTOS.status==='erro'
+      ? '<b>A aba Produtos não carregou.</b> '+esc(PRODUTOS.msg)+' O resto do painel segue funcionando normalmente.'
+      : '<b>A aba Produtos ainda não foi ligada à planilha.</b> Ela lê a aba "Itens", que o robô de relatórios preenche a partir do relatório de faturamento por produto do Questor.';
+    return;
+  }
+  const K=computeProdutos();
+  if(K.vazio){ fora(); aviso.innerHTML='<b>Sem itens para este filtro.</b> A aba "Itens" não tem vendas desta empresa.'; return; }
+  cont.classList.remove('hidden');
+  const notas=[];
+  if(K.pedidoSemDado) notas.push(`A aba "Itens" ainda não tem ${MESES_L[state.mes-1]}/${state.ano}; mostrando ${MESES_L[K.mes-1]}/${K.ano}, o mês mais recente com produtos.`);
+  if(!K.temAnt) notas.push(`Sem itens de ${MESES_L[K.pMes-1]} na aba "Itens", então não há comparação com o mês anterior.`);
+  if(K.semVend>0 && K.tot>0 && K.semVend/K.tot>0.03) notas.push(`${BRL.format(K.semVend)} em itens ainda sem vendedor (notas que não estão nas abas Sem Imposto nem no histórico). Aparecem como SEM VENDEDOR.`);
+  aviso.classList.toggle('hidden', !notas.length);
+  if(notas.length) aviso.innerHTML='<b>Atenção:</b> '+notas.map(esc).join(' ');
+
+  const mA=MESES[K.mes-1], mP=MESES[K.pMes-1];
+  const per = K.fechado ? MESES_L[K.mes-1] : `01 a ${String(K.corte).padStart(2,'0')}/${mA}`;
+  const perAnt = K.fechado ? mP : `01 a ${String(Math.min(K.corteAnt,31)).padStart(2,'0')}/${mP}`;
+  const varPct=(a,b)=> b? (a/b-1)*100 : null;
+  const quem = state.vend!=='__all' ? state.vend : (state.grupo!=='__all' ? state.grupo : (state.empresa==='__all'?'Naturalle + Selecto':(state.empresa==='naturalle'?'Naturalle':'Selecto')));
+  $('#prodTitulo').textContent=`Produtos — ${quem} · ${MESES_L[K.mes-1]}/${K.ano}${K.fechado?'':' (até dia '+K.corte+')'}`;
+  const A=K.ativos, sobe=K.vend.filter(p=>p.ant>0||p.valor>0).filter(p=>p.var_rs>0).sort((a,b)=>b.var_rs-a.var_rs), cai=K.vend.filter(p=>p.var_rs<0).sort((a,b)=>a.var_rs-b.var_rs);
+  const linhaTop=K.linhas.find(l=>!/^Outros/.test(l.linha));
+  $('#prodTake').innerHTML = !A.length ? 'Nenhum produto vendido neste recorte.' :
+    `<b>${esc(A[0].nome)}</b> é o produto que mais vende (${BRL.format(A[0].valor)}, ${Math.round(A[0].valor/K.totProd*100)}% do faturamento em produtos). `+
+    `Os 5 primeiros somam <b>${Math.round(K.top5/K.totProd*100)}%</b> e <b>${K.abc.A.n}</b> de ${A.length} produtos fazem 80% da venda. `+
+    (linhaTop? `A linha mais forte é <b>${esc(linhaTop.linha.toLowerCase())}</b> (${Math.round(linhaTop.atu/K.tot*100)}%). ` : '')+
+    (K.temAnt && sobe[0] ? `Quem mais cresceu contra ${perAnt}: <b>${esc(sobe[0].nome)}</b> (+${BRL.format(sobe[0].var_rs)}). ` : '')+
+    (K.temAnt && cai[0] ? `Maior queda: <b>${esc(cai[0].nome)}</b> (−${BRL.format(-cai[0].var_rs)}).` : '');
+
+  const kp=(id,cap,val,sub)=>{ $(id).innerHTML=`<div class="kcap">${cap}</div><div class="kval num">${val}</div><div class="ksub">${sub}</div>`; };
+  const vs=(a,b,fmt)=> K.temAnt? `<span class="${cartCls(varPct(a,b))}">${cartPct(varPct(a,b))}</span> vs ${fmt(b)} em ${perAnt}` : 'sem mês anterior para comparar';
+  kp('#prodKpiFat',`Faturado em produtos · ${per}`, cartMil(K.tot), vs(K.tot,K.totAnt,cartMil));
+  kp('#prodKpiUn','Unidades vendidas', Math.round(K.un).toLocaleString('pt-BR'), vs(K.un,K.unAnt,v=>Math.round(v).toLocaleString('pt-BR')));
+  const pm=K.un? K.totProd/K.un : 0, pmAnt=K.unAnt? sum(K.vend,p=>p.ant)/K.unAnt : 0;
+  kp('#prodKpiPreco','Preço médio por unidade', pm.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}), vs(pm,pmAnt,v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})));
+  kp('#prodKpiSku','Produtos diferentes vendidos', A.length, `${K.vend.filter(p=>p.valor===0).length} vendidos em ${mP} e parados em ${mA}`);
+  kp('#prodKpiMix','Mix por loja', K.skuLoja.toLocaleString('pt-BR',{maximumFractionDigits:1})+' itens', K.temAnt? `${K.skuLojaAnt.toLocaleString('pt-BR',{maximumFractionDigits:1})} em ${perAnt} · ${K.lojas} lojas compraram` : `${K.lojas} lojas compraram`);
+  kp('#prodKpiConc','Concentração nos 5 primeiros', Math.round(K.totProd? K.top5/K.totProd*100 : 0)+'%', `${K.abc.A.n} produtos fazem 80% da venda`);
+
+  // ranking
+  const met=prodUI.metrica; document.querySelectorAll('#prodMetrica button').forEach(b=>b.classList.toggle('on', b.dataset.m===met));
+  const fmtM = v => met==='qtde'? Math.round(v).toLocaleString('pt-BR')+' un' : BRL.format(v);
+  const li=(p,i,val,sub,cls,mx,ant,atu)=>`<li><span class="pos">${i+1}</span><span class="nm" title="${esc(p.produto)}">${esc(p.nome)}<small>${esc(p.linha)}${state.empresa==='__all'?' · '+(p.marca==='NATURALLE'?'Naturalle':'Selecto'):''} · ${p.nLojas} ${p.nLojas===1?'loja':'lojas'}</small></span>
+    <span class="vl">${val}<small class="${cls}">${sub}</small></span>
+    <div class="rk-bar"><div class="prev" data-w="${(ant/mx*100).toFixed(1)}%"></div><div class="f-${atu>=ant?'marca':'bad'}" data-w="${(atu/mx*100).toFixed(1)}%"></div></div></li>`;
+  const rk=A.slice().sort((a,b)=>b[met]-a[met]).slice(0,15), antK=met==='qtde'?'antQ':'ant';
+  const mx=Math.max(1,...rk.map(p=>Math.max(p[met],p[antK])));
+  $('#prodTopDesc').textContent=`${met==='qtde'?'Em unidades':'Em faturamento sem imposto'}, ${per}.${K.temAnt?' Barra clara = '+perAnt+'.':''}`;
+  $('#prodTop').innerHTML = rk.map((p,i)=>{ const v=varPct(p[met],p[antK]);
+    return li(p,i,fmtM(p[met]), K.temAnt? (p[antK]? cartPct(v)+' vs '+mP : 'novo no mês') : `${Math.round(p.valor/K.totProd*100)}% da venda`, v==null?'up':(v<0?'down':'up'), mx, K.temAnt?p[antK]:0, p[met]); }).join('');
+  const mxS=Math.max(1,...sobe.slice(0,8).map(p=>Math.max(p.valor,p.ant))), mxC=Math.max(1,...cai.slice(0,8).map(p=>Math.max(p.valor,p.ant)));
+  $('#prodAltaDesc').textContent=`Maior ganho em reais contra ${perAnt}.`;
+  $('#prodQuedaDesc').textContent=`Maior perda em reais contra ${perAnt} — inclui produto que parou de vender.`;
+  $('#prodAlta').innerHTML = !K.temAnt? '<li class="sub">Precisa do mês anterior na aba "Itens".</li>' : (sobe.slice(0,8).map((p,i)=>li(p,i,'+'+BRL.format(p.var_rs), p.ant? `${BRL.format(p.valor)} de ${BRL.format(p.ant)}` : 'não vendia', 'up', mxS, p.ant, p.valor)).join('') || '<li class="sub">Nenhum produto cresceu.</li>');
+  $('#prodQueda').innerHTML = !K.temAnt? '<li class="sub">Precisa do mês anterior na aba "Itens".</li>' : (cai.slice(0,8).map((p,i)=>li(p,i,'−'+BRL.format(-p.var_rs), p.valor? `${BRL.format(p.valor)} de ${BRL.format(p.ant)}` : `parou (${BRL.format(p.ant)} em ${mP})`, 'down', mxC, p.ant, p.valor)).join('') || '<li class="sub">Nenhum produto caiu.</li>');
+
+  // curva ABC
+  const ab=K.abc, tp=K.totProd||1, nA=A.length||1;
+  $('#prodAbc').innerHTML=`<div class="abc">${['A','B','C'].map(k=>`<div><div class="l ${k}">${k}</div><div class="n">${ab[k].n} ${ab[k].n===1?'produto':'produtos'} · ${BRL.format(ab[k].v)}</div><div class="p">${Math.round(ab[k].v/tp*100)}% da venda · ${Math.round(ab[k].n/nA*100)}% dos produtos</div></div>`).join('')}</div>
+    <div class="abc-bar">${['A','B','C'].map(k=>`<div class="${k}" data-w="${(ab[k].v/tp*100).toFixed(1)}%"></div>`).join('')}</div>
+    <p class="desc" style="margin-top:10px">C = ${A.filter(p=>p.abc==='C').slice(0,6).map(p=>esc(p.nome)).join(', ')}${ab.C.n>6?' e outros':''}. Candidatos a revisar: tiram espaço no freezer e na visita do vendedor.</p>`;
+
+  // linhas
+  kill('cProdLinha');
+  const LL=K.linhas;
+  $('#cProdLinhaBox').style.height=Math.max(180, LL.length*46+40)+'px';
+  charts.cProdLinha=new Chart($('#cProdLinha'),{type:'bar',
+    data:{labels:LL.map(l=>l.linha), datasets:[
+      ...(K.temAnt?[{label:perAnt, data:LL.map(l=>l.ant), backgroundColor:C.mauveL, borderRadius:5, maxBarThickness:16}]:[]),
+      {label:per, data:LL.map(l=>l.atu), backgroundColor:C.orange, borderRadius:5, maxBarThickness:16,
+        datalabels:{display:true, anchor:'end', align:'right', color:C.ink, font:{weight:'700',size:11}, formatter:v=>K.tot? cartMil(v)+' · '+Math.round(v/K.tot*100)+'%' : ''}}]},
+    options:baseOpts({indexAxis:'y', layout:{padding:{right:110}},
+      scales:{x:{beginAtZero:true, grid:{color:'#F2EBDE'}, ticks:{color:C.muted, font:{size:11}, callback:BRLk}},
+        y:{grid:{display:false}, ticks:{color:C.ink, font:{size:11.5, weight:'700'}}}},
+      plugins:{legend:{display:K.temAnt, position:'top', align:'end', labels:{boxWidth:10, boxHeight:10, color:C.muted}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.raw)}}}})});
+
+  // evolução
+  kill('cProdEvol');
+  const cores=[C.orange, C.mauve, C.green, '#3E7CB1', C.brick];
+  $('#prodEvolDesc').textContent = K.evMeses.length<2 ? 'A evolução aparece quando a aba "Itens" tiver mais de um mês.' :
+    `Os 5 produtos que mais vendem em ${mA}, mês a mês (${met==='qtde'?'unidades':'R$ sem imposto'}).${K.fechado?'':' '+mA+' ainda está em andamento.'}`;
+  charts.cProdEvol=new Chart($('#cProdEvol'),{type:'line',
+    data:{labels:K.evMeses.map(p=>MESES[p%100-1]+'/'+String(Math.floor(p/100)).slice(2)),
+      datasets:K.evol.map((e,i)=>({label:e.nome, data:e.serie.map((v,j)=>met==='qtde'? v : v), borderColor:cores[i], backgroundColor:cores[i],
+        pointRadius:3.5, pointHoverRadius:5, borderWidth:2.5, cubicInterpolationMode:'monotone',
+        segment:{borderDash:ctx=>!K.fechado && ctx.p1DataIndex===K.evMeses.length-1 ? [5,4] : undefined}}))},
+    options:baseOpts({scales:{x:{grid:{display:false}, ticks:{color:C.ink, font:{size:11.5,weight:'700'}}},
+        y:{beginAtZero:true, grid:{color:'#F2EBDE'}, ticks:{color:C.muted, font:{size:11}, callback:v=>met==='qtde'? Math.round(v).toLocaleString('pt-BR') : BRLk(v)}}},
+      plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:10, boxHeight:10, color:C.ink, font:{size:11.5,weight:'700'}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(met==='qtde'? Math.round(c.raw).toLocaleString('pt-BR')+' un' : money(c.raw))}}}})});
+
+  // produto x vendedor
+  const cols=[
+    {f:'vendedor', h:'Vendedor'},
+    {f:'valor', h:'Faturado', num:true, fmt:v=>BRL.format(v)},
+    {f:'lojas', h:'Lojas', num:true},
+    {f:'skus', h:'Produtos', num:true},
+    {f:'mixLoja', h:'Itens por loja', num:true, fmt:v=>v.toLocaleString('pt-BR',{maximumFractionDigits:1})},
+    {f:'top', h:'Mais vendido', fmt:(v,r)=>`${esc(v)} <small class="sub">${Math.round(r.topSh)}%</small>`},
+    {f:'zeroSh', h:'Zero + funcional', num:true, fmt:v=>Math.round(v)+'%'}];
+  if(!prodUI.sort) prodUI.sort=['valor','desc'];
+  const wrap=$('#prodVend'), [key,dir]=prodUI.sort, col=cols.find(c=>c.f===key)||cols[1];
+  const rows=K.porVend.slice().sort((a,b)=>{ const d=col.num? a[key]-b[key] : String(a[key]).localeCompare(String(b[key]),'pt-BR'); return dir==='desc'?-d:d; });
+  wrap.innerHTML='<table class="rank-table"><thead><tr>'+cols.map(c=>`<th class="${c.num?'num':''}"><button type="button" data-f="${c.f}">${c.h}${c.f===key?(dir==='desc'?' ▼':' ▲'):''}</button></th>`).join('')+'</tr></thead><tbody>'+
+    (rows.length? rows.map(r=>`<tr class="cart-click${state.vend===r.vendedor?' cart-sel':''}" data-key="${esc(r.vendedor)}">`+cols.map(c=>`<td class="${c.num?'num':''}">${c.fmt? c.fmt(r[c.f],r) : esc(r[c.f])}</td>`).join('')+'</tr>').join('')
+      : `<tr><td colspan="${cols.length}" class="sub">Nenhuma venda neste recorte.</td></tr>`)+'</tbody></table>';
+  wrap.querySelectorAll('th button').forEach(b=>b.onclick=()=>{ const f=b.dataset.f; prodUI.sort=[f, prodUI.sort[0]===f && prodUI.sort[1]==='desc'?'asc':'desc']; renderProdutos(); });
+  wrap.querySelectorAll('tr[data-key]').forEach(tr=>tr.onclick=()=>{ const v=tr.dataset.key; const sel=$('#fVend');
+    if(sel && [...sel.options].some(o=>o.value===v)){ sel.value = state.vend===v ? '__all' : v; sel.dispatchEvent(new Event('change')); } });
+  $('#prodFonte').textContent=`Fonte: aba "Itens" (relatório de faturamento por produto do Questor, valores sem imposto). Meses disponíveis: ${K.mesesTxt.join(', ')}.`;
+  animar($('#tabProdutos'));
+}
+document.querySelectorAll('#prodMetrica button').forEach(b=>b.onclick=()=>{ prodUI.metrica=b.dataset.m; renderProdutos(); });
+
 /* ---------- ACESSO: senha da equipe ----------
    Os links das planilhas ficam criptografados (AES-GCM) com uma chave derivada da senha (PBKDF2, 250 mil voltas).
    Sem a senha certa o painel não consegue nem descobrir de onde vêm os dados. Para trocar a senha, peça ao Pedro
    para gerar um novo COFRE. */
-const COFRE = {"salt": "TAjqhc1YRDxvKaX/HMtTlw==", "iv": "ZiIYYUZvQsUayp2r", "dados": "OC3Ac7gDSlARZusK3hrtMoExjX1FWs74jT1zLw1xeOkAefLcKzSPMI4i8Lrn8yELhy5GlM823MxTgm1KUrw/S1xfU5aGVmnT0/8NDHyGKZYw6OATwJWU86Iy4Pk+KwyYvyFviJ3NMArwmnFG5taQwIqzaajRDHQ3N35ajn+KIgZQZarPMqhpC9x3jDkaUR84/nPdJ+GMPgRmmIIRRUH6wCGn7i1APvbMg7oHkk5z7uLGoNsrz1lVHppf1piJpnM10ve2i2M4v2PwnOUcowCojObZLGfxxLaB4b/hghtECFt5nO7XiqqUF83As/K+wgQQLkwV8dLpTMAsWMuvMUedcfFQaUFvRtUvImnTu+az0DZaioksLGk6i2MPM/kQcvDXPy3DIhlU+Cud6qYMwuZC3XoRVUYQ9r9nl3Rv+I0x+1JQ4o6neSHRZulPxVLXkKEfrdWBmlkHM/ZZaMe3d06NuzzMviMnPRUlIdCZNMjEWD8EttL6y5/A2/dVmTg81VwWKS6zvbN+Zgkmv8M2vt+PUALdhG/7Y5RTTolUgCkEOsrmXZfaNFXM9zVI3RNZgX0qxeaB/8IriFqpDMBQwxYw8PC+/GOew/Oncy4sX/Z/h9F1qVo82nq1M2Z0j/IhTrU1VXV64iL5GcWXv4/fUWRB60gD82RSFWwTv5qup6sooGqZEVRncC44rCz3BUGSJf6rEYJxdFGLTGw/GKALrLhA+sbNQjOo8yHyLht8iOr9JCXSb5jGK4SBdd/VOqykKGT3hOv0SG80ESbKoI5Nnb38gbVptW4rISeLQDTd522XRkADIwp+qfK5TdDOhtr1JHqt/XwPqImgGFxvLtG+WzXe0MJ6hsLX4q1CL9T/rIyNdLpgN1sarfq0/ReHnqfBEXTpV8C3raUcEyXO6G9MzkyUSrvr2CzUBd5adAJEPp/X8m+hk5mEGjj4EhmX0Wse9RC65oeS1hj0s7mGVsOtP8GARDGewH5f0+umvmDIoner6AruQnF4vUsKLHnNcmzFf9CYe7Ln/hs3UDOgQQDc2AMJ1Hi09lTNyw2Kbz2c3rj8aLy/zkVE4YkQilL11812anJIYt4HBnQtAbe3fYiGgUVGVqqjzebyJZ/sVVTJm9PvKqI6G7rs8s5cAwegcYYYNz9++T5HCKYEaTdLpRBGEro/NGf6Ypu9kckZJpdymiYLgIOltC6Yh7gH33g8sF645dRB9pC3yb4olRpDSDu19FhYTwzp3AbGvTXwhTCl4bIWEVMLrYM3kRn4Hcf+PQ3UeupRs+sYF/C8vlDM7jv5tBTs30NrgtoZNy6cqRfK6OtwcwPGtwIXPtb4sE2prBnO0DkrwDPsINGo+QqeuT+gjriFN9MnWZRSdlxUB/Z7BUDtsIFxJv7SDdIDZhDKqxQOguWltJvzhS2nrraKNQtbiX6CLjMvmHaz+KMa5nrrvNApOpGZXHGFSAPTMoPeaMDe+1zCbpmYGOjDle256YAtGQ99uhVXsSMZ84zC2SpFjUowZ4mFDfvskMBnCuBgY88G1jUrWm7KeFeTsVDU58jUwx6JItXDvr1cvNZGGpfAaMl7mTMD+7jRWfRiKO+H18vi6XiftwcSTJJVLNgn346Qy/Up7iExeNN+2CyjT0iCTkY/CrYqEIyX223l+WORRdty5EfzyRKU9LyE3Xj+Z1UZA27cy+c1BMgmhlmsg6ovUQb074+QjbXybVLSyYRVznIbBYtlcpR1dKkj03ZpaUIk9rRTgxDSTWtvXm+UcJ/7QKZgMX7SSAlWVJ7D4wKuqQ7HiJYuK6plU3SrYgWo24dw/cRuGDlffs47cARkq+KgcnHpGiToMoD6jMdDAjXsnDpf6RSgCCpF9mFNydG7fbLxrsytlBzhHZNzvsfkFIo1OQ==", "iter": 250000};
+const COFRE = {"salt": "TAjqhc1YRDxvKaX/HMtTlw==", "iv": "ePXvTgc3Iid4xIQd", "dados": "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", "iter": 250000};
 const CHAVE_LS = 'naturalle_painel_chave';
 let PAINEL_ABERTO = false;
 const b64bytes = b => Uint8Array.from(atob(b), c=>c.charCodeAt(0));
@@ -2752,6 +3077,7 @@ async function abrirCofre(chave){
   SHEET_CSV_URL_SEMIMP_NATURALLE=L.SHEET_CSV_URL_SEMIMP_NATURALLE; SHEET_CSV_URL_SEMIMP_SELECTO=L.SHEET_CSV_URL_SEMIMP_SELECTO;
   SHEET_CSV_URL_CARTEIRA_ANTERIOR=L.SHEET_CSV_URL_CARTEIRA_ANTERIOR;
   SHEET_CSV_URL_CORRIDINHA=L.SHEET_CSV_URL_CORRIDINHA||'';
+  SHEET_CSV_URL_ITENS=L.SHEET_CSV_URL_ITENS||'';
 }
 function liberarPainel(){
   PAINEL_ABERTO = true;
@@ -3111,6 +3437,7 @@ function render(){
   renderConfig(k);
   try{ renderCarteira(); }catch(e){ console.error('aba Carteira:', e); }
   try{ renderCampanha(); }catch(e){ console.error('aba Campanhas:', e); }
+  try{ if(!$('#tabProdutos').classList.contains('hidden')) renderProdutos(); }catch(e){ console.error('aba Produtos:', e); }
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
     : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';
