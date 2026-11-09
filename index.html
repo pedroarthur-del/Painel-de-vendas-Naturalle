@@ -418,6 +418,100 @@
   .rmr-acoes{display:flex; justify-content:flex-end; gap:10px; margin-top:14px}
   .rmr-acoes .btn[disabled]{opacity:.7; cursor:wait}
   @media (max-width:560px){ .rmr-grid{grid-template-columns:minmax(0,1fr)} }
+  /* ---------- Campanhas · Corridinha do Sorvete ---------- */
+  .camp-head{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px}
+  .camp-head select{font:800 15px var(--body); padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--marca-esc)}
+  .camp-meses{display:inline-flex; background:var(--track); border-radius:999px; padding:4px; gap:4px}
+  .camp-meses button{border:0; background:transparent; font:800 14px var(--body); color:var(--muted); padding:7px 16px; border-radius:999px; cursor:pointer}
+  .camp-meses button.on{background:var(--marca); color:#fff}
+  .camp-vazio{padding:28px; text-align:center; color:var(--muted)} .camp-vazio b{display:block; color:var(--ink); font-size:17px; margin-bottom:6px}
+  .camp-top{display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between; margin-bottom:14px}
+  .camp-top h2{font:800 clamp(22px,2.6vw,30px)/1.1 var(--display); letter-spacing:-.02em; color:var(--marca-esc); margin:0}
+  .camp-top .desc{margin:6px 0 0}
+  .camp-placar{display:flex; gap:10px}
+  .camp-placar div{background:var(--marca-esc); color:#fff; border-radius:14px; padding:8px 14px; text-align:center; min-width:88px}
+  .camp-placar b{display:block; font:800 24px/1 var(--display)} .camp-placar span{font-size:12px; font-weight:700; opacity:.85}
+  /* pista */
+  .pista{background:#3A2416; border-radius:22px; padding:18px 18px 14px; color:#F5E6D3; overflow:hidden; position:relative}
+  .pista-regua{position:relative; height:22px; margin:0 70px 6px 0; font-size:11.5px; font-weight:800; color:#CDB59A}
+  .pista-regua span{position:absolute; transform:translateX(-50%); white-space:nowrap}
+  .pista-regua span:first-child{transform:none}
+  .pista-regua .r95{color:#FFC27A; transform:translateX(calc(-100% - 6px))} .pista-regua .r100{color:#fff; transform:translateX(8px)}
+  .pista-raias{position:relative; margin-right:70px}
+  .raia{position:relative; height:74px; border-top:2px dashed rgba(255,255,255,.14)}
+  .raia:last-child{border-bottom:2px dashed rgba(255,255,255,.14)}
+  .raia:nth-child(odd){background:rgba(255,255,255,.03)}
+  .rastro{position:absolute; left:0; top:50%; height:10px; margin-top:6px; width:0; border-radius:0 10px 10px 0; background:linear-gradient(90deg,transparent,var(--cor)); opacity:.75; transition:width 1.6s var(--ease)}
+  .corredor{position:absolute; top:4px; left:0; transform:translateX(-50%); transition:left 1.6s var(--ease); display:flex; align-items:flex-end; gap:6px; z-index:2}
+  .corredor .boneco{width:40px; height:62px; filter:drop-shadow(0 3px 3px rgba(0,0,0,.35))}
+  .placa{background:rgba(0,0,0,.45); border-radius:10px; padding:3px 8px; line-height:1.15; white-space:nowrap; margin-bottom:8px}
+  .placa b{display:block; font-size:12.5px; color:#fff} .placa span{font-size:12px; font-weight:800; color:#FFC27A}
+  .corredor.apto .placa span{color:#9BE3A9}
+  .corredor.lider .placa{background:var(--cor)} .corredor.lider .placa span{color:#fff}
+  .porta{position:absolute; top:-4px; bottom:-4px; width:0; border-left:3px dashed #FFC27A; z-index:1}
+  .chegada{position:absolute; top:-4px; bottom:-4px; width:14px; margin-left:-2px; z-index:1;
+    background:repeating-conic-gradient(#fff 0 25%, #1c1c1c 0 50%) 0 0/14px 14px; opacity:.9; border-radius:3px}
+  .esperado{position:absolute; top:-4px; bottom:-4px; width:0; border-left:2px solid rgba(255,255,255,.55); z-index:1}
+  .esperado span{position:absolute; bottom:-20px; left:4px; font-size:10.5px; font-weight:800; color:#CDB59A; white-space:nowrap}
+  .pista-leg{display:flex; flex-wrap:wrap; gap:16px; margin-top:26px; font-size:12px; font-weight:700; color:#CDB59A}
+  .pista-leg i{display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:-1px}
+  .lg-porta{border-left:3px dashed #FFC27A} .lg-chegada{background:repeating-conic-gradient(#fff 0 25%,#1c1c1c 0 50%) 0 0/8px 8px} .lg-esp{border-left:2px solid rgba(255,255,255,.6)}
+  @media (prefers-reduced-motion:no-preference){
+    .corredor .bn-perna.p1{animation:passo .5s ease-in-out infinite alternate; transform-origin:30px 66px}
+    .corredor .bn-perna.p2{animation:passo .5s ease-in-out infinite alternate-reverse; transform-origin:30px 66px}
+    .corredor .bn-corpo{animation:quica .5s ease-in-out infinite alternate}
+    .corredor.lider .bn-braco.b1{animation:aceno .6s ease-in-out infinite alternate; transform-origin:10px 36px}
+    @keyframes passo{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+    @keyframes quica{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+    @keyframes aceno{from{transform:rotate(0)}to{transform:rotate(-40deg)}}
+  }
+  @media (prefers-reduced-motion:reduce){ .rastro,.corredor{transition:none} }
+  /* blocos */
+  .camp-duo{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:16px}
+  .camp-box{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px}
+  .camp-box h3{font:800 17px var(--display); margin:0 0 10px; color:var(--marca-esc)}
+  .perto{margin:0; padding:0; list-style:none; display:grid; gap:8px}
+  .perto li{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px}
+  .perto li>span:last-child{margin-left:auto; color:var(--muted)}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block; flex:none}
+  .chance-bar{display:flex; height:18px; border-radius:9px; overflow:hidden; background:var(--track)}
+  .chance-leg{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:6px; font-size:14px}
+  .chance-leg b{margin-left:6px}
+  .cp-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; margin-top:16px}
+  .cp-card{background:var(--card); border:1px solid var(--line); border-top:5px solid var(--cor); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:10px}
+  .cp-card header{display:flex; gap:10px; align-items:center}
+  .cp-mini .boneco{width:30px; height:46px}
+  .cp-card h3{margin:0; font:800 18px var(--display)}
+  .cp-chip{display:inline-block; margin-top:3px; font-size:12px; font-weight:800; border-radius:999px; padding:2px 9px; background:var(--track); color:var(--muted)}
+  .cp-chip.ok{background:var(--ok-soft); color:var(--ok)} .cp-chip.warn{background:#FCEBD3; color:#9A5B0C}
+  .cp-total{margin-left:auto; text-align:right} .cp-total b{display:block; font:800 30px/1 var(--display); color:var(--cor)} .cp-total span{font-size:11.5px; font-weight:800; color:var(--muted)}
+  .cp-meta-bar{position:relative; height:10px; border-radius:6px; background:var(--track)}
+  .cp-meta-bar i{position:absolute; inset:0 auto 0 0; border-radius:6px; background:var(--cor)}
+  .cp-meta-bar em{position:absolute; top:-3px; bottom:-3px; border-left:2px dashed #C98A26} .cp-meta-bar em.c100{border-left:2px solid var(--ink)}
+  .cp-meta-num{font-size:13.5px; margin-top:6px} .cp-meta-num b{font-size:15px}
+  .cp-proj{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .cp-cupons{list-style:none; margin:0; padding:0; border-top:1px solid var(--line-2)}
+  .cp-cupons li{display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line-2); font-size:14px}
+  .cp-cupons small{display:block; color:var(--muted); font-size:12px}
+  .cp-cupons b{font:800 18px var(--display)}
+  .cp-cupons li.tb.on{color:var(--ok)} .cp-cupons li.tb.on b{color:var(--ok)}
+  .cp-dica{margin:0; font-size:12.5px; color:#9A5B0C; font-weight:700}
+  .cp-qz{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .qz-h{display:flex; justify-content:space-between; font-size:12.5px; font-weight:800} .qz-h b{font-size:12px; color:var(--muted)} .qz-h b.ok{color:var(--ok)} .qz-h b.bad{color:var(--bad)}
+  .qz-bar{height:7px; border-radius:5px; background:var(--track); margin:4px 0 3px; overflow:hidden} .qz-bar i{display:block; height:100%; background:#C98A26} .qz-bar i.ok{background:var(--ok)}
+  .qz small{font-size:11.5px; color:var(--muted)}
+  .cp-chance{margin:0; font-size:13.5px}
+  .camp-regras{margin-top:16px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px}
+  .camp-regras summary{font-weight:800; cursor:pointer; color:var(--marca-esc)}
+  .camp-regras ul{margin:10px 0 4px; padding-left:18px; line-height:1.6; font-size:14px}
+  @media (max-width:760px){
+    .camp-duo{grid-template-columns:minmax(0,1fr)}
+    .pista{padding:14px 10px 12px} .pista-regua,.pista-raias{margin-right:44px}
+    .pista-regua span:not(.r95):not(.r100):not(:first-child){display:none}
+    .pista-regua .r95{font-size:10px}
+    .raia{height:64px} .corredor .boneco{width:30px; height:48px} .placa b{font-size:11px} .placa span{font-size:11px}
+    .camp-placar div{min-width:0; padding:6px 10px} .camp-placar b{font-size:20px}
+  }
   /* ---------- acesso por senha ---------- */
   html:not(.aberto) .wrap{display:none}
   html.aberto .login{display:none}
@@ -606,7 +700,7 @@
       <button type="button" id="tabBtnRankings">Rankings</button>
       <button type="button" id="tabBtnConfig">Config</button>
       <button type="button" id="tabBtnCarteira">Carteira</button>
-      <button type="button" id="tabBtnCampanha">Campanha</button>
+      <button type="button" id="tabBtnCampanha">Campanhas</button>
     </div>
 
     <div id="tabGeral">
@@ -762,11 +856,13 @@
     </div><!-- /tabConfig -->
 
     <div id="tabCampanha" class="hidden">
-      <div class="grid">
-        <div class="panel">
-          <h2>Campanha de novos clientes</h2>
-          <div class="cfg-soon">Essa aba ainda vai ser montada — falta definir, junto com o Pedro, como fica a estrutura da aba de campanha na planilha (quais colunas, como um cliente novo é identificado, se é por vendedor, prazo da campanha, meta/premiação etc.).</div>
+      <div class="panel camp">
+        <div class="camp-head">
+          <label class="vh" for="campSel">Campanha</label>
+          <select id="campSel"></select>
+          <div class="camp-meses" id="campMes" role="group" aria-label="Mês da campanha"></div>
         </div>
+        <div id="campBody"><div class="camp-vazio">Carregando a campanha…</div></div>
       </div>
     </div><!-- /tabCampanha -->
 
@@ -1189,7 +1285,8 @@ async function carregarDados(manual){
     const [natRes, selRes] = await Promise.allSettled([
       fetchVendasCSV(SHEET_CSV_URL_NATURALLE),
       fetchVendasCSV(SHEET_CSV_URL_SELECTO),
-      carregarCarteira()
+      carregarCarteira(),
+      carregarCorridinha()
     ]);
     RECS_NAT = natRes.status==='fulfilled' ? natRes.value : null;
     RECS_SEL = selRes.status==='fulfilled' ? selRes.value : null;
@@ -1258,6 +1355,7 @@ function irParaAba(nome){
   });
   const painel=$('#tab'+nome); painel.classList.remove('rise-in'); void painel.offsetWidth; painel.classList.add('rise-in');
   if(nome==='Carteira'){ try{ renderCarteira(); }catch(e){ console.error(e); } } // redesenha o gráfico já visível
+  if(nome==='Campanha'){ try{ renderCampanha(); }catch(e){ console.error(e); } }
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 
@@ -1383,6 +1481,7 @@ async function gerarResumo(formato){
 let SHEET_CSV_URL_SEMIMP_NATURALLE = ''; // preenchido só depois da senha (ver ACESSO)
 let SHEET_CSV_URL_SEMIMP_SELECTO = ''; // preenchido só depois da senha (ver ACESSO)
 let SHEET_CSV_URL_CARTEIRA_ANTERIOR = ''; // preenchido só depois da senha (ver ACESSO)
+let SHEET_CSV_URL_CORRIDINHA = ''; // aba "Corridinha do Sorvete" (campanha)
 
 // posição das colunas nas abas "Sem Imposto" (0 = coluna A): Z = cliente; AY..BE = colunas verdes de fórmula
 const SI_COL = {cliente:25, doc:50, data:51, vend:54, flag:55, valor:56}; // Z, AY, AZ, BC, BD, BE
@@ -2396,11 +2495,247 @@ $('#rmrForm').onsubmit=async e=>{
   finally{ btn.disabled=false; btn.textContent='Gerar PPTX'; }
 };
 
+/* =====================================================================================
+   CAMPANHAS · Corridinha do Sorvete (03/11 a 31/12/2026)
+   Regras validadas com o Valmir e o Rodrigo:
+   • Porta de entrada: 95% da meta do mês para entrar no sorteio.
+   • Meta: cada ponto inteiro vale 1 cupom a partir de 95% (95% = 5, 96% = 6, 100% = 10…), sem teto.
+   • Clientes novos: 1 cupom cada (o supervisor lança na aba "Corridinha do Sorvete").
+   • Positivação da carteira: 65–69% = 2 · 70–74% = 3 · 75–79% = 4 · 80% ou mais = 5 cupons.
+     Carteira = lojas que compraram com o vendedor nos 2 meses anteriores (fechada no início do mês).
+   • Turbo: bateu a meta das duas quinzenas, o total de cupons do mês dobra.
+   Quinzenas por dias úteis (seg–sex), sem feriados: 02, 15 e 20/11 · 08 (Fortaleza) e 25/12.
+   ===================================================================================== */
+const campAll=s=>[...document.querySelectorAll(s)];
+const CAMPANHAS = [
+  { id:'corridinha', nome:'Corridinha do Sorvete', ini:[2026,11,3], fim:[2026,12,31], meses:[[2026,11],[2026,12]],
+    premios:{ '2026_11':'Prêmio de novembro (a diretoria anuncia)', '2026_12':'Uma TV' }, vigente:true },
+  { id:'prospeccao', nome:'Campanha de Prospecção (clientes novos)', ini:[2026,10,1], fim:[2026,11,30], emBreve:true },
+];
+const CAMP_FERIADOS_EXTRA = {12:[8]}; // Nossa Senhora da Conceição (Fortaleza)
+const CAMP_FAIXAS = [[80,5],[75,4],[70,3],[65,2]];
+const CAMP_CORES = ['#EF742B','#D9475A','#6E9E2F','#7E4A8C','#E3A51C','#3E8FA8','#B5651D','#5B2C4F'];
+let CAMP_CFG = null, CAMP_ERRO = '';
+const campUI = { id:'corridinha', mes:null };
+
+async function carregarCorridinha(){
+  if(!cartConfigurada(SHEET_CSV_URL_CORRIDINHA)){ CAMP_CFG=null; CAMP_ERRO='link da aba Corridinha do Sorvete não configurado'; return; }
+  try{
+    const rows = await fetchCSVRows(SHEET_CSV_URL_CORRIDINHA);
+    const h=(rows[0]||[]).map(x=>stripAccents(NORM(x)));
+    const I={ano:h.indexOf('ANO'), mes:h.indexOf('MES'), p:h.indexOf('PARTICIPANTE'), lin:h.indexOf('LINHAS NA ABA VENDAS'), meta:h.indexOf('META DO MES'), nov:h.indexOf('NOVOS CLIENTES'), obs:h.indexOf('OBSERVACAO')};
+    if([I.ano,I.mes,I.p,I.lin].some(i=>i<0)) throw new Error('a aba "Corridinha do Sorvete" não tem o cabeçalho esperado');
+    CAMP_CFG = rows.slice(1).filter(r=>r && cartInt(r[I.ano])>2000 && String(r[I.p]||'').trim()).map(r=>({
+      ano:cartInt(r[I.ano]), mes:cartInt(r[I.mes]), nome:String(r[I.p]).trim(),
+      linhas:String(r[I.lin]||r[I.p]).split('+').map(x=>stripAccents(NORM(x))).filter(Boolean),
+      meta: I.meta>=0 && String(r[I.meta]??'').trim()!=='' ? (+String(r[I.meta]).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.')||null) : null,
+      novos: I.nov>=0 ? cartInt(r[I.nov]) : 0, obs: I.obs>=0 ? String(r[I.obs]||'').trim() : '' }));
+    CAMP_ERRO='';
+  }catch(e){ CAMP_CFG=null; CAMP_ERRO=e.message; }
+}
+
+function campDiasUteis(ano, mes, de, ate){
+  const fer=new Set([...(FERIADOS_NACIONAIS[mes]||[]), ...(CAMP_FERIADOS_EXTRA[mes]||[])]);
+  let n=0; for(let d=de; d<=ate; d++) if(isBizDay(ano,mes,d) && !fer.has(d)) n++; return n;
+}
+const campChaveNota = d => d.marca+'|'+d.ano+'|'+d.mes+'|'+d.doc;
+function campNotas(){
+  if(CARTEIRA.status!=='ok') return null;
+  const vistos=new Set(), out=[];
+  [...(CARTEIRA.anterior||[]), ...(CARTEIRA.atual||[])].forEach(d=>{ const k=campChaveNota(d); if(vistos.has(k)) return; vistos.add(k); out.push(d); });
+  return out;
+}
+const campVendNorm = v => { const s=stripAccents(NORM(v)); return s==='REBECA' ? 'GLEICY' : s; };
+
+function computeCorridinha(ano, mes){
+  const cfg=(CAMP_CFG||[]).filter(c=>c.ano===ano && c.mes===mes);
+  const diasMes=new Date(ano,mes,0).getDate();
+  const recs=(RECS_ALL||[]).filter(r=>r.ano===ano && r.mes===mes);
+  // até que dia temos lançamento
+  let dataAte=0; recs.forEach(r=>(r.dias||[]).forEach(d=>{ if(d.valor>0) dataAte=Math.max(dataAte,d.dia); }));
+  const hoje=new Date(), mesIdx=ano*12+mes, hojeIdx=hoje.getFullYear()*12+hoje.getMonth()+1;
+  const fechado = hojeIdx>mesIdx, futuro = hojeIdx<mesIdx;
+  const corte = fechado ? diasMes : Math.max(0, Math.min(diasMes, hoje.getDate()-1, Math.max(dataAte, 0)) );
+  const corteRitmo = fechado ? diasMes : Math.min(diasMes, Math.max(dataAte, hoje.getDate()-1));
+  const du1=campDiasUteis(ano,mes,1,15), du2=campDiasUteis(ano,mes,16,diasMes), duTot=du1+du2;
+  const duFeitos=campDiasUteis(ano,mes,1,Math.max(0,corteRitmo)), duResta=Math.max(0,duTot-duFeitos);
+  // notas: carteira dos 2 meses anteriores e compras do mês
+  const notas=campNotas();
+  const m1 = mes===1? [ano-1,12] : [ano,mes-1], m2 = m1[1]===1? [m1[0]-1,12] : [m1[0],m1[1]-1];
+  const temBase = notas && notas.some(d=>d.ano===m1[0]&&d.mes===m1[1]);
+  const temMes = notas && notas.some(d=>d.ano===ano&&d.mes===mes);
+
+  const linhas=cfg.map((c,i)=>{
+    const rs=recs.filter(r=>c.linhas.includes(stripAccents(NORM(r.vendedor))));
+    const venda=sum(rs,r=>r.venda);
+    const porDia=Array(diasMes+1).fill(0); rs.forEach(r=>(r.dias||[]).forEach(d=>{ if(d.dia<=diasMes) porDia[d.dia]+=d.valor; }));
+    const v1=porDia.slice(1,16).reduce((a,b)=>a+b,0), v2=porDia.slice(16).reduce((a,b)=>a+b,0);
+    const meta = c.meta || sum(rs.filter(r=>r.meta),r=>r.meta) || null;
+    const pct = meta ? venda/meta*100 : null;
+    const mq1 = meta ? meta*du1/duTot : null, mq2 = meta ? meta*du2/duTot : null;
+    const q1ok = mq1!=null && v1>=mq1, q2ok = mq2!=null && v2>=mq2;
+    const q1fim = fechado || corte>=15 || hoje.getDate()>15 && !futuro, q2fim = fechado;
+    const apto = pct!=null && pct>=95;
+    const cupMeta = pct!=null && pct>=95 ? Math.floor(pct+1e-9)-90 : 0;
+    // positivação
+    let pos=null;
+    if(notas && temBase){
+      const daLinha = d => c.linhas.includes(campVendNorm(d.vendedor)) && !CART_EXCLUIR.includes(cartChave(d.cliente));
+      const base=new Set(notas.filter(d=>daLinha(d) && ((d.ano===m1[0]&&d.mes===m1[1])||(d.ano===m2[0]&&d.mes===m2[1]))).map(d=>cartChave(d.cliente)));
+      const compr=new Set(notas.filter(d=>daLinha(d) && d.ano===ano && d.mes===mes).map(d=>cartChave(d.cliente)));
+      const positiv=[...base].filter(k=>compr.has(k)).length;
+      const p = base.size ? positiv/base.size*100 : 0;
+      const faixa = (CAMP_FAIXAS.find(([lim])=>p>=lim)||[0,0]);
+      const prox = [...CAMP_FAIXAS].reverse().find(([lim])=>p<lim);
+      const forasDaBase=[...compr].filter(k=>!base.has(k)).length;
+      pos={ base:base.size, positiv, pct:p, cupons:faixa[1], prox: prox? {lim:prox[0], cupons:prox[1], faltam:Math.max(1,Math.ceil(prox[0]/100*base.size-1e-9)-positiv)} : null, forasDaBase };
+    }
+    const cupPos = pos ? pos.cupons : 0;
+    const sub = cupMeta + (c.novos||0) + cupPos;
+    const turbo = q1ok && q2ok;
+    const total = sub * (turbo?2:1);
+    const ritmoDia = duFeitos ? venda/duFeitos : 0;
+    const proj = fechado ? venda : venda + ritmoDia*duResta;
+    const projPct = meta ? proj/meta*100 : null;
+    const falta95 = meta ? Math.max(0, meta*0.95-venda) : null;
+    return { ...c, cor:CAMP_CORES[i%CAMP_CORES.length], venda, meta, pct, v1, v2, mq1, mq2, q1ok, q2ok, q1fim, q2fim, apto,
+      cupMeta, cupPos, pos, sub, turbo, total, proj, projPct, falta95, porDiaFalta: falta95 && duResta ? falta95/duResta : null };
+  });
+  const aptos=linhas.filter(l=>l.apto), totCup=sum(aptos,l=>l.total);
+  aptos.forEach(l=>l.chance = totCup? l.total/totCup*100 : 0);
+  const esperadoHoje = duTot ? duFeitos/duTot*100 : 0;
+  return { ano, mes, linhas, du1, du2, duTot, duFeitos, duResta, fechado, futuro, dataAte, esperadoHoje, totCup, temBase, temMes, m1, m2, notasOk: !!notas };
+}
+
+/* ---------- bonequinho picolé (SVG) ---------- */
+function campBoneco(cor, nome){
+  return `<svg class="boneco" viewBox="0 0 60 92" role="img" aria-label="${nome}">
+    <g class="bn-corpo">
+      <rect x="10" y="4" width="40" height="52" rx="18" fill="${cor}"/>
+      <path d="M10 26 Q18 20 26 26 T42 26 T50 24 V36 H10Z" fill="#fff" opacity=".18"/>
+      <circle cx="23" cy="24" r="3.6" fill="#2B1A10"/><circle cx="37" cy="24" r="3.6" fill="#2B1A10"/>
+      <circle cx="24.2" cy="22.8" r="1.2" fill="#fff"/><circle cx="38.2" cy="22.8" r="1.2" fill="#fff"/>
+      <path d="M23 34 Q30 41 37 34" stroke="#2B1A10" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="16" cy="32" r="3" fill="#fff" opacity=".35"/><circle cx="44" cy="32" r="3" fill="#fff" opacity=".35"/>
+      <path class="bn-braco b1" d="M10 36 L2 30" stroke="${cor}" stroke-width="5" stroke-linecap="round"/>
+      <path class="bn-braco b2" d="M50 36 L58 42" stroke="${cor}" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <rect x="26" y="54" width="8" height="14" rx="3" fill="#E1C08F"/>
+    <path class="bn-perna p1" d="M28 66 L20 86" stroke="#B88B4A" stroke-width="5" stroke-linecap="round"/>
+    <path class="bn-perna p2" d="M32 66 L40 86" stroke="#B88B4A" stroke-width="5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/* ---------- desenho ---------- */
+function renderCampanha(){
+  const el=$('#campBody'); if(!el) return;
+  const camp=CAMPANHAS.find(c=>c.id===campUI.id)||CAMPANHAS[0];
+  $('#campSel').innerHTML=CAMPANHAS.map(c=>`<option value="${c.id}" ${c.id===camp.id?'selected':''}>${c.nome}${c.vigente?' · vigente':''}</option>`).join('');
+  if(camp.emBreve){
+    $('#campMes').innerHTML=''; $('#campMes').hidden=true;
+    el.innerHTML=`<div class="camp-vazio"><b>${camp.nome}</b><p>O acompanhamento desta campanha ainda não está no painel. A contagem de clientes novos que o supervisor lança na aba "Corridinha do Sorvete" já alimenta a corrida.</p></div>`;
+    return;
+  }
+  const hoje=new Date(), atual=hoje.getFullYear()*12+hoje.getMonth()+1;
+  if(!campUI.mes){ const m=camp.meses.find(([a,mm])=>a*12+mm===atual) || camp.meses.filter(([a,mm])=>a*12+mm<atual).pop() || camp.meses[0]; campUI.mes=m[0]+'_'+m[1]; }
+  $('#campMes').hidden=false;
+  $('#campMes').innerHTML=camp.meses.map(([a,m])=>`<button type="button" data-m="${a}_${m}" class="${campUI.mes===a+'_'+m?'on':''}">${MESES_L[m-1].replace(/^./,c=>c.toUpperCase())}</button>`).join('');
+  campAll('#campMes button').forEach(b=>b.onclick=()=>{ campUI.mes=b.dataset.m; renderCampanha(); });
+  if(!RECS_ALL){ el.innerHTML='<div class="camp-vazio">Carregando os dados de vendas…</div>'; return; }
+  if(!CAMP_CFG){ el.innerHTML=`<div class="camp-vazio"><b>Não consegui ler a aba "Corridinha do Sorvete" da planilha.</b><p>${CAMP_ERRO||''}</p></div>`; return; }
+  const [ano,mes]=campUI.mes.split('_').map(Number), K=computeCorridinha(ano,mes), mL=MESES_L[mes-1];
+  if(!K.linhas.length){ el.innerHTML=`<div class="camp-vazio">A aba "Corridinha do Sorvete" ainda não tem participantes para ${mL}.</div>`; return; }
+  if(K.futuro){ el.innerHTML=`<div class="camp-vazio"><b>A corrida de ${mL} ainda não começou.</b><p>Ela larga no dia 1º. Os participantes e as metas já estão na planilha.</p></div>`; return; }
+
+  const ESC=125; // a pista vai até 125% da meta
+  const pos = p => Math.max(0, Math.min(ESC, p||0))/ESC*100;
+  const ord=K.linhas.slice().sort((a,b)=>(b.pct||0)-(a.pct||0));
+  const lider=ord[0];
+  const premio=(camp.premios||{})[ano+'_'+mes]||'';
+  const statusDia = K.fechado ? `Mês fechado.` : `Dados até ${String(K.dataAte||0).padStart(2,'0')}/${String(mes).padStart(2,'0')} · ${K.duFeitos} de ${K.duTot} dias úteis · faltam ${K.duResta}`;
+
+  const pista = `
+    <div class="pista" style="--esperado:${pos(K.esperadoHoje).toFixed(2)}%">
+      <div class="pista-regua">
+        <span style="left:0">0%</span><span style="left:${pos(50)}%">50%</span>
+        <span class="r95" style="left:${pos(95)}%">95% · sorteio</span><span class="r100" style="left:${pos(100)}%">100%</span><span style="left:${pos(120)}%">120%</span>
+      </div>
+      <div class="pista-raias">
+        <div class="porta" style="left:${pos(95)}%" aria-hidden="true"></div>
+        <div class="chegada" style="left:${pos(100)}%" aria-hidden="true"></div>
+        ${!K.fechado ? `<div class="esperado" style="left:${pos(K.esperadoHoje)}%" title="Onde deveria estar hoje para fechar em 100%"><span>ritmo de 100% hoje</span></div>` : ''}
+        ${ord.map((l,i)=>`
+          <div class="raia">
+            <div class="rastro" style="--cor:${l.cor}" data-w="${pos(l.pct)}%"></div>
+            <div class="corredor ${l.apto?'apto':''} ${l===lider && (l.pct||0)>0?'lider':''}" data-left="${pos(l.pct)}%" style="--cor:${l.cor}">
+              ${campBoneco(l.cor, l.nome)}
+              <div class="placa"><b>${l.nome}</b><span>${l.pct!=null? numBRc(l.pct,0)+'%':'sem meta'}${l.pct>ESC?' ↗':''}</span></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="pista-leg"><span><i class="lg-porta"></i>Porta de entrada: 95% da meta</span><span><i class="lg-chegada"></i>Chegada: 100%</span>${!K.fechado?'<span><i class="lg-esp"></i>Onde precisaria estar hoje para fechar o mês em 100%</span>':''}</div>
+    </div>`;
+
+  const cards = K.linhas.slice().sort((a,b)=>(b.apto-a.apto) || (b.total-a.total) || ((b.pct||0)-(a.pct||0))).map(l=>{
+    const qz=(v,m,ok,fim,rot)=>{ const p=m? Math.min(100,v/m*100):0;
+      return `<div class="qz"><div class="qz-h"><span>${rot}</span><b class="${ok?'ok':(fim?'bad':'')}">${ok?'batida':(fim?'não bateu':'em andamento')}</b></div>
+        <div class="qz-bar"><i class="${ok?'ok':''}" style="width:${p.toFixed(1)}%"></i></div><small>${BRL.format(v)} de ${m?BRL.format(m):'—'}</small></div>`; };
+    const P=l.pos;
+    const posTxt = !K.notasOk ? 'sem notas na planilha' : !K.temBase ? `falta o histórico de ${MESES_L[K.m1[1]-1]}` :
+      P.base ? `${P.positiv} de ${P.base} lojas · ${numBRc(P.pct,0)}%` : 'sem carteira nos 2 meses anteriores';
+    const posProx = P && P.prox && P.base ? `Mais ${P.prox.faltam} ${P.prox.faltam===1?'loja':'lojas'} da carteira comprando e a positivação passa para ${P.prox.cupons} cupons.` : (P && P.base ? 'Faixa máxima de positivação.' : '');
+    const chip = l.pct==null ? '<span class="cp-chip">sem meta</span>' : l.apto ? '<span class="cp-chip ok">no sorteio</span>' : `<span class="cp-chip warn">faltam ${BRL.format(l.falta95)} para 95%</span>`;
+    return `<article class="cp-card" style="--cor:${l.cor}">
+      <header><span class="cp-mini">${campBoneco(l.cor,l.nome)}</span><div><h3>${l.nome}</h3>${chip}</div>
+        <div class="cp-total"><b>${l.apto? l.total : l.sub}</b><span>${l.apto? (l.turbo?'cupons com turbo ×2':'cupons') : 'cupons guardados'}</span></div></header>
+      <div class="cp-meta"><div class="cp-meta-bar"><i style="width:${Math.min(100,(l.pct||0)/1.2).toFixed(1)}%"></i><em style="left:${(95/1.2).toFixed(1)}%"></em><em class="c100" style="left:${(100/1.2).toFixed(1)}%"></em></div>
+        <div class="cp-meta-num"><b>${l.pct!=null? numBRc(l.pct,1)+'%':'—'}</b> da meta · ${BRL.format(l.venda)} de ${l.meta?BRL.format(l.meta):'—'}</div>
+        ${!K.fechado && l.projPct!=null ? `<div class="cp-proj">No ritmo de hoje fecha em <b>${numBRc(l.projPct,0)}%</b>${!l.apto && l.porDiaFalta? ` · precisa de ${BRL.format(l.porDiaFalta)} por dia útil para chegar a 95%`:''}</div>`:''}</div>
+      <ul class="cp-cupons">
+        <li><span>Meta${l.pct!=null && l.pct<95?' <small>(conta a partir de 95%)</small>':''}</span><b>${l.cupMeta}</b></li>
+        <li><span>Clientes novos <small>(lançados pelo supervisor)</small></span><b>${l.novos||0}</b></li>
+        <li><span>Positivação <small>${posTxt}</small></span><b>${l.cupPos}</b></li>
+        <li class="tb ${l.turbo?'on':''}"><span>Turbo das quinzenas</span><b>${l.turbo?'×2':'—'}</b></li>
+      </ul>
+      ${posProx?`<p class="cp-dica">${posProx}</p>`:''}
+      <div class="cp-qz">${qz(l.v1,l.mq1,l.q1ok,l.q1fim,'1ª quinzena')}${qz(l.v2,l.mq2,l.q2ok,l.q2fim,'2ª quinzena')}</div>
+      ${l.apto && K.totCup ? `<p class="cp-chance">Chance no sorteio hoje: <b>${numBRc(l.chance,0)}%</b></p>`:''}
+    </article>`;
+  }).join('');
+
+  const pert = K.linhas.filter(l=>l.meta && !l.apto).sort((a,b)=>a.falta95-b.falta95);
+  const aptos = K.linhas.filter(l=>l.apto).sort((a,b)=>b.total-a.total);
+  el.innerHTML = `
+    <div class="camp-top">
+      <div><h2>Corridinha do Sorvete · ${mL}</h2><p class="desc">${statusDia}${premio?` · Prêmio do mês: <b>${premio}</b>`:''}</p></div>
+      <div class="camp-placar"><div><b>${aptos.length}</b><span>no sorteio</span></div><div><b>${K.totCup}</b><span>cupons valendo</span></div><div><b>${K.linhas.filter(l=>l.turbo).length}</b><span>com turbo ×2</span></div></div>
+    </div>
+    ${pista}
+    <div class="camp-duo">
+      <section class="camp-box"><h3>Mais perto de entrar no sorteio</h3>${pert.length? `<ol class="perto">${pert.map(l=>`<li><span class="dot" style="background:${l.cor}"></span><b>${l.nome}</b><span>faltam <b>${BRL.format(l.falta95)}</b>${l.porDiaFalta?` · ${BRL.format(l.porDiaFalta)}/dia útil`:''}</span></li>`).join('')}</ol>` : '<p class="desc">Todos com meta já passaram dos 95%.</p>'}</section>
+      <section class="camp-box"><h3>Chance no sorteio de ${mL}</h3>${aptos.length && K.totCup? `<div class="chance-bar">${aptos.map(l=>`<i style="width:${l.chance.toFixed(2)}%;background:${l.cor}" title="${l.nome}: ${l.total} cupons"></i>`).join('')}</div><ul class="chance-leg">${aptos.map(l=>`<li><span class="dot" style="background:${l.cor}"></span>${l.nome} <b>${l.total} cupons · ${numBRc(l.chance,0)}%</b></li>`).join('')}</ul>` : '<p class="desc">Ninguém bateu 95% da meta ainda. Quem chegar primeiro larga com todos os cupons do sorteio.</p>'}</section>
+    </div>
+    <div class="cp-grid">${cards}</div>
+    <details class="camp-regras"><summary>Como funcionam os cupons</summary>
+      <ul><li><b>Porta de entrada:</b> só entra no sorteio quem fecha o mês com pelo menos 95% da meta.</li>
+      <li><b>Meta:</b> 95% = 5 cupons, 96% = 6, 100% = 10, sem teto. Só contam pontos inteiros.</li>
+      <li><b>Clientes novos:</b> 1 cupom por cliente novo aberto no mês (lançado pelo supervisor na planilha).</li>
+      <li><b>Positivação:</b> lojas que compraram com o vendedor em ${MESES_L[K.m2[1]-1]} ou ${MESES_L[K.m1[1]-1]} e voltaram a comprar em ${mL}. 65–69% = 2 cupons · 70–74% = 3 · 75–79% = 4 · 80% ou mais = 5.</li>
+      <li><b>Turbo:</b> bateu a meta das duas quinzenas (1ª: ${K.du1} dias úteis · 2ª: ${K.du2} dias úteis), o total de cupons dobra.</li>
+      <li>Enquanto não chega a 95%, os cupons ficam guardados e só passam a valer quando o vendedor entra no sorteio.</li></ul></details>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    campAll('#campBody .rastro').forEach(r=>r.style.width=r.dataset.w);
+    campAll('#campBody .corredor').forEach(c=>c.style.left=c.dataset.left);
+  }));
+}
+const numBRc=(v,d)=>(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+$('#campSel').onchange=e=>{ campUI.id=e.target.value; campUI.mes=null; renderCampanha(); };
+
 /* ---------- ACESSO: senha da equipe ----------
    Os links das planilhas ficam criptografados (AES-GCM) com uma chave derivada da senha (PBKDF2, 250 mil voltas).
    Sem a senha certa o painel não consegue nem descobrir de onde vêm os dados. Para trocar a senha, peça ao Pedro
    para gerar um novo COFRE. */
-const COFRE = {"salt": "TAjqhc1YRDxvKaX/HMtTlw==", "iv": "Zm8wKu5sZHF1ABzo", "dados": "whf1RXE7t3rdPYq5NBIvAjq94CcO3BksCXTOKiMwKtweBHuprXP4BHNOcmJLbFmEca02QMHiD/p/j+BUqJqp+T/1bByKWc/B/uwDtJtDE9XoiNgWuwo2pDnYcNaAs95e8kyb2mZY8jqAyYP8PNyL4Oqw2GSG1KDwLFDdd8bVYQ5HCGNixupaxu3tjK+uxzWIgo2cniPCo0jj7M2WAGnwNE1r3ny1cPOCAjVoaUBtUjjmqde0conkrmjZ/+1CkJSLfmxWV4AuCkmxAyaLkGEVXOmraTjBrFHVk8pb8dg4WBjFWujoaJj2byO/cOB0hiEquHyTjZuOFYs7oCwf1/8Ql3nqUI+mZYsyF8cmDVogfj+8FcHjBWuNGDRzNSeFaujhYNnNO/oyy133/c5U2AC2HI6X4afhbgft0+W/eJkJfLxDy0+P4veJA+lvZW+9rY09Vcr/fx+fjj9Vp3ZQR7ynzOG/3/0iW2aC+HJhbw35Nd2BrH3BhKuklComniU+TNOwn6jyjGNcXmS/unUNz2uLsWxL/Rrxk9TDaIjnXN2IdSybdsvyjk/S9JmNU55ytWyzCVkmgORTMwqc89x9tbbIswgI47dxnZBls5Acn/rXaQGVAYC9Isjl9SXLP0NbHaj88ZYnonQ5vj1YOouiPQldYLPjBEBjCiiuWPAZ9J79DN6WDT6vUwbt7/h9cnwQAqqgS/7wUOELrNS9BifXSmnqJAJp5qYiMysC03ocdHSUZzULGEtdHzXP+9eW5ShkVwDTlqQskbd4o1YvVhYID3iFTYYblDtQtys6GI9EIkqLFYthM1EjV3uH8sGVQkRt30+e+/fPI3DCSs4C3lLr+h1i+PD/zxXhfy+JfRQ2BsyPUMhX6ZNu+8axhKhbwsh1YQD6GQspEBO4+WmWG2XpHMVYTwJMI+GI32nQ224FeRhO9p3Qn5/fq/ox3JQttJ5VaixaaNBFJ1jpKE9e6LzvNpoeC8Eisb+LHYQ0dY9Wtb9GJ6MvKxh0Ysjv7bqJmC/Qe/p5HjQTmtp5T6CP8/Fn08bHCrL9gL6SsRlwF9UeExruAgINI/xVij9T7HF/deZzfSwkwhxBeAJh8YAY2aQWYVoelYuUV4Lu3sv+Gz7WyKYG9RK+2RJzz6f7f+onFsErO7ZP81yovDE4ZTwy0y/hchAasPS9N5pXzRnlmcDrx9qu/dDImXsSisJTr6ADz8JWNwVIQceRs26zRGdgiiL6U6Y82odV4PKLeeya69Zlm31yrZUKdbibNH2evojybq3515SHADZB7MbMtV2VCLCwA2uNsgkhnekjqbBHAeF9u/92ZIjst7hpnelhC6msZMk5cQd7AsoukGUrhkz4HlQFnCPrjsjn9yTqSpPCo+3uQTNYRc5Y30DTKwnNMsqhHgBUTaKRoHtR791Uvky0joZoFO6GW9ioaKBgBeWwSAVJiPmsAXAGYnfIsK/ytIZaQQPcahkyEq1nh5FMQTXM8xbpiMFftCazJxxNxlsEn46ylgKAceEsmf5qNVZVo7HjT+fewYqwUfAaxwyr4ep4voDeXHJp2Hh9TA6cRFVXJ9424rIaU3vd7EaTo5trTgIXN/btLcdRne6X3ZAajDueS4BWLEopOpgGHRg=", "iter": 250000};
+const COFRE = {"salt": "TAjqhc1YRDxvKaX/HMtTlw==", "iv": "ZiIYYUZvQsUayp2r", "dados": "OC3Ac7gDSlARZusK3hrtMoExjX1FWs74jT1zLw1xeOkAefLcKzSPMI4i8Lrn8yELhy5GlM823MxTgm1KUrw/S1xfU5aGVmnT0/8NDHyGKZYw6OATwJWU86Iy4Pk+KwyYvyFviJ3NMArwmnFG5taQwIqzaajRDHQ3N35ajn+KIgZQZarPMqhpC9x3jDkaUR84/nPdJ+GMPgRmmIIRRUH6wCGn7i1APvbMg7oHkk5z7uLGoNsrz1lVHppf1piJpnM10ve2i2M4v2PwnOUcowCojObZLGfxxLaB4b/hghtECFt5nO7XiqqUF83As/K+wgQQLkwV8dLpTMAsWMuvMUedcfFQaUFvRtUvImnTu+az0DZaioksLGk6i2MPM/kQcvDXPy3DIhlU+Cud6qYMwuZC3XoRVUYQ9r9nl3Rv+I0x+1JQ4o6neSHRZulPxVLXkKEfrdWBmlkHM/ZZaMe3d06NuzzMviMnPRUlIdCZNMjEWD8EttL6y5/A2/dVmTg81VwWKS6zvbN+Zgkmv8M2vt+PUALdhG/7Y5RTTolUgCkEOsrmXZfaNFXM9zVI3RNZgX0qxeaB/8IriFqpDMBQwxYw8PC+/GOew/Oncy4sX/Z/h9F1qVo82nq1M2Z0j/IhTrU1VXV64iL5GcWXv4/fUWRB60gD82RSFWwTv5qup6sooGqZEVRncC44rCz3BUGSJf6rEYJxdFGLTGw/GKALrLhA+sbNQjOo8yHyLht8iOr9JCXSb5jGK4SBdd/VOqykKGT3hOv0SG80ESbKoI5Nnb38gbVptW4rISeLQDTd522XRkADIwp+qfK5TdDOhtr1JHqt/XwPqImgGFxvLtG+WzXe0MJ6hsLX4q1CL9T/rIyNdLpgN1sarfq0/ReHnqfBEXTpV8C3raUcEyXO6G9MzkyUSrvr2CzUBd5adAJEPp/X8m+hk5mEGjj4EhmX0Wse9RC65oeS1hj0s7mGVsOtP8GARDGewH5f0+umvmDIoner6AruQnF4vUsKLHnNcmzFf9CYe7Ln/hs3UDOgQQDc2AMJ1Hi09lTNyw2Kbz2c3rj8aLy/zkVE4YkQilL11812anJIYt4HBnQtAbe3fYiGgUVGVqqjzebyJZ/sVVTJm9PvKqI6G7rs8s5cAwegcYYYNz9++T5HCKYEaTdLpRBGEro/NGf6Ypu9kckZJpdymiYLgIOltC6Yh7gH33g8sF645dRB9pC3yb4olRpDSDu19FhYTwzp3AbGvTXwhTCl4bIWEVMLrYM3kRn4Hcf+PQ3UeupRs+sYF/C8vlDM7jv5tBTs30NrgtoZNy6cqRfK6OtwcwPGtwIXPtb4sE2prBnO0DkrwDPsINGo+QqeuT+gjriFN9MnWZRSdlxUB/Z7BUDtsIFxJv7SDdIDZhDKqxQOguWltJvzhS2nrraKNQtbiX6CLjMvmHaz+KMa5nrrvNApOpGZXHGFSAPTMoPeaMDe+1zCbpmYGOjDle256YAtGQ99uhVXsSMZ84zC2SpFjUowZ4mFDfvskMBnCuBgY88G1jUrWm7KeFeTsVDU58jUwx6JItXDvr1cvNZGGpfAaMl7mTMD+7jRWfRiKO+H18vi6XiftwcSTJJVLNgn346Qy/Up7iExeNN+2CyjT0iCTkY/CrYqEIyX223l+WORRdty5EfzyRKU9LyE3Xj+Z1UZA27cy+c1BMgmhlmsg6ovUQb074+QjbXybVLSyYRVznIbBYtlcpR1dKkj03ZpaUIk9rRTgxDSTWtvXm+UcJ/7QKZgMX7SSAlWVJ7D4wKuqQ7HiJYuK6plU3SrYgWo24dw/cRuGDlffs47cARkq+KgcnHpGiToMoD6jMdDAjXsnDpf6RSgCCpF9mFNydG7fbLxrsytlBzhHZNzvsfkFIo1OQ==", "iter": 250000};
 const CHAVE_LS = 'naturalle_painel_chave';
 let PAINEL_ABERTO = false;
 const b64bytes = b => Uint8Array.from(atob(b), c=>c.charCodeAt(0));
@@ -2416,6 +2751,7 @@ async function abrirCofre(chave){
   SHEET_CSV_URL=L.SHEET_CSV_URL; SHEET_CSV_URL_NATURALLE=L.SHEET_CSV_URL_NATURALLE; SHEET_CSV_URL_SELECTO=L.SHEET_CSV_URL_SELECTO;
   SHEET_CSV_URL_SEMIMP_NATURALLE=L.SHEET_CSV_URL_SEMIMP_NATURALLE; SHEET_CSV_URL_SEMIMP_SELECTO=L.SHEET_CSV_URL_SEMIMP_SELECTO;
   SHEET_CSV_URL_CARTEIRA_ANTERIOR=L.SHEET_CSV_URL_CARTEIRA_ANTERIOR;
+  SHEET_CSV_URL_CORRIDINHA=L.SHEET_CSV_URL_CORRIDINHA||'';
 }
 function liberarPainel(){
   PAINEL_ABERTO = true;
@@ -2774,6 +3110,7 @@ function render(){
   renderRankMeta(k); renderRankCresc(k); renderRankClientes(k);
   renderConfig(k);
   try{ renderCarteira(); }catch(e){ console.error('aba Carteira:', e); }
+  try{ renderCampanha(); }catch(e){ console.error('aba Campanhas:', e); }
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
     : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';
