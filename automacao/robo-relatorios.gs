@@ -180,25 +180,27 @@ function extrairItens(rows, marca) {
 function gravarBruto_(sh, rows) {
   if (!sh) throw new Error('aba de destino não encontrada');
   const maxCol = sh.getMaxColumns(), maxRow = Math.max(sh.getMaxRows(), 1);
-  // colunas com fórmula na linha 1 = área calculada; o relatório entra antes dela
-  const f1 = sh.getRange(1, 1, 1, maxCol).getFormulas()[0];
+  // a aba pode ter uma linha de cabeçalho "Column1, Column2…" (tabela do Sheets): o relatório entra embaixo dela
+  const ini = /^column\s*\d+$/i.test(String(sh.getRange(1, 1).getDisplayValue()).trim()) ? 2 : 1;
+  // colunas com fórmula na 1ª linha de dados = área calculada; o relatório entra antes dela
+  const f1 = sh.getRange(ini, 1, 1, maxCol).getFormulas()[0];
   const primeiraFormula = f1.findIndex(x => x !== '');
   const largCSV = Math.max.apply(null, rows.map(r => r.length));
   const larg = primeiraFormula > 0 ? Math.min(largCSV, primeiraFormula) : largCSV;
   if (primeiraFormula > 0 && largCSV > primeiraFormula && rows.some(r => r.slice(primeiraFormula).some(x => String(x).trim() !== '')))
     throw new Error('o relatório tem mais colunas do que o espaço antes das fórmulas da aba; layout do Questor mudou?');
   const dados = rows.map(r => { const o = []; for (let i = 0; i < larg; i++) o.push(converter(r[i])); return o; });
-  if (rows.length > maxRow) sh.insertRowsAfter(maxRow, rows.length - maxRow + 50);
-  sh.getRange(1, 1, sh.getMaxRows(), larg).clearContent();
-  sh.getRange(1, 1, dados.length, larg).setValues(dados);
+  const fim = ini + dados.length - 1;
+  if (fim > maxRow) sh.insertRowsAfter(maxRow, fim - maxRow + 50);
+  sh.getRange(ini, 1, sh.getMaxRows() - ini + 1, larg).clearContent();
+  sh.getRange(ini, 1, dados.length, larg).setValues(dados);
   // estende as fórmulas de cada linha até o fim do relatório
   if (primeiraFormula >= 0) {
-    const f2 = sh.getRange(2, 1, 1, maxCol).getFormulas()[0];
+    const f2 = sh.getRange(ini + 1, 1, 1, maxCol).getFormulas()[0];
     f1.forEach((f, i) => {
-      if (!f || /ARRAYFORMULA/i.test(f) || !f2[i]) return; // fórmula de linha única ou matricial: não mexe
-      const col = i + 1;
-      const ultima = ultimaComFormula_(sh, col);
-      if (ultima < dados.length) sh.getRange(1, col).copyTo(sh.getRange(ultima + 1, col, dados.length - ultima, 1));
+      if (!f || /ARRAYFORMULA/i.test(f) || !f2[i]) return; // fórmula única ou matricial: não mexe
+      const col = i + 1, ultima = ultimaComFormula_(sh, col);
+      if (ultima < fim) sh.getRange(ini, col).copyTo(sh.getRange(ultima + 1, col, fim - ultima, 1));
     });
   }
   return dados.length;
@@ -225,13 +227,14 @@ function guardarHistorico_(ss, marca) {
   const h = aba_(ss, ROBO.ABA_HIST, ROBO.CAB_HIST);
   const hv = h.getLastRow() > 1 ? h.getRange(2, 1, h.getLastRow() - 1, 8).getValues() : [];
   const chave = r => semAcento(r[0]) + '|' + Number(r[1]) + '|' + Number(r[2]) + '|' + String(r[4]).trim();
-  const pos = {}; hv.forEach((r, i) => { if (Number(r[1]) > 2000) pos[chave(r)] = i; });
-  let mudou = false; const novas = [];
-  notas.forEach(n => { const k = chave(n), i = pos[k];
-    if (i == null) { novas.push(n); pos[k] = -1; }
-    else if (i >= 0 && (String(hv[i][6]) !== n[6] || Number(hv[i][7]) !== n[7] || String(hv[i][5]) !== n[5])) { hv[i] = n; mudou = true; } });
-  if (mudou) h.getRange(2, 1, hv.length, 8).setValues(hv);
-  if (novas.length) h.getRange(h.getLastRow() + 1, 1, novas.length, 8).setValues(novas);
+  // os meses que estão na aba Sem Imposto passam a valer como estão lá (nota cancelada sai do histórico)
+  const meses = {}, novasK = {}; notas.forEach(n => { meses[n[1] * 100 + n[2]] = 1; novasK[chave(n)] = 1; });
+  const fica = hv.filter(r => Number(r[1]) > 2000 && !(semAcento(r[0]) === marca && meses[Number(r[1]) * 100 + Number(r[2])]));
+  const vistos = {}; fica.forEach(r => { vistos[chave(r)] = 1; });
+  const tudo = fica.concat(notas.filter(n => !vistos[chave(n)]));
+  if (h.getMaxRows() < tudo.length + 1) h.insertRowsAfter(h.getMaxRows(), tudo.length + 1 - h.getMaxRows() + 100);
+  if (hv.length) h.getRange(2, 1, hv.length, 8).clearContent();
+  h.getRange(2, 1, tudo.length, 8).setValues(tudo);
 }
 /* itens: substitui as linhas da mesma marca dentro das datas do arquivo; busca o vendedor pela nota */
 function gravarItens_(ss, rows, c) {
