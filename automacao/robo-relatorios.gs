@@ -159,11 +159,19 @@ function classificar(rows) {
   return { tipo, marca, periodo, min, max, datas: min != null ? fmt(min) + ' a ' + fmt(max) : '' };
 }
 /* converte o texto do relatório no que a importação do Sheets faria (números e datas) */
+/* data à meia-noite no fuso da PLANILHA (o do script pode ser outro: sem isso a data cai no dia
+   anterior às 19:00 e as fórmulas SOMASES por dia não acham a nota) */
+let FUSO_PLANILHA_ = null;
+function dataPlanilha_(d) {
+  if (!FUSO_PLANILHA_) FUSO_PLANILHA_ = SpreadsheetApp.getActive().getSpreadsheetTimeZone() || Session.getScriptTimeZone();
+  const p = n => (n < 10 ? '0' : '') + n;
+  return Utilities.parseDate(d.ano + '-' + p(d.mes) + '-' + p(d.dia), FUSO_PLANILHA_, 'yyyy-MM-dd');
+}
 function converter(v) {
   if (v == null) return '';
   const s = String(v).trim();
   if (s === '') return '';
-  const d = dataBR(s); if (d) return new Date(d.ano, d.mes - 1, d.dia);
+  const d = dataBR(s); if (d) return dataPlanilha_(d);
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s) || /^-?\d+(,\d+)?$/.test(s)) return numBR(s);
   return s;
 }
@@ -224,7 +232,10 @@ function guardarHistorico_(ss, marca) {
   const notas = [];
   v.forEach(r => {
     if (Number(r[ROBO.SI.flag]) !== 1) return;
-    let d = r[ROBO.SI.data]; if (!(d instanceof Date)) { const x = dataBR(d); if (!x) return; d = new Date(x.ano, x.mes - 1, x.dia); }
+    let d = r[ROBO.SI.data], x;
+    if (d instanceof Date) { const t = Utilities.formatDate(d, ss.getSpreadsheetTimeZone(), 'yyyy-M-d').split('-'); x = { ano: +t[0], mes: +t[1], dia: +t[2] }; }
+    else { x = dataBR(d); if (!x) return; }
+    d = { getFullYear: () => x.ano, getMonth: () => x.mes - 1, getDate: () => x.dia };
     const vend = String(r[ROBO.SI.vend] || '').trim();
     notas.push([marca, d.getFullYear(), d.getMonth() + 1, d.getDate(), String(r[ROBO.SI.doc]).trim(), String(r[ROBO.SI.cliente] || '').trim(),
       (!vend || vend.charAt(0) === '#') ? 'SEM VENDEDOR' : vend, Math.round(numBR(r[ROBO.SI.valor]) * 100)]);
@@ -288,3 +299,14 @@ function log_(linha) {
 
 /* testes fora do Google (node) */
 if (typeof module !== 'undefined') module.exports = { classificar, extrairItens, converter, numBR, dataBR, marcaDe, separadorCSV };
+
+/* reimporta os relatórios processados hoje (depois de uma correção no robô) */
+function reimportarHoje() {
+  const pasta = pegarPasta_(DriveApp.getRootFolder(), ROBO.PASTA), proc = pegarPasta_(pasta, 'Processados');
+  const hoje = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const it = proc.getFiles(), lista = [];
+  while (it.hasNext()) { const f = it.next(); if (Utilities.formatDate(f.getLastUpdated(), Session.getScriptTimeZone(), 'yyyy-MM-dd') === hoje) lista.push(f); }
+  lista.forEach(f => f.moveTo(pasta));
+  console.log('Reimportando: ' + lista.map(f => f.getName()).join(', '));
+  processarPasta();
+}
