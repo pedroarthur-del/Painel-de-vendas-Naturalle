@@ -60,4 +60,6 @@ A mensagem pronta para mandar no WhatsApp aparece na hora. O acesso é do númer
 - Vendas → **Resultado da semana**: escolha a semana e a pessoa; gera texto e imagem individual (faturamento, clientes novos, carteira, produto, comissão, campanha).
 - Dados montados a cada 10 minutos (gatilho `portalPreaquecer`) e logo após cada importação do robô. "Atualizar dados" (gestão) lê a planilha na hora.
 
+- Encaminhamentos, atas e planejamento ficam no **Firebase** (ver `plataforma/LEIA-ME.md`). O portal só emite o passe (`fbToken`) com a chave guardada em `FB_SA`.
+
 **Ao mudar o código do portal:** cole o novo `portal.gs` no arquivo `portal` do projeto, salve, e Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar (o endereço continua o mesmo).

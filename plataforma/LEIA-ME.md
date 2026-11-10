@@ -14,32 +14,31 @@ Hub da área comercial num link só, com menu lateral recolhível:
 Endereço: `https://pedroarthur-del.github.io/Painel-de-vendas-Naturalle/plataforma/`
 O painel de vendas da raiz continua funcionando como antes.
 
-## Como funciona hoje (modo equipe)
+## Onde fica cada coisa
 
-Sem a nuvem ligada, entra com a senha da equipe (a mesma do painel de vendas). Os quadros de
-encaminhamentos, planejamento e remuneração ficam salvos **só no navegador de quem usa**.
-Serve para testar e montar a estrutura; para a equipe toda usar, ligue a nuvem.
+| O quê | Onde fica |
+|---|---|
+| Encaminhamentos, atas, planejamento, responsáveis, configurações da plataforma | **Google Firebase** (Cloud Firestore, projeto `plataforma-naturalle`, São Paulo), igual para toda a gestão, em tempo real |
+| Vendas, carteira, produtos, campanhas, metas e feriados | Planilha da Naturalle, entregue pelo portal seguro (Apps Script), filtrada por pessoa |
+| Contas (número de celular + senha) e regras de comissão | Portal seguro (Apps Script) |
 
-## Ligar a nuvem (Firebase) · uma vez, uns 15 minutos
+Login único: número + senha no portal. Com a sessão válida, o portal emite um passe do Firebase
+(token personalizado com papel, nome e abas; vale 3 h e a plataforma renova sozinha).
+Trocar a senha ou desativar o número corta a renovação. Vendedor não recebe passe: não lê nada do Firebase.
 
-1. **console.firebase.google.com** → Adicionar projeto → nome `plataforma-naturalle` (Analytics pode desligar).
-2. **Authentication** → Começar → ative **E-mail/senha**.
-   Em *Configurações → Domínios autorizados*, adicione `pedroarthur-del.github.io`.
-3. **Firestore Database** → Criar banco → região `southamerica-east1 (São Paulo)` → modo produção.
-   Aba **Regras** → apague tudo, cole o conteúdo de `firestore.rules` → Publicar.
-4. **Configurações do projeto** (engrenagem) → Seus apps → ícone **</>** (Web) → registre.
-   Copie o bloco `firebaseConfig` e cole em `plataforma/config.js` no lugar de `firebase: null,`:
-   ```js
-   firebase: { apiKey: "...", authDomain: "...", projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..." },
-   ```
-   (Essas chaves do Firebase são públicas por natureza; quem protege os dados são as regras do passo 3.)
-5. **Authentication → Usuários → Adicionar usuário**: crie o seu acesso (seu e-mail e uma senha forte).
-   Entre na plataforma com `pedroarthur@gomesdematos.com.br`: a plataforma copia os dados que estiverem no seu navegador
-   (ou o ponto de partida do projeto) para a nuvem.
-6. **Configurações → Nuvem e dados → Conectar vendas**: digite a senha do painel de vendas.
-   A chave fica no servidor e só abre para quem tem a aba Vendas, Planejamento ou Remuneração.
-7. **Configurações → Pessoas e acessos**: cadastre cada pessoa com e-mail, papel e abas. Ao salvar,
-   ela recebe um e-mail para criar a própria senha.
+Se o Firebase não responder, a plataforma avisa e guarda o que for cadastrado só naquele navegador.
+
+## Instalação da nuvem (feita em 10/11/2026)
+
+1. Projeto Firebase `plataforma-naturalle` (sem Analytics/Gemini), Firestore em `southamerica-east1`, modo produção.
+2. Authentication ligado (nenhum provedor: o login é pelo token do portal). Domínio autorizado: `pedroarthur-del.github.io`.
+3. Regras: conteúdo de `firestore.rules` em Firestore → Regras → Publicar.
+4. `config.js`: `firebase` preenchido e `loginPortal: true`.
+5. Chave do servidor: Firebase → Configurações do projeto → Contas de serviço → **Gerar nova chave privada**.
+   Solte o `.json` no Meu Drive. O gatilho de 10 min do portal (ou `portalFirebaseChave()` no editor)
+   guarda a chave nas Propriedades do script (`FB_SA`) e manda o arquivo para a lixeira. A chave nunca vai para o GitHub.
+6. Primeiro login de um administrador: a plataforma leva para a nuvem o que estava salvo naquele navegador
+   (ou o ponto de partida do projeto). Em Configurações → Nuvem e dados há o botão para enviar de novo (só soma).
 
 ## Lembretes por e-mail (robô no Google Apps Script)
 
