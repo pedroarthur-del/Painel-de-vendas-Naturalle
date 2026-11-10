@@ -6,11 +6,18 @@
 window.PLATAFORMA = {
   cliente: { nome: "Naturalle Ice Up", curto: "Naturalle", cidade: "Fortaleza · CE" },
 
-  /* Conexão com a nuvem (Firebase). Cole aqui o firebaseConfig do projeto
-     (passo a passo no LEIA-ME.md). Enquanto estiver null, a plataforma roda no
-     MODO EQUIPE: entra com a senha da equipe e os quadros (encaminhamentos,
-     planejamento, remuneração) ficam salvos só no navegador de quem usa. */
-  firebase: null,
+  /* Nuvem (Firebase · projeto plataforma-naturalle). Estas chaves são públicas por natureza:
+     quem protege os dados são as regras (firestore.rules) e o passe emitido pelo portal. */
+  firebase: {
+    apiKey: "AIzaSyDthGOy-vNfTJ5Sa9Z2AVijSpGJtGEbQeA",
+    authDomain: "plataforma-naturalle.firebaseapp.com",
+    projectId: "plataforma-naturalle",
+    storageBucket: "plataforma-naturalle.firebasestorage.app",
+    messagingSenderId: "346727787701",
+    appId: "1:346727787701:web:a1c5923eadde902e3022fc",
+  },
+  /* Login único no portal (número + senha). O Firebase guarda encaminhamentos, atas e planejamento. */
+  loginPortal: true,
 
   /* E-mails que entram como Administrador desde o primeiro acesso na nuvem.
      Precisam ser os mesmos da lista em firestore.rules. */

@@ -64,12 +64,13 @@ const portalEhEquipe_ = s => s.papel !== 'vendedor';      // vê os dados da emp
 const portalEhAdmin_ = s => s.papel === 'admin';
 function portalRotear_(p) {
   const acao = String(p.acao || '');
-  if (acao === 'saude') return { ok: true, versao: 5, agora: new Date().toISOString() };
+  if (acao === 'saude') return { ok: true, versao: 6, nuvem: !!portalProps_().getProperty('FB_SA'), agora: new Date().toISOString() };
   if (acao === 'login') return portalLogin_(p);
   const s = portalSessao_(p.t); // lança se inválida
   if (acao === 'eu') return { ok: true, papel: s.papel, nome: s.nome, id: s.u, abas: s.abas };
   if (acao === 'dados') { if (p.forcar && portalEhEquipe_(s)) portalPreaquecer(); return { ok: true, papel: s.papel, nome: s.nome, id: s.u, abas: s.abas, gz: portalAbasGz_(s), extra: portalExtra_(s) }; }
   if (acao === 'minhaSenha') return portalMinhaSenha_(p, s);
+  if (acao === 'fbToken') return portalFbToken_(s);
   if (!portalEhEquipe_(s)) portalFalha_('sem permissão');
   // ---- gestão (admin/gestor) ----
   if (acao === 'metaSalvar') { if (!(s.papel === 'admin' || s.papel === 'gestor')) portalFalha_('sem permissão'); return portalMetaSalvar_(p, s); }
@@ -267,6 +268,7 @@ function portalPreaquecer() {
       portalCacheGravar_('ABAS:' + id, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: id, linhas: v.linhas, corr: v.corr }) })); });
     portalProps_().setProperty('PORTAL_PRONTO_EM', new Date().toISOString());
   } finally { lock.releaseLock(); }
+  try { if (!portalProps_().getProperty('FB_SA')) portalFirebaseChave(); } catch (e) { console.error(e); }
 }
 function portalAbasGz_(s) {
   const chave = portalEhEquipe_(s) ? 'ABAS:equipe' : 'ABAS:' + s.u;
@@ -391,3 +393,46 @@ function portalInstalar(senhaEquipe) {
 }
 
 if (typeof module !== 'undefined') module.exports = { portalFiltrarVendas_, portalNorm_, portalMontar_, PORTAL, VENDEDORES_PADRAO };
+
+/* ================= nuvem (Firebase) =================
+   Encaminhamentos, atas, planejamento e pessoas ficam no Firestore (projeto plataforma-naturalle).
+   O login continua um só (número + senha, aqui no portal): com a sessão válida, o portal emite um
+   "token personalizado" do Firebase com o papel e as abas da pessoa. As regras do Firestore
+   (plataforma/firestore.rules) conferem esses dados e o prazo "ate" (3 h; a plataforma renova sozinha).
+   Vendedor não recebe token: ele não vê nada do Firestore.
+   A chave da conta de serviço fica só nas Propriedades do script (FB_SA), nunca no GitHub.
+   Para instalar: baixe a chave (Firebase → Configurações → Contas de serviço → Gerar nova chave privada)
+   e solte o .json no Meu Drive. O gatilho de 10 min (ou portalFirebaseChave() no editor) guarda a chave
+   e manda o arquivo para a lixeira. */
+const FB_PROJETO = 'plataforma-naturalle';
+function portalFirebaseChave() {
+  const it = DriveApp.searchFiles("title contains 'firebase-adminsdk' and trashed = false");
+  while (it.hasNext()) {
+    const f = it.next(); if (!/\.json$/i.test(f.getName())) continue;
+    let j; try { j = JSON.parse(f.getBlob().getDataAsString('UTF-8')); } catch (e) { continue; }
+    if (j.type !== 'service_account' || j.project_id !== FB_PROJETO || !j.private_key || !j.client_email) continue;
+    portalGravarJson_('FB_SA', { email: j.client_email, key: j.private_key });
+    f.setTrashed(true);
+    console.log('Chave do Firebase guardada: ' + j.client_email);
+    return true;
+  }
+  console.log('Nenhum arquivo de chave do Firebase encontrado no Drive.');
+  return false;
+}
+function portalFbToken_(s) {
+  if (!portalEhEquipe_(s)) portalFalha_('sem permissão');
+  const sa = portalLerJson_('FB_SA', null);
+  if (!sa) portalFalha_('nuvem não configurada');
+  const agora = Math.floor(Date.now() / 1000), ate = Date.now() + 3 * 36e5;
+  const b64 = o => Utilities.base64EncodeWebSafe(typeof o === 'string' ? o : JSON.stringify(o), Utilities.Charset.UTF_8).replace(/=+$/, '');
+  const abas = s.abas || { vendas: true, encaminhamentos: true, planejamento: true, remuneracao: true };
+  const corpo = {
+    iss: sa.email, sub: sa.email, iat: agora, exp: agora + 3600,
+    aud: 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
+    uid: s.u === 'equipe' ? 'equipe' : 'n' + s.u,
+    claims: { papel: s.papel, nome: String(s.nome || '').slice(0, 80), abas: { vendas: !!abas.vendas, encaminhamentos: !!abas.encaminhamentos, planejamento: !!abas.planejamento, remuneracao: !!abas.remuneracao }, ate: ate },
+  };
+  const entrada = b64({ alg: 'RS256', typ: 'JWT' }) + '.' + b64(corpo);
+  const ass = Utilities.base64EncodeWebSafe(Utilities.computeRsaSha256Signature(entrada, sa.key)).replace(/=+$/, '');
+  return { ok: true, token: entrada + '.' + ass, ate: ate, uid: corpo.uid };
+}

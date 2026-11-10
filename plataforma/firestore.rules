@@ -1,45 +1,37 @@
 rules_version = '2';
 // =====================================================================
-// REGRAS DE ACESSO · Plataforma Comercial Naturalle
-// Cole este arquivo em Firebase › Firestore › Regras › Publicar.
-// Quem decide o acesso é o servidor: mesmo que alguém mexa no navegador,
-// só lê e grava o que o papel e as abas liberadas permitem.
+// REGRAS DE ACESSO · Plataforma Comercial Naturalle (Firestore)
+// O login é um só: número do celular + senha no portal (Apps Script). Com a sessão válida,
+// o portal emite um token do Firebase com papel, nome e abas da pessoa (claims) e um prazo
+// ("ate", 3 h, renovado pela plataforma). Trocar a senha ou desativar o número no portal
+// corta a renovação, e o acesso ao banco cai em até 3 h.
+// Vendedor não recebe token: não lê nem grava nada aqui.
 // Papéis: admin · gestor · membro · leitor   Abas: vendas · encaminhamentos · planejamento · remuneracao
 // =====================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Mesma lista de config.js → adminsIniciais
-    function adminsIniciais() { return ['pedroarthur@gomesdematos.com.br']; }
-
-    function logado() { return request.auth != null && request.auth.token.email != null; }
-    function email() { return request.auth.token.email.lower(); }
-    function inicial() { return logado() && email() in adminsIniciais(); }
-    function temAcesso() { return exists(/databases/$(database)/documents/acessos/$(email())); }
-    function acc() { return get(/databases/$(database)/documents/acessos/$(email())).data; }
-    function ativo() { return inicial() || (logado() && temAcesso() && acc().get('ativo', true) != false); }
-    function papel() { return inicial() ? 'admin' : acc().get('papel', 'leitor'); }
-    function admin() { return inicial() || (ativo() && papel() == 'admin'); }
-    function aba(a) { return admin() || (ativo() && acc().get('abas', {}).get(a, false) == true); }
+    function tk() { return request.auth.token; }
+    function ativo() {
+      return request.auth != null
+        && tk().get('papel', '') in ['admin', 'gestor', 'membro', 'leitor']
+        && request.time.toMillis() < tk().get('ate', 0);
+    }
+    function papel() { return tk().papel; }
+    function nome() { return tk().get('nome', ''); }
+    function admin() { return ativo() && papel() == 'admin'; }
+    function aba(a) { return admin() || (ativo() && tk().get('abas', {}).get(a, false) == true); }
     function gestor(a) { return admin() || (aba(a) && papel() == 'gestor'); }
     function escreve(a) { return gestor(a) || (aba(a) && papel() == 'membro'); }
     function soMuda(campos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos); }
 
-    // Cadastro de acesso de cada e-mail
-    match /acessos/{e} {
-      allow read: if logado() && (e == email() || admin());
-      allow create, delete: if admin();
-      allow update: if admin() || (logado() && e == email() && soMuda(['ultimoAcesso']));
-    }
-
-    // Pessoas (responsáveis e quem recebe lembretes)
+    // Responsáveis dos encaminhamentos (nomes, cargos)
     match /pessoas/{id} {
       allow read: if ativo();
-      allow write: if admin();
-      allow update: if gestor('encaminhamentos') && soMuda(['convidadoEm']);
+      allow write: if admin() || gestor('encaminhamentos');
     }
 
-    // Configurações gerais
+    // Configurações gerais (segurança, automações, remuneração da plataforma)
     match /config/{id} {
       allow read: if ativo();
       allow write: if admin()
@@ -47,18 +39,12 @@ service cloud.firestore {
         || (id == 'remuneracao' && gestor('remuneracao'));
     }
 
-    // Chave que abre os links da planilha de vendas
-    match /segredos/{id} {
-      allow read: if aba('vendas') || aba('remuneracao') || aba('planejamento');
-      allow write: if admin();
-    }
-
     // Encaminhamentos (quadro)
     match /tarefas/{id} {
       allow read: if aba('encaminhamentos');
       allow create: if escreve('encaminhamentos');
       allow update: if gestor('encaminhamentos')
-        || (escreve('encaminhamentos') && (resource.data.get('respEmail', '') == email() || resource.data.get('criadoPorEmail', '') == email()))
+        || (escreve('encaminhamentos') && (resource.data.get('resp', '') == nome() || resource.data.get('criadoPor', '') == nome()))
         || (escreve('encaminhamentos') && soMuda(['comentarios']));
       allow delete: if gestor('encaminhamentos');
     }
@@ -81,16 +67,6 @@ service cloud.firestore {
     match /metas/{ano} {
       allow read: if ativo();
       allow write: if gestor('planejamento');
-    }
-
-    // Fila de e-mails: o navegador só coloca na fila; quem lê e envia é o robô (Google Apps Script),
-    // que entra pela conta dona do projeto e não passa por estas regras.
-    match /mail/{id} {
-      allow create: if ativo() && papel() != 'leitor'
-        && request.resource.data.status == 'pendente'
-        && request.resource.data.por == email()
-        && request.resource.data.para is string && request.resource.data.para.matches('^[^@ ]+@[^@ ]+$');
-      allow read, update, delete: if false;
     }
 
     // Qualquer outra coleção fica fechada

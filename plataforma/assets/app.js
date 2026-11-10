@@ -159,7 +159,7 @@
     leitor: { l: "Leitor", d: "Só visualiza as abas liberadas." },
     vendedor: { l: "Vendedor", d: "Vê só os próprios números: Vendas e Remuneração." },
   };
-  const S = { modo: "local", store: null, fb: null, me: null, data: {}, unsub: [], view: "inicio", sub: {}, f: { busca: "", resp: "", prio: "", origem: "" }, vendas: null, vendasErro: "", chaveVendas: null, links: null, charts: [], iniciado: false };
+  const S = { modo: "local", store: null, fb: null, me: null, data: {}, unsub: [], view: "inicio", sub: {}, f: { busca: "", resp: "", prio: "", origem: "" }, vendas: null, vendasErro: "", chaveVendas: null, links: null, charts: [], iniciado: false, nuvem: false, fbRenova: null };
   COLS.forEach(c => S.data[c] = []);
   const cfgDoc = id => S.data.config.find(d => d.id === id) || {};
   const ehAdmin = () => S.me?.papel === "admin";
@@ -288,7 +288,7 @@
     const local = lsGet(KEY + "-dados-v1", null), origem = local ? Object.fromEntries(Object.entries(local).map(([c, o]) => [c, Object.entries(o || {}).map(([id, d]) => ({ id, ...d }))])) : SEED();
     let b = db.batch(), n = 0;
     for (const [c, rows] of Object.entries(origem)) { if (!COLS.includes(c)) continue; for (const { id, ...d } of rows) { if (c === "config" && id === "abasSenha") continue; b.set(db.doc(`${c}/${id}`), JSON.parse(JSON.stringify(d))); if (++n % 400 === 0) { await b.commit(); b = db.batch(); } } }
-    await b.commit(); toast(local ? "Dados deste navegador copiados para a nuvem" : "Plataforma preparada com o que já foi combinado no projeto");
+    b.set(db.doc("config/migracao"), { por: S.me.nome, em: new Date().toISOString(), deNavegador: !!local }); await b.commit(); if (local) { lsSet(KEY + "-dados-v1-antigo", local); lsDel(KEY + "-dados-v1"); } toast(local ? "Dados deste navegador copiados para a nuvem" : "Plataforma preparada com o que já foi combinado no projeto");
   }
 
   function meDaSessao(j) {
@@ -306,9 +306,28 @@
     if (S.token) try { sessionStorage.setItem("naturalle_sessao", JSON.stringify({ t: S.token, papel: S.me?.papel === "vendedor" ? "vendedor" : "equipe", papelReal: S.me?.papel, nome: S.me?.nome || "Equipe", id: S.me?.id || "equipe" })); } catch (_) { }
     try { localStorage.removeItem(CHAVE_PAINEL); } catch (_) { }
   }
-  function iniciarApp() {
+  /* nuvem: com a sessão do portal, pega um passe do Firebase (renovado a cada 50 min).
+     Vendedor não usa o banco: fica com um quadro vazio neste aparelho. */
+  async function ligarNuvem() {
+    if (!S.fb || ehVendedor() || S.modo !== "local") return false;
+    const j = await VendasDados.api(CFG.apiUrl, { acao: "fbToken", t: S.token });
+    await S.fb.auth().signInWithCustomToken(j.token);
+    clearInterval(S.fbRenova);
+    S.fbRenova = setInterval(async () => { if (!S.iniciado || !S.nuvem) return; try { const k = await VendasDados.api(CFG.apiUrl, { acao: "fbToken", t: S.token }); await S.fb.auth().signInWithCustomToken(k.token); } catch (e) { console.warn("renovar nuvem", e); if (e.sessao) sair("Sua sessão terminou. Entre de novo."); } }, 50 * 60e3);
+    S.store = new FsStore(S.fb.firestore()); S.nuvem = true;
+    if (ehAdmin()) await semearNuvem().catch(e => console.warn("seed", e));
+    return true;
+  }
+  async function prepararStore() {
+    S.nuvem = false;
+    try { if (await ligarNuvem()) return; } catch (e) { console.warn("nuvem", e); if (e.sessao) throw e; }
+    S.store = new LocalStore(KEY + "-dados-v1"); if (S.store.vazio()) S.store.semear(ehVendedor() ? {} : SEED());
+  }
+  async function iniciarApp() {
     $("#login").hidden = true; $("#login").innerHTML = ""; $("#app").hidden = false;
     sessaoPainel(); // abre o painel de vendas sem pedir a senha de novo
+    if (S.fb && !ehVendedor()) $("#app").innerHTML = `<div class="carregando" style="display:grid;place-items:center;height:100vh;color:var(--muted)">Abrindo a plataforma…</div>`;
+    try { await prepararStore(); } catch (e) { return sair("Sua sessão terminou. Entre de novo."); }
     montarMoldura(); conectar(); Ocioso.iniciar(); S.iniciado = true;
     const [v, sub] = location.hash.slice(1).split("/"); ir(ABAS.some(a => a.id === v) || v === "config" ? v : (ehVendedor() ? "vendas" : lsGet(KEY + "-view", "inicio")), sub);
     carregarVendas();
@@ -324,7 +343,7 @@
     S.unsub.forEach(f => { try { f(); } catch (_) { } }); S.unsub = []; S.iniciado = false; S.me = null; S.chaveVendas = null; S.links = null; S.token = null; S.vendas = null;
     ssDel(KEY + "-sessao"); lsDel(KEY + "-sessao"); ssDel(KEY + "-abas-ok"); lsDel(CHAVE_PAINEL); ssDel("naturalle_sessao"); try { localStorage.removeItem("naturalle_sessao"); } catch (_) { }
     $$(".vendas-frame").forEach(fr => fr.remove());
-    if (S.modo === "cloud") { try { await S.fb.auth().signOut(); } catch (_) { } }
+    clearInterval(S.fbRenova); if (S.fb) { try { await S.fb.auth().signOut(); } catch (_) { } } S.nuvem = false;
     $("#app").innerHTML = ""; telaEntrada(msg || "");
   }
 
@@ -341,7 +360,7 @@
         <div class="side-pe">
           <button class="nav-i" data-act="ir" data-to="config" data-tip="Configurações">${ico("cfg")}<span>${ehAdmin() ? "Configurações" : "Minha conta"}</span></button>
           <button class="nav-i recolher" data-act="mini" data-tip="Expandir menu" aria-label="Recolher ou expandir o menu">${ico(mini ? "expandir" : "recolher")}<span>Recolher menu</span></button>
-          <div class="eu"><span class="avatar">${esc(iniciais(S.me.nome))}</span><div><b>${esc(S.me.nome)}</b><small>${esc(PAPEIS[S.me.papel]?.l || "")}${S.modo === "local" ? " · modo equipe" : ""}</small></div></div>
+          <div class="eu"><span class="avatar">${esc(iniciais(S.me.nome))}</span><div><b>${esc(S.me.nome)}</b><small>${esc(PAPEIS[S.me.papel]?.l || "")}${S.nuvem || ehVendedor() ? "" : " · modo equipe"}</small></div></div>
           <button class="nav-i" data-act="sair" data-tip="Sair">${ico("sair")}<span>Sair</span></button>
         </div>
       </aside>
@@ -357,7 +376,7 @@
   function desenharNav() {
     const atrasados = S.data.tarefas.filter(t => t.status !== "concluido" && t.prazo && diasAte(t.prazo) < 0).length;
     $("#nav").innerHTML = ABAS.map(a => {
-      const ok = veAba(a.id), trava = S.modo === "local" && (cfgDoc("abasSenha")[a.id]) && !abaLiberada(a.id);
+      const ok = veAba(a.id), trava = S.modo === "local" && !S.nuvem && (cfgDoc("abasSenha")[a.id]) && !abaLiberada(a.id);
       if (!ok) return "";
       const bt = `<button class="nav-i" data-act="ir" data-to="${a.id}" data-tip="${esc(a.nome)}" ${S.view === a.id && !(a.id === "vendas" && S.view === "vendas") ? 'aria-current="page"' : ""} ${a.id === "vendas" ? `aria-expanded="${S.view === "vendas"}"` : ""}>${ico(a.ic)}<span>${esc(a.nome)}</span>${a.id === "encaminhamentos" && atrasados ? `<b class="badge" title="Encaminhamentos atrasados">${atrasados}</b>` : ""}${trava ? ico("cad", "cad") : ""}</button>`;
       if (a.id !== "vendas" || S.view !== "vendas") return bt;
@@ -393,13 +412,13 @@
     document.title = $("#titulo").textContent + " · Naturalle";
     if (vendas) return viewVendas(host, v === "remuneracao" ? "Remuneracao" : (SUB_VENDAS.find(x => x.id === subVendas()) || {}).aba, v === "vendas" && subVendas() === "semana");
     if (!abaLiberada(v)) return viewTrava(c, v);
-    const aviso = S.modo === "local" && v !== "vendas" ? `<div class="aviso-modo">${ico("nuvem")}<span>Modo equipe: o que você cadastrar aqui fica salvo só neste navegador.${ehAdmin() ? " Ligue a nuvem para a equipe inteira ver o mesmo quadro." : ""}</span>${ehAdmin() ? `<button class="btn sm ghost" data-act="ir" data-to="config" data-sub="nuvem">Ligar a nuvem</button>` : ""}</div>` : "";
+    const aviso = S.modo === "local" && !S.nuvem && !ehVendedor() && v !== "vendas" && v !== "remuneracao" ? `<div class="aviso-modo">${ico("nuvem")}<span>Modo equipe: o que você cadastrar aqui fica salvo só neste navegador.${ehAdmin() ? " A nuvem não respondeu agora; recarregue a página." : ""}</span>${ehAdmin() ? `<button class="btn sm ghost" data-act="ir" data-to="config" data-sub="nuvem">Ver nuvem</button>` : ""}</div>` : "";
     const fn = { inicio: viewInicio, encaminhamentos: viewEncaminhamentos, planejamento: viewPlanejamento, remuneracao: viewRemuneracao, config: viewConfig }[v];
     c.innerHTML = aviso + '<div id="vw"></div>'; fn($("#vw"));
   }
 
   /* senha extra por aba (modo equipe) */
-  const abaLiberada = id => S.modo !== "local" || !cfgDoc("abasSenha")[id] || (ssGet(KEY + "-abas-ok", {})[id] === true);
+  const abaLiberada = id => S.modo !== "local" || S.nuvem || !cfgDoc("abasSenha")[id] || (ssGet(KEY + "-abas-ok", {})[id] === true);
   function viewTrava(c, id) {
     c.innerHTML = `<div class="trava card">${ico("cad")}<h2 class="mt-s">${esc(ABAS.find(a => a.id === id)?.nome)}</h2><p class="sub">Esta aba tem uma senha própria.</p>
       <form id="trForm"><label class="vh" for="trSenha">Senha da aba</label><input class="inp" id="trSenha" type="password" placeholder="Senha da aba" autocomplete="off"><button class="btn" type="submit">Abrir aba</button><p class="lg-erro" id="trErro" role="alert"></p></form></div>`;
@@ -843,7 +862,7 @@
      5f. CONFIGURAÇÕES
      ================================================================= */
   function viewConfig(el) {
-    const tabs = [["conta", "Minha conta", true], ["pessoas", "Pessoas e acessos", ehAdmin()], ["metas", "Metas e feriados", ehGestao()], ["seguranca", "Segurança", ehAdmin()], ["nuvem", "Nuvem e dados", ehAdmin() && S.modo === "cloud"], ["sobre", "Privacidade", true]].filter(t => t[2]);
+    const tabs = [["conta", "Minha conta", true], ["pessoas", "Pessoas e acessos", ehAdmin()], ["metas", "Metas e feriados", ehGestao()], ["seguranca", "Segurança", ehAdmin()], ["nuvem", "Nuvem e dados", ehAdmin()], ["sobre", "Privacidade", true]].filter(t => t[2]);
     const sub = tabs.some(t => t[0] === S.sub.config) ? S.sub.config : "conta";
     el.innerHTML = `<div class="subabas" role="tablist">${tabs.map(([id, l]) => `<button role="tab" aria-selected="${sub === id}" data-act="sub" data-v="config" data-s="${id}">${l}</button>`).join("")}</div><div id="cfB"></div>`;
     ({ conta: S.modo === "local" ? cfgContaPortal : cfgConta, pessoas: S.modo === "local" ? cfgAcessos : cfgPessoas, metas: cfgMetas, seguranca: cfgSeguranca, nuvem: cfgNuvem, sobre: cfgSobre })[sub]($("#cfB"));
@@ -959,21 +978,21 @@
     $("#sgF").onsubmit = e => { e.preventDefault(); guardar(() => S.store.set("config", "seguranca", { timeoutMin: +$("#sgT").value }), "Sessão salva"); };
   }
   function cfgNuvem(el) {
-    const ok = S.modo === "cloud";
-    el.innerHTML = `<div class="linha l2"><section class="card"><div class="card-h"><div><h2>${ok ? "Nuvem ligada" : "Nuvem desligada"}</h2><p class="sub">${ok ? `Projeto Firebase: ${esc(CFG.firebase.projectId)}. Dados compartilhados em tempo real e protegidos pelas regras do servidor.` : "Hoje a plataforma está no modo equipe: os quadros ficam neste navegador."}</p></div><span class="chip ${ok ? "ok" : "warn"}">${ok ? "nuvem" : "modo equipe"}</span></div>
-        ${ok ? "" : `<p>Para ligar (15 minutos, uma vez só):</p><ol style="margin:0;padding-left:20px;line-height:1.7"><li>Crie um projeto no Firebase (console.firebase.google.com).</li><li>Ative Authentication → E-mail/senha.</li><li>Crie o Firestore (região São Paulo) e cole o arquivo <b>firestore.rules</b> em Regras.</li><li>Cole o firebaseConfig no arquivo <b>plataforma/config.js</b> do GitHub.</li><li>Entre com o seu e-mail: a plataforma copia o que já estiver aqui.</li></ol><p class="sub" style="color:var(--muted)">O passo a passo completo está no LEIA-ME.md da pasta plataforma.</p>
-        <div class="mt"><button class="btn ghost" data-act="exportarLocal">${ico("baixar")}Baixar cópia dos dados deste navegador</button></div>`}</section>
-      <section class="card"><div class="card-h"><div><h2>Dados de vendas</h2><p class="sub">${S.links ? "Conectado à planilha de vendas." : "Ainda não conectado."} ${S.vendas ? `Última leitura ${relTempo(new Date(S.vendas.em).toISOString())}, ${S.vendas.recs.length} linhas.` : esc(S.vendasErro)}</p></div><span class="chip ${S.links ? "ok" : "warn"}">${S.links ? "conectado" : "pendente"}</span></div>
-        ${ok ? `<form id="nvF" class="lista" style="gap:10px"><p class="sub" style="color:var(--muted);margin:0">Digite a senha do painel de vendas para liberar os dados a quem tem a aba Vendas. A chave fica guardada no servidor, acessível só a essas pessoas.</p><label class="f">Senha do painel de vendas<input class="inp" id="nvS" type="password" autocomplete="off"></label><p class="lg-erro" id="nvE"></p><div><button class="btn" type="submit">Conectar vendas</button></div></form>` : ""}
-        ${S.links ? `<div class="mt"><button class="btn ghost" data-act="recarregarVendas">${ico("recarregar")}Ler a planilha de novo</button></div>` : ""}</section></div>`;
-    const f = $("#nvF"); if (f) f.onsubmit = async e => { e.preventDefault(); try { const k = await VendasDados.chaveDaSenha($("#nvS").value, CFG.cofreVendas); S.links = await VendasDados.abrirCofre(k, CFG.cofreVendas); S.chaveVendas = await VendasDados.chaveParaBase64(k); await S.fb.firestore().doc("segredos/vendas").set({ chave: S.chaveVendas, por: S.me.email, em: new Date().toISOString() }); localStorage.setItem(CHAVE_PAINEL, S.chaveVendas); toast("Vendas conectadas"); carregarVendas(true); } catch (er) { $("#nvE").textContent = er?.code ? erroAuth(er) : "Senha incorreta."; } };
+    const ok = S.nuvem, mig = cfgDoc("migracao"), local = lsGet(KEY + "-dados-v1", null);
+    const nLocal = local ? ["tarefas", "reunioes", "frentes", "iniciativas"].reduce((t, c) => t + Object.keys(local[c] || {}).length, 0) : 0;
+    el.innerHTML = `<div class="linha l2"><section class="card"><div class="card-h"><div><h2>${ok ? "Nuvem ligada" : "Nuvem fora do ar"}</h2><p class="sub">${ok ? `Encaminhamentos, atas, planejamento e responsáveis ficam no Google Firebase (projeto ${esc(CFG.firebase?.projectId || "")}, São Paulo), iguais para toda a gestão e atualizados na hora.` : "Não consegui abrir a nuvem agora. O que você cadastrar fica só neste navegador até ela voltar. Recarregue a página."}</p></div><span class="chip ${ok ? "ok" : "warn"}">${ok ? "nuvem" : "neste navegador"}</span></div>
+        <p class="sub" style="color:var(--muted)">O login é um só (número + senha). Vendas, metas e acessos vêm da planilha pelo portal; o resto fica no Firebase.${mig.em ? ` Dados levados para a nuvem em ${esc(dataBR(mig.em.slice(0, 10)))} por ${esc(mig.por || "")}.` : ""}</p>
+        ${ok && nLocal ? `<div class="mt"><p class="sub" style="margin:0 0 8px">Este navegador ainda guarda ${nLocal} ${nLocal === 1 ? "item" : "itens"} do modo antigo. Se algum não aparece na nuvem, envie de novo (só soma, não apaga nada).</p><button class="btn ghost" data-act="enviarLocalNuvem">${ico("nuvem")}Enviar dados deste navegador para a nuvem</button></div>` : ""}
+        <div class="mt"><button class="btn ghost" data-act="exportarLocal">${ico("baixar")}Baixar cópia dos dados</button></div></section>
+      <section class="card"><div class="card-h"><div><h2>Dados de vendas</h2><p class="sub">${S.vendas ? `Planilha lida ${relTempo(new Date(S.vendas.em).toISOString())}.` : esc(S.vendasErro || "Lidos pelo portal seguro.")}</p></div><span class="chip ${S.vendas ? "ok" : "warn"}">${S.vendas ? "conectado" : "pendente"}</span></div>
+        <div class="mt"><button class="btn ghost" data-act="recarregarVendas">${ico("recarregar")}Ler a planilha de novo</button></div></section></div>`;
   }
   function cfgSobre(el) {
     el.innerHTML = `<section class="card"><div class="card-h"><div><h2>Privacidade e dados</h2></div></div><div style="max-width:72ch;line-height:1.65">
       <p>A plataforma reúne as informações comerciais da Naturalle Ice Up: vendas, encaminhamentos de reuniões, planejamento e regras de remuneração.</p>
       <p><b>Dados pessoais tratados:</b> nome, e-mail e cargo das pessoas cadastradas, e o registro de quem criou ou alterou cada informação.</p>
       <p><b>Finalidade:</b> organizar a execução comercial e enviar lembretes dos encaminhamentos. Os dados não são vendidos nem compartilhados com terceiros.</p>
-      <p><b>Onde ficam:</b> ${S.modo === "cloud" ? "Google Firebase (Cloud Firestore), com acesso restrito por papel e por aba." : "somente neste navegador (modo equipe)."} Os links da planilha de vendas ficam criptografados.</p>
+      <p><b>Onde ficam:</b> ${S.nuvem ? "encaminhamentos, atas e planejamento no Google Firebase (Cloud Firestore, São Paulo), com acesso restrito por papel e por aba; vendas, metas e acessos na planilha da Naturalle, entregues pelo portal seguro só a quem pode ver." : "neste navegador (a nuvem não respondeu) e na planilha da Naturalle, pelo portal seguro."}</p>
       <p><b>Direitos (LGPD):</b> para consultar, corrigir ou excluir seus dados, fale com um administrador da plataforma.</p></div></section>`;
   }
 
@@ -1116,7 +1135,13 @@
     senhaAba: async b => { const v = await pedirTexto({ titulo: "Senha da aba " + ABAS.find(a => a.id === b.dataset.aba).nome, texto: "Quem abrir esta aba vai precisar desta senha, além da senha da equipe.", ok: "Salvar senha", tipo: "password" }); if (!v) return; if (v.length < 6) return toast("Use pelo menos 6 caracteres.");
       const as = { ...cfgDoc("abasSenha") }; delete as.id; as[b.dataset.aba] = await sha256(VendasDados.normSenha(v)); await guardar(() => S.store.set("config", "abasSenha", as, false), "Senha da aba salva"); const ok = ssGet(KEY + "-abas-ok", {}); ok[b.dataset.aba] = true; ssSet(KEY + "-abas-ok", ok); },
     tirarSenhaAba: async b => { const as = { ...cfgDoc("abasSenha") }; delete as.id; delete as[b.dataset.aba]; await guardar(() => S.store.set("config", "abasSenha", as, false), "Senha removida"); },
-    exportarLocal: () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(lsGet(KEY + "-dados-v1", {}), null, 2)], { type: "application/json" })); a.download = "plataforma-naturalle-dados.json"; a.click(); },
+    enviarLocalNuvem: async () => {
+      const local = lsGet(KEY + "-dados-v1", null); if (!S.nuvem || !local) return;
+      if (!(await confirmar({ titulo: "Enviar os dados deste navegador?", texto: "Itens que já existem na nuvem com o mesmo código são atualizados com a versão deste navegador. Nada é apagado.", ok: "Enviar" }))) return;
+      await guardar(async () => { const db = S.fb.firestore(); let b = db.batch(), n = 0;
+        for (const c of ["pessoas", "tarefas", "reunioes", "frentes", "iniciativas", "metas"]) for (const [id, d] of Object.entries(local[c] || {})) { b.set(db.doc(`${c}/${id}`), JSON.parse(JSON.stringify(d)), { merge: true }); if (++n % 400 === 0) { await b.commit(); b = db.batch(); } }
+        await b.commit(); }, "Dados enviados para a nuvem"); },
+    exportarLocal: () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(S.nuvem ? Object.fromEntries(COLS.map(c => [c, Object.fromEntries((S.data[c] || []).map(({ id, ...d }) => [id, d]))])) : lsGet(KEY + "-dados-v1", {}), null, 2)], { type: "application/json" })); a.download = "plataforma-naturalle-dados.json"; a.click(); },
   };
   function ligarEventos() {
     document.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (!b || b.disabled) return; const f = A[b.dataset.act]; if (f) { e.preventDefault(); f(b, e); } });
@@ -1141,7 +1166,10 @@
   }
   async function partida() {
     ligarEventos();
-    if (CFG.firebase && CFG.firebase.apiKey) {
+    if (CFG.firebase && CFG.firebase.apiKey && CFG.loginPortal) {
+      // login único no portal; o Firebase guarda os quadros (ver ligarNuvem)
+      try { await carregarFirebase(); if (window.firebase) S.fb = firebase.initializeApp(CFG.firebase); } catch (e) { console.error("firebase", e); }
+    } else if (CFG.firebase && CFG.firebase.apiKey) {
       try { await carregarFirebase(); } catch (e) { console.error(e); }
       if (window.firebase) {
         S.modo = "cloud"; S.fb = firebase.initializeApp(CFG.firebase); S.fb.auth().languageCode = "pt";
@@ -1151,7 +1179,7 @@
       }
       return telaEntrada("Não consegui carregar a nuvem. Verifique a internet e recarregue a página.");
     }
-    S.modo = "local"; S.store = new LocalStore(KEY + "-dados-v1"); if (S.store.vazio()) S.store.semear(SEED());
+    S.modo = "local";
     const ses = ssGet(KEY + "-sessao", null) || lsGet(KEY + "-sessao", null);
     if (ses?.t && ses.papel) {
       try { S.token = ses.t; S.links = true; S.me = meDaSessao(ses); ssSet(KEY + "-sessao", ses); return iniciarApp(); }
