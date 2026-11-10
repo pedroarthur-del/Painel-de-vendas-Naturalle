@@ -28,7 +28,7 @@ const PORTAL = {
   CAB_METAS: ['ANO', 'MES', 'GRUPO', 'VENDEDOR', 'META', 'ATUALIZADO EM', 'POR'],
   SI: { cliente: 25, doc: 50, data: 51, vend: 54, flag: 55, valor: 56 }, // colunas que o painel usa na aba Sem Imposto
   ITER: 2000,               // voltas do hash de senha
-  CACHE_S: 300,             // os dados montados ficam 5 min em cache
+  CACHE_S: 21600,           // pacotes prontos ficam no cache até 6 h (o gatilho renova a cada 10 min)
   SESSAO_H: 12,             // validade da sessão sem "lembrar"
   LEMBRAR_D: 30,            // validade com "lembrar neste aparelho"
   ERROS_MAX: 5, BLOQUEIO_S: 900,
@@ -65,7 +65,7 @@ function portalRotear_(p) {
   if (acao === 'login') return portalLogin_(p);
   const s = portalSessao_(p.t); // lança se inválida
   if (acao === 'eu') return { ok: true, papel: s.papel, nome: s.nome, id: s.u };
-  if (acao === 'dados') return { ok: true, papel: s.papel, nome: s.nome, id: s.u, gz: portalDadosGz_(s, !!p.forcar && s.papel === 'equipe') };
+  if (acao === 'dados') { if (p.forcar && s.papel === 'equipe') portalPreaquecer(); return { ok: true, papel: s.papel, nome: s.nome, id: s.u, gz: portalAbasGz_(s), extra: portalExtra_(s) }; }
   if (s.papel !== 'equipe') portalFalha_('sem permissão');
   // ---- só equipe ----
   if (acao === 'metaSalvar') return portalMetaSalvar_(p, s);
@@ -171,13 +171,14 @@ function portalMetasLinhas_(ss) {
     .filter(r => Number(r[0]) > 2000 && Number(r[1]) >= 1 && r[4] !== '' && r[4] != null)
     .map(r => ({ ano: Number(r[0]), mes: Number(r[1]), grupo: String(r[2] || '__all'), vend: String(r[3] || '__all'), meta: Number(r[4]) || 0 }));
 }
-function portalMontar_(s) {
+function portalLerTudo_() {
   const ss = SpreadsheetApp.getActive(), A = PORTAL.ABAS, abas = {};
   Object.keys(A).forEach(k => { abas[k] = portalLerAba_(ss, A[k], k === 'semN' || k === 'semS' ? 57 : 40); });
-  let metas = portalMetasLinhas_(ss);
-  const remun = portalLerJson_('PORTAL_REMUN', null), feriados = portalLerJson_('PORTAL_FERIADOS', {});
-  if (s.papel === 'equipe') return { v: 3, em: new Date().toISOString(), papel: 'equipe', abas, metas, remun, feriados };
-  // ---------- vendedor: só o que é dele ----------
+  return abas;
+}
+/* abas de cada perfil: equipe recebe tudo; vendedor só o que é dele (linhas e colunas) */
+function portalAbasDe_(abas, s) {
+  if (s.papel === 'equipe') return abas;
   const meu = {}; (s.linhas || []).forEach(l => { meu[portalNorm_(l)] = 1; });
   const ehMeu = v => !!meu[portalNorm_(v)];
   const out = {};
@@ -191,24 +192,31 @@ function portalMontar_(s) {
     const iv = rows[0].map(portalNorm_).indexOf('VENDEDOR');
     out[k] = iv < 0 ? [] : [rows[0]].concat(rows.slice(1).filter(r => ehMeu(r[iv])));
   });
-  {
-    const rows = abas.corr || [];
-    if (rows.length) {
-      const h = rows[0].map(portalNorm_), ip = h.indexOf('PARTICIPANTE'), il = h.indexOf('LINHAS NA ABA VENDAS'), nCols = 7;
-      const corrMeu = portalNorm_(s.corr);
-      out.corr = [rows[0].slice(0, nCols)].concat(rows.slice(1).filter(r => {
-        if (corrMeu && ip >= 0 && portalNorm_(r[ip]) === corrMeu) return true;
-        if (il < 0) return false;
-        const ls = String(r[il] || '').split('+').map(portalNorm_).filter(Boolean);
-        return ls.length > 0 && ls.every(x => meu[x]);
-      }).map(r => r.slice(0, nCols)));
-    } else out.corr = [];
-  }
-  metas = metas.filter(m => m.vend !== '__all' && ehMeu(m.vend));
-  return {
-    v: 3, em: new Date().toISOString(), papel: 'vendedor', vendedor: { id: s.u, nome: s.nome, linhas: s.linhas },
-    abas: out, metas, feriados, remun: remun && remun.publicada ? portalRemunDoVendedor_(remun, s.linhas) : null,
-  };
+  const rows = abas.corr || [];
+  if (rows.length) {
+    const h = rows[0].map(portalNorm_), ip = h.indexOf('PARTICIPANTE'), il = h.indexOf('LINHAS NA ABA VENDAS'), nCols = 7, corrMeu = portalNorm_(s.corr);
+    out.corr = [rows[0].slice(0, nCols)].concat(rows.slice(1).filter(r => {
+      if (corrMeu && ip >= 0 && portalNorm_(r[ip]) === corrMeu) return true;
+      if (il < 0) return false;
+      const ls = String(r[il] || '').split('+').map(portalNorm_).filter(Boolean);
+      return ls.length > 0 && ls.every(x => meu[x]);
+    }).map(r => r.slice(0, nCols)));
+  } else out.corr = [];
+  return out;
+}
+/* metas, regras de comissão e feriados: pequenos, lidos na hora (mudança aparece na hora) */
+function portalExtra_(s) {
+  let metas = portalMetasLinhas_(SpreadsheetApp.getActive());
+  const remun = portalLerJson_('PORTAL_REMUN', null), feriados = portalLerJson_('PORTAL_FERIADOS', {});
+  if (s.papel === 'equipe') return { metas, remun, feriados, em: portalProps_().getProperty('PORTAL_PRONTO_EM') || '' };
+  const meu = {}; (s.linhas || []).forEach(l => { meu[portalNorm_(l)] = 1; });
+  metas = metas.filter(m => m.vend !== '__all' && meu[portalNorm_(m.vend)]);
+  return { metas, feriados, vendedor: { id: s.u, nome: s.nome, linhas: s.linhas }, remun: remun && remun.publicada ? portalRemunDoVendedor_(remun, s.linhas) : null, em: portalProps_().getProperty('PORTAL_PRONTO_EM') || '' };
+}
+/* usado nos testes: monta o pacote completo de um perfil */
+function portalMontar_(s) {
+  const abas = portalAbasDe_(portalLerTudo_(), s);
+  return Object.assign({ v: 4, papel: s.papel, abas }, portalExtra_(s));
 }
 function portalFiltrarVendas_(rows, ehMeu) {
   return (rows || []).map(r => {
@@ -222,25 +230,41 @@ function portalRemunDoVendedor_(rg, linhas) {
   const ind = {}; (linhas || []).forEach(l => { const k = portalNorm_(l); if (rg.individuais && rg.individuais[k]) ind[k] = rg.individuais[k]; });
   return { publicada: true, vendedor: rg.vendedor, individuais: ind, observacao: rg.observacao || '' };
 }
-function portalDadosGz_(s, forcar) {
-  const cache = CacheService.getScriptCache(), chave = 'DADOS:' + s.u + ':' + portalVersaoDados_();
-  if (!forcar) {
-    const n = Number(cache.get(chave + ':n') || 0);
-    if (n) {
-      const ks = []; for (let i = 0; i < n; i++) ks.push(chave + ':' + i);
-      const got = cache.getAll(ks); if (ks.every(k => got[k] != null)) return ks.map(k => got[k]).join('');
-    }
-  }
-  const json = JSON.stringify(portalMontar_(s));
-  const gz = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/json', 'd.json')).getBytes());
-  const partes = {}, TAM = 90000; let n = 0;
-  for (let i = 0; i < gz.length; i += TAM) partes[chave + ':' + (n++)] = gz.slice(i, i + TAM);
+function portalGz_(o) { return Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(o), 'application/json', 'd.json')).getBytes()); }
+function portalCacheGravar_(chave, txt) {
+  const cache = CacheService.getScriptCache(), partes = {}, TAM = 90000; let n = 0;
+  for (let i = 0; i < txt.length; i += TAM) partes[chave + ':' + (n++)] = txt.slice(i, i + TAM);
   partes[chave + ':n'] = String(n);
-  try { cache.putAll(partes, PORTAL.CACHE_S); } catch (e) { /* cache cheio: segue sem cache */ }
+  cache.putAll(partes, PORTAL.CACHE_S);
+}
+function portalCacheLer_(chave) {
+  const cache = CacheService.getScriptCache(), n = Number(cache.get(chave + ':n') || 0);
+  if (!n) return null;
+  const ks = []; for (let i = 0; i < n; i++) ks.push(chave + ':' + i);
+  const got = cache.getAll(ks); return ks.every(k => got[k] != null) ? ks.map(k => got[k]).join('') : null;
+}
+/* lê a planilha uma vez e deixa pronto o pacote da equipe e o de cada vendedor liberado.
+   Roda pelo gatilho de 10 em 10 min, depois de cada importação e no "Atualizar dados" da equipe. */
+function portalPreaquecer() {
+  const lock = LockService.getDocumentLock(); if (!lock.tryLock(60000)) return;
+  try {
+    const abas = portalLerTudo_(), reg = portalLerJson_('PORTAL_VENDEDORES', {});
+    portalCacheGravar_('ABAS:equipe', portalGz_({ v: 4, abas }));
+    Object.keys(reg).forEach(id => { const v = reg[id]; if (v.ativo === false || !v.hash) return;
+      portalCacheGravar_('ABAS:' + id, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: id, linhas: v.linhas, corr: v.corr }) })); });
+    portalProps_().setProperty('PORTAL_PRONTO_EM', new Date().toISOString());
+  } finally { lock.releaseLock(); }
+}
+function portalAbasGz_(s) {
+  const chave = 'ABAS:' + s.u;
+  let gz = portalCacheLer_(chave);
+  if (gz) return gz;
+  gz = portalGz_({ v: 4, abas: portalAbasDe_(portalLerTudo_(), s) });
+  try { portalCacheGravar_(chave, gz); } catch (e) { }
   return gz;
 }
-function portalVersaoDados_() { return portalProps_().getProperty('PORTAL_VERSAO_DADOS') || '1'; }
-function portalInvalidar() { portalProps_().setProperty('PORTAL_VERSAO_DADOS', String(Date.now())); }
+/* chamado pelo robô depois de importar relatórios: remonta os pacotes com os dados novos */
+function portalInvalidar() { try { portalPreaquecer(); } catch (e) { console.error(e); } }
 
 /* ================= metas (gravadas na planilha, valem para todos) ================= */
 function portalAbaMetas_(ss) {
@@ -262,7 +286,6 @@ function portalMetaSalvar_(p, s) {
     else if (i >= 0) sh.getRange(i + 2, 5, 1, 3).setValues([[valor, new Date(), s.nome]]);
     else sh.appendRow([ano, mes, grupo, vend, valor, new Date(), s.nome]);
   } finally { lock.releaseLock(); }
-  portalInvalidar();
   return { ok: true };
 }
 
@@ -284,6 +307,7 @@ function portalVendedorSalvar_(p) {
   const reg = portalRegistro_(), v = reg[id] || { ver: 0, ativo: false };
   v.nome = String(p.nome || id).trim().slice(0, 60); v.linhas = linhas; v.corr = String(p.corr || '').trim().slice(0, 60);
   reg[id] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
+  CacheService.getScriptCache().remove('ABAS:' + id + ':n');
   return { ok: true, lista: portalVendedoresPublico_() };
 }
 function portalVendedorChave_(p) {
@@ -293,6 +317,7 @@ function portalVendedorChave_(p) {
   for (let i = 0; i < 12; i++) chave += ALF[(bytes[i] + 256) % ALF.length];
   v.sal = portalAleatorio_(24); v.hash = portalHash_(chave, v.sal); v.ver = (Number(v.ver) || 0) + 1; v.ativo = true; v.chaveEm = new Date().toISOString();
   reg[id] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
+  try { const c = portalCacheLer_('ABAS:equipe'); if (c) { const abas = JSON.parse(Utilities.newBlob(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(c), 'application/x-gzip'))).getDataAsString()).abas; portalCacheGravar_('ABAS:' + id, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: id, linhas: v.linhas, corr: v.corr }) })); } } catch (e) { }
   return { ok: true, id, chave: chave.slice(0, 4) + '-' + chave.slice(4, 8) + '-' + chave.slice(8), lista: portalVendedoresPublico_() };
 }
 function portalVendedorBloquear_(p) {
@@ -312,7 +337,6 @@ function portalRemunSalvar_(p) {
   const faixas = (r.vendedor && r.vendedor.faixas || []).slice(0, 10).map(f => ({ de: num(f.de, 0, 1000), mult: num(f.mult, 0, 10) }));
   const ind = {}; Object.keys(r.individuais || {}).slice(0, 40).forEach(k => { const x = r.individuais[k] || {}; ind[portalNorm_(k)] = { pct: num(x.pct, 0, 100), fixo: num(x.fixo, 0, 1e6) }; });
   portalGravarJson_('PORTAL_REMUN', { publicada: !!r.publicada, vendedor: { pct: num(r.vendedor && r.vendedor.pct, 0, 100), fixo: num(r.vendedor && r.vendedor.fixo, 0, 1e6), bonusMeta: num(r.vendedor && r.vendedor.bonusMeta, 0, 1e6), faixas }, individuais: ind, observacao: String(r.observacao || '').slice(0, 400), em: new Date().toISOString() });
-  portalInvalidar();
   return { ok: true };
 }
 
@@ -320,7 +344,7 @@ function portalFeriadosSalvar_(p) {
   const ano = Number(p.ano), mes = Number(p.mes); if (!(ano > 2000 && mes >= 1 && mes <= 12)) portalFalha_('mês inválido');
   const dias = (Array.isArray(p.dias) ? p.dias : []).map(Number).filter(d => d >= 1 && d <= 31).slice(0, 15);
   const f = portalLerJson_('PORTAL_FERIADOS', {}); if (dias.length) f[ano + '_' + mes] = dias; else delete f[ano + '_' + mes];
-  portalGravarJson_('PORTAL_FERIADOS', f); portalInvalidar();
+  portalGravarJson_('PORTAL_FERIADOS', f);
   return { ok: true };
 }
 
@@ -331,7 +355,9 @@ function portalInstalar(senhaEquipe) {
   if (senhaEquipe) { const sal = portalAleatorio_(24), eq = portalLerJson_('PORTAL_EQUIPE', { ver: 0 }); portalGravarJson_('PORTAL_EQUIPE', { sal, hash: portalHash_(portalNormSenhaEquipe_(senhaEquipe), sal), ver: (eq.ver || 0) + 1 }); }
   portalRegistro_();
   portalAbaMetas_(SpreadsheetApp.getActive());
-  portalInvalidar();
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'portalPreaquecer').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('portalPreaquecer').timeBased().everyMinutes(10).create();
+  portalPreaquecer();
   Logger.log('Portal pronto. Equipe configurada: ' + !!portalLerJson_('PORTAL_EQUIPE', null));
 }
 
