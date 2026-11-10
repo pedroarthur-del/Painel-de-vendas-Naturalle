@@ -36,22 +36,28 @@ Se um arquivo não for reconhecido, ele vai para a subpasta **Com erro** e nada 
 
 A aba Itens é criada com o id 1771100000, que é o link que o painel já usa.
 
-# Portal seguro do painel (portal.gs)
+# Portal seguro (portal.gs) · plataforma única
 
-O painel não lê mais a planilha "publicada na web". Ele entra numa API (App da Web do mesmo projeto do robô),
-que roda com a conta dona da planilha e entrega a cada pessoa só o que ela pode ver.
+Endereço único: https://pedroarthur-del.github.io/Painel-de-vendas-Naturalle/ (abre a plataforma; o painel de vendas roda dentro dela, no menu **Vendas**).
+A plataforma não lê a planilha direto: entra numa API (App da Web do mesmo projeto do robô), que roda com a conta dona da planilha e entrega a cada pessoa só o que ela pode ver.
 
-| Quem | Usuário | Vê |
-|---|---|---|
-| Gestão / consultoria / supervisor | `equipe` + senha da equipe | tudo, como antes |
-| Vendedor | o usuário dele (ex.: `allyson`) + chave individual | só as linhas, notas, clientes, produtos, campanha e comissão dele |
+## Contas por número de celular corporativo
 
-- O filtro é feito **no servidor**: o faturamento da empresa e os números de outros vendedores nem chegam ao celular do vendedor.
-- Encaminhamentos e atas ficam na plataforma, que só aceita o usuário `equipe`.
-- Chaves dos vendedores: painel → aba **Config** → **Acessos dos vendedores** → "Gerar acesso". A chave aparece uma vez, com a mensagem pronta para mandar no privado. "Nova chave" ou "Bloquear" derrubam o acesso na hora.
-- Senha da equipe: painel → Config → **Senha da equipe**. Ao trocar, todo mundo da equipe entra de novo.
-- 5 senhas erradas seguidas bloqueiam aquele usuário por 15 minutos.
-- Metas digitadas no painel ficam na aba **Metas do painel** da planilha (valem para todos). Feriados e regras de comissão ficam no servidor.
-- Os dados são montados a cada 10 minutos (gatilho `portalPreaquecer`) e logo depois de cada importação do robô. "Atualizar dados" (equipe) lê a planilha na hora.
+Configurações → **Pessoas e acessos** → "Novo acesso": número, nome, papel, linhas de venda (para vendedor), senha (mín. 6), situação Ativo.
+A mensagem pronta para mandar no WhatsApp aparece na hora. O acesso é do número: se a pessoa sair, troque o nome e a senha e o número continua.
 
-**Ao mudar o código do portal:** Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar (o endereço continua o mesmo).
+| Papel | Vê |
+|---|---|
+| Administrador | tudo + Pessoas e acessos, remuneração, senha do acesso `equipe` |
+| Gestor | tudo; edita metas e feriados |
+| Membro / Leitor | tudo (leitor sem editar) |
+| Vendedor | só Vendas (Visão geral, Carteira, Produtos, Campanhas) e Remuneração, com os números dele |
+
+- O filtro é feito **no servidor**: faturamento da empresa e números de outros vendedores nem chegam ao celular do vendedor.
+- Trocar senha, mudar acesso ou desativar derruba as sessões daquele número na hora. 5 senhas erradas bloqueiam por 15 minutos.
+- O acesso legado `equipe` continua valendo como administrador até você trocar a senha dele (Pessoas e acessos → Senha do acesso equipe).
+- Metas: Configurações → **Metas e feriados** (ficam na aba **Metas do painel** da planilha). Regras de comissão e feriados ficam no servidor.
+- Vendas → **Resultado da semana**: escolha a semana e a pessoa; gera texto e imagem individual (faturamento, clientes novos, carteira, produto, comissão, campanha).
+- Dados montados a cada 10 minutos (gatilho `portalPreaquecer`) e logo após cada importação do robô. "Atualizar dados" (gestão) lê a planilha na hora.
+
+**Ao mudar o código do portal:** cole o novo `portal.gs` no arquivo `portal` do projeto, salve, e Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar (o endereço continua o mesmo).
