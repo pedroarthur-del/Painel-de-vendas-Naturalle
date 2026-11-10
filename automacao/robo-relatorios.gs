@@ -102,6 +102,7 @@ function processarPasta() {
       }
     });
     SpreadsheetApp.flush();
+    if (lidos.length && typeof portalInvalidar === 'function') portalInvalidar(); // o painel busca os dados novos
     // 4) depois que as fórmulas recalculam, atualiza o histórico com o mês atual
     ['NATURALLE', 'SELECTO'].forEach(m => { if (lidos.some(l => l.c.marca === m && l.c.tipo !== 'ITENS')) guardarHistorico_(ss, m); });
   } finally { trava.releaseLock(); }
