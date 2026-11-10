@@ -273,3 +273,25 @@ table.t .inp{padding:6px 8px; font-size:14px; max-width:140px}
 .trava{max-width:420px; margin:40px auto; text-align:center}
 .trava svg{width:40px; height:40px; color:var(--caramelo)}
 .trava form{display:grid; gap:10px; margin-top:16px}
+
+/* ---------- ata no padrão Gomes de Matos ---------- */
+.ata-bloco{display:grid; gap:8px}
+.ata-h{font-size:13px; font-weight:800; color:var(--muted)} .ata-h small{font-weight:600; margin-left:6px}
+.ata-l{display:grid; grid-template-columns:minmax(0,1fr) 170px 34px; gap:6px; align-items:center}
+.ata-pauta{grid-template-columns:minmax(0,1.6fr) minmax(0,.9fr) minmax(0,.9fr) auto 34px}
+.ata-enc{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) 150px 34px}
+.ata-cab{font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
+@media (max-width:700px){ .ata-pauta,.ata-enc{grid-template-columns:minmax(0,1fr) 34px} .ata-pauta > :not(:first-child):not(:last-child), .ata-enc > :not(:first-child):not(:last-child){grid-column:1} .ata-cab{display:none} }
+.ata-pdf{position:fixed; left:-10000px; top:0; width:794px; padding:28px 30px; background:#fff; color:#2A1F17; font-family:Arial,Helvetica,sans-serif; font-size:12.5px; line-height:1.4}
+.ata-pdf header{display:grid; grid-template-columns:150px 1fr 60px; align-items:center; gap:14px; border-bottom:3px solid #2B1A10; padding-bottom:12px; margin-bottom:14px}
+.ata-pdf header img{width:150px; height:auto} .ata-pdf header img.nat{width:46px; justify-self:end}
+.ata-pdf h1{font-size:17px; text-align:center; margin:0; letter-spacing:.02em; color:#2B1A10}
+.ata-pdf .sec{background:#2B1A10; color:#fff; font-weight:bold; padding:6px 10px; border-radius:4px; margin:14px 0 8px; font-size:12.5px} .ata-pdf .sec small{font-weight:normal; opacity:.8; margin-left:8px}
+.ata-pdf .dados{display:grid; grid-template-columns:repeat(4,1fr); gap:8px} .ata-pdf .dados div{border:1px solid #E6DCCD; border-radius:4px; padding:6px 8px} .ata-pdf .dados span{display:block; font-size:10.5px; color:#76665A; text-transform:uppercase} .ata-pdf .dados b{font-size:13px}
+.ata-pdf .parts{display:grid; grid-template-columns:repeat(3,1fr); gap:6px 14px} .ata-pdf .parts div{display:flex; gap:8px; align-items:center}
+.ata-pdf .parts i{font-style:normal; font-weight:bold; font-size:10.5px; min-width:26px; text-align:center; padding:2px 4px; border-radius:3px; background:#E6F0E4; color:#2F6B3A} .ata-pdf .parts i.p-NP{background:#F8E2DD; color:#A13A22} .ata-pdf .parts i.p-J{background:#F6EBD3; color:#8A5A0B}
+.ata-pdf .cond{margin:10px 0 0}
+.ata-pdf table{width:100%; border-collapse:collapse; margin-top:14px} .ata-pdf th{background:#2B1A10; color:#fff; text-align:left; padding:6px 8px; font-size:12px} .ata-pdf td{border-bottom:1px solid #E6DCCD; padding:6px 8px; vertical-align:top} .ata-pdf td.c{text-align:center} .ata-pdf tr:nth-child(even) td{background:#FBF7F1}
+.ata-pdf .defs{margin:0; padding-left:20px} .ata-pdf .defs li{margin:3px 0} .ata-pdf .vaz{color:#9A8A7E; text-align:center}
+.ata-pdf .pm{display:grid; grid-template-columns:1fr 1fr; gap:14px} .ata-pdf .pm p{margin:0}
+.ata-pdf footer{margin-top:20px; border-top:1px solid #E6DCCD; padding-top:8px; font-size:10.5px; color:#76665A; text-align:center}

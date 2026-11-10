@@ -228,16 +228,18 @@
     try {
       if (S.modo === "cloud") { await S.fb.auth().signInWithEmailAndPassword(email, senha); Trava.zerar(email); }
       else {
-        const chave = await VendasDados.chaveDaSenha(senha, CFG.cofreVendas);
-        S.links = await VendasDados.abrirCofre(chave, CFG.cofreVendas); // senha errada falha aqui
-        S.chaveVendas = await VendasDados.chaveParaBase64(chave);
-        Trava.zerar(""); ssSet(KEY + "-sessao", { chave: S.chaveVendas });
+        // login no portal seguro (usuário "equipe"); vendedores não entram na plataforma
+        const j = await VendasDados.api(CFG.apiUrl, { acao: "login", u: "equipe", s: senha, lembrar: false });
+        if (j.papel !== "equipe") throw new Error("sem permissão");
+        S.token = j.t; S.links = true;
+        Trava.zerar(""); ssSet(KEY + "-sessao", { t: S.token });
+        sessaoPainel();
         S.me = { nome: lsGet(KEY + "-nome", "") || "Equipe Naturalle", email: "", papel: "admin", abas: Object.fromEntries(ABA_IDS.map(a => [a, true])) };
         iniciarApp();
       }
     } catch (e) {
       Trava.erro(email); const w2 = Trava.espera(email);
-      erro.textContent = (S.modo === "cloud" ? erroAuth(e) : "Senha incorreta.") + (w2 ? ` Aguarde ${w2 >= 60 ? Math.ceil(w2 / 60) + " min" : w2 + " s"} para tentar de novo.` : "");
+      erro.textContent = (S.modo === "cloud" ? erroAuth(e) : (e.api && /aguarde/.test(e.message) ? "Muitas tentativas erradas. Aguarde 15 minutos." : e.api || e.message === "sem permissão" ? "Senha incorreta." : "Sem conexão com o servidor. Tente de novo.")) + (w2 ? ` Aguarde ${w2 >= 60 ? Math.ceil(w2 / 60) + " min" : w2 + " s"} para tentar de novo.` : "");
       card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
     } finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = "Entrar"; } }
   }
@@ -264,9 +266,14 @@
     await b.commit(); toast(local ? "Dados deste navegador copiados para a nuvem" : "Plataforma preparada com o que já foi combinado no projeto");
   }
 
+  function sessaoPainel() {
+    // o painel de vendas (iframe, mesmo endereço) lê a sessão daqui e abre sem pedir a senha de novo
+    if (S.token) try { sessionStorage.setItem("naturalle_sessao", JSON.stringify({ t: S.token, papel: "equipe", nome: "Equipe", id: "equipe" })); } catch (_) { }
+    try { localStorage.removeItem(CHAVE_PAINEL); } catch (_) { }
+  }
   function iniciarApp() {
     $("#login").hidden = true; $("#login").innerHTML = ""; $("#app").hidden = false;
-    if (S.chaveVendas) try { localStorage.setItem(CHAVE_PAINEL, S.chaveVendas); } catch (_) { } // abre o painel de vendas sem pedir a senha de novo
+    sessaoPainel(); // abre o painel de vendas sem pedir a senha de novo
     montarMoldura(); conectar(); Ocioso.iniciar(); S.iniciado = true;
     const [v, sub] = location.hash.slice(1).split("/"); ir(ABAS.some(a => a.id === v) || v === "config" ? v : lsGet(KEY + "-view", "inicio"), sub);
     carregarVendas();
@@ -279,8 +286,8 @@
   }
   async function sair(msg) {
     Ocioso.parar(); fecharGaveta(); destruirGraficos();
-    S.unsub.forEach(f => { try { f(); } catch (_) { } }); S.unsub = []; S.iniciado = false; S.me = null; S.chaveVendas = null; S.links = null; S.vendas = null;
-    ssDel(KEY + "-sessao"); ssDel(KEY + "-abas-ok"); lsDel(CHAVE_PAINEL);
+    S.unsub.forEach(f => { try { f(); } catch (_) { } }); S.unsub = []; S.iniciado = false; S.me = null; S.chaveVendas = null; S.links = null; S.token = null; S.vendas = null;
+    ssDel(KEY + "-sessao"); ssDel(KEY + "-abas-ok"); lsDel(CHAVE_PAINEL); ssDel("naturalle_sessao");
     const fr = $("#vendasFrame"); if (fr) fr.remove();
     if (S.modo === "cloud") { try { await S.fb.auth().signOut(); } catch (_) { } }
     $("#app").innerHTML = ""; telaEntrada(msg || "");
@@ -362,14 +369,14 @@
      ================================================================= */
   function viewVendas(host) {
     if (!$("#vendasFrame")) {
-      if (S.chaveVendas) try { localStorage.setItem(CHAVE_PAINEL, S.chaveVendas); } catch (_) { }
+      sessaoPainel();
       host.innerHTML = `<iframe id="vendasFrame" class="vendas-frame" title="Painel de vendas" src="${esc(CFG.painelVendas || "../index.html")}" referrerpolicy="same-origin"></iframe>`;
     }
   }
   async function carregarVendas(forcar) {
-    if (!S.links || !veAba("vendas") && !veAba("remuneracao") && !veAba("planejamento")) { if (!S.links) S.vendasErro = S.modo === "cloud" ? (ehAdmin() ? "Conecte os dados de vendas em Configurações → Nuvem." : "") : ""; return; }
-    try { S.vendas = await VendasDados.carregar(S.links, forcar); S.vendasErro = ""; }
-    catch (e) { S.vendasErro = "Não consegui ler a planilha de vendas: " + (e.message || e); }
+    if (!S.token || !veAba("vendas") && !veAba("remuneracao") && !veAba("planejamento")) { if (!S.links) S.vendasErro = S.modo === "cloud" ? (ehAdmin() ? "Conecte os dados de vendas em Configurações → Nuvem." : "") : ""; return; }
+    try { S.vendas = await VendasDados.carregarApi(CFG.apiUrl, S.token, forcar); S.vendasErro = ""; }
+    catch (e) { if (e.sessao && S.modo !== "cloud") return sair("Sua sessão terminou. Entre de novo."); S.vendasErro = "Não consegui ler a planilha de vendas: " + (e.message || e); }
     if (["inicio", "planejamento", "remuneracao"].includes(S.view)) agendarRender();
   }
   const recsMes = (a, m) => (S.vendas?.recs || []).filter(r => r.ano === a && r.mes === m);
@@ -530,21 +537,90 @@
         return `<div class="li click" data-act="abrirReuniao" data-id="${esc(r.id)}" role="button" tabindex="0"><span class="avatar" style="background:var(--acai)">${ico("ata")}</span><div class="tt">${esc(r.titulo)}<small>${r.data ? dataBR(r.data) : "data a confirmar"} · ${esc(r.tipo || "Reunião")} · ${(r.participantes || []).length} participantes</small></div><div class="dir">${ts.length ? `<span class="chip ${ok === ts.length ? "ok" : ""}">${ok}/${ts.length} encaminhamentos</span>` : '<span class="chip">sem encaminhamentos</span>'}</div></div>`; }).join("")}</div>`
         : `<div class="vazio"><b>Nenhuma reunião registrada.</b>Comece pela próxima reunião semanal ou pela RMR.${pode ? `<br><button class="btn" data-act="novaReuniao">${ico("mais")}Registrar reunião</button>` : ""}</div>`}</section>`;
   }
+  /* ---------- ATA no padrão Gomes de Matos: participantes com presença, pauta, definições,
+     encaminhamentos (ação · responsável · data), pontos positivos e de melhoria ---------- */
+  const PRES = { P: "Presente", NP: "Não presente", J: "Justificado" };
+  const ataPart = r => {
+    const pres = r.presenca || {};
+    const nomes = (r.participantes || []).length ? r.participantes : S.data.pessoas.filter(p => p.ativo !== false).map(p => p.nome);
+    return nomes.map(n => ({ nome: n, p: pres[n] || "P" }));
+  };
+  const ataPauta = r => Array.isArray(r.pautaItens) && r.pautaItens.length ? r.pautaItens : (r.pauta ? String(r.pauta).split(/\n+/).filter(Boolean).map(t => ({ t, hora: "", resp: "", ok: false })) : []);
+  const linhaPart = (x, ro) => `<div class="ata-l" data-part><input class="inp" data-nome list="dlPessoas" value="${esc(x.nome)}" placeholder="Nome" ${ro}><select class="sel inp" data-pres ${ro} aria-label="Presença">${Object.keys(PRES).map(k => `<option value="${k}" ${x.p === k ? "selected" : ""}>${k} · ${PRES[k]}</option>`).join("")}</select>${ro ? "" : `<button type="button" class="iconbtn" data-act="ataRm" aria-label="Remover">${ico("x")}</button>`}</div>`;
+  const linhaPauta = (x, ro) => `<div class="ata-l ata-pauta" data-pauta><input class="inp" data-t value="${esc(x.t)}" placeholder="Assunto" ${ro}><input class="inp" data-hora value="${esc(x.hora || "")}" placeholder="13:00 às 14:00" ${ro}><input class="inp" data-resp list="dlPessoas" value="${esc(x.resp || "")}" placeholder="Responsável" ${ro}><label class="ck" title="Tratado"><input type="checkbox" data-ok ${x.ok ? "checked" : ""} ${ro}><span>ok</span></label>${ro ? "" : `<button type="button" class="iconbtn" data-act="ataRm" aria-label="Remover">${ico("x")}</button>`}</div>`;
+  const linhaEnc = (x, ro) => `<div class="ata-l ata-enc" data-enc><input class="inp" data-acao value="${esc(x.titulo || "")}" placeholder="Ação (o que vai ser feito)" ${ro}><input class="inp" data-resp list="dlPessoas" value="${esc(x.resp || "")}" placeholder="Responsável" ${ro}><input class="inp" type="date" data-prazo value="${esc(x.prazo || "")}" ${ro} aria-label="Data"><button type="button" class="iconbtn" data-act="ataRm" aria-label="Remover">${ico("x")}</button></div>`;
   function gavetaReuniao(r, novo) {
     const pode = podeEditar("encaminhamentos"), ro = pode ? "" : "disabled", ts = S.data.tarefas.filter(t => t.origem === r.id);
     abrirGaveta(novo ? "Nova reunião" : "Ata da reunião", `
-      <label class="f">Título<input class="inp" id="rTit" maxlength="140" value="${esc(r.titulo)}" ${ro} placeholder="Ex.: Reunião semanal comercial"></label>
+      <label class="f">Título<input class="inp" id="rTit" maxlength="140" value="${esc(r.titulo)}" ${ro} placeholder="Ex.: Reunião Semanal de Vendas"></label>
       <div class="grid2"><label class="f">Data<input class="inp" id="rData" type="date" value="${esc(r.data)}" ${ro}></label>
         <label class="f">Tipo<select class="sel inp" id="rTipo" ${ro}>${["Semanal comercial", "RMR", "Diretoria", "Alinhamento", "Treinamento"].map(x => `<option ${r.tipo === x ? "selected" : ""}>${x}</option>`).join("")}</select></label></div>
-      <label class="f">Participantes <small>separe por vírgula</small><input class="inp" id="rPart" list="dlPessoas" value="${esc((r.participantes || []).join(", "))}" ${ro}></label>
-      <label class="f">Pauta<textarea class="inp" id="rPauta" maxlength="4000" ${ro}>${esc(r.pauta)}</textarea></label>
-      <label class="f">Decisões e registros<textarea class="inp" id="rDec" maxlength="8000" style="min-height:120px" ${ro}>${esc(r.decisoes)}</textarea></label>
-      ${pode ? `<div><div style="font-size:13px;font-weight:800;color:var(--muted);margin-bottom:6px">Novos encaminhamentos desta reunião <small style="font-weight:600">(um por linha: o quê · responsável · prazo dd/mm)</small></div><textarea class="inp" id="rEnc" placeholder="Ligar para as 10 maiores lojas que não voltaram · Rodrigo · 14/11"></textarea></div>` : ""}
-      ${ts.length ? `<div><div style="font-size:13px;font-weight:800;color:var(--muted);margin-bottom:6px">Encaminhamentos já criados</div><div class="lista">${ts.map(liTarefa).join("")}</div></div>` : ""}
+      <div class="grid2"><label class="f">Horário de início<input class="inp" id="rIni" type="time" value="${esc(r.horaIni || "")}" ${ro}></label><label class="f">Horário de fim<input class="inp" id="rFim" type="time" value="${esc(r.horaFim || "")}" ${ro}></label></div>
+      <label class="f">Condução<input class="inp" id="rCond" maxlength="120" value="${esc(r.conducao || "Gomes de Matos Consultoria")}" ${ro}></label>
+      <div class="ata-bloco"><div class="ata-h">Participantes <small>P = presente · NP = não presente · J = justificado</small></div>
+        <div id="rPartL">${ataPart(r).map(x => linhaPart(x, ro)).join("")}</div>${pode ? `<button type="button" class="btn sm ghost" data-act="ataAdd" data-tipo="part">${ico("mais")}Participante</button>` : ""}</div>
+      <div class="ata-bloco"><div class="ata-h">Pauta</div>
+        <div id="rPautaL">${ataPauta(r).map(x => linhaPauta(x, ro)).join("")}</div>${pode ? `<button type="button" class="btn sm ghost" data-act="ataAdd" data-tipo="pauta">${ico("mais")}Item de pauta</button>` : ""}</div>
+      <label class="f">Definições da reunião <small>uma por linha</small><textarea class="inp" id="rDec" maxlength="8000" style="min-height:110px" ${ro}>${esc(r.decisoes)}</textarea></label>
+      ${pode ? `<div class="ata-bloco"><div class="ata-h">Novos encaminhamentos <small>cada linha vira um cartão no quadro</small></div>
+        <div class="ata-l ata-enc ata-cab" aria-hidden="true"><span>Ação</span><span>Responsável</span><span>Data</span><span></span></div>
+        <div id="rEncL">${linhaEnc({}, "")}</div><button type="button" class="btn sm ghost" data-act="ataAdd" data-tipo="enc">${ico("mais")}Encaminhamento</button></div>` : ""}
+      ${ts.length ? `<div class="ata-bloco"><div class="ata-h">Encaminhamentos desta reunião</div><div class="lista">${ts.map(liTarefa).join("")}</div></div>` : ""}
+      <div class="grid2"><label class="f">Pontos positivos<textarea class="inp" id="rPos" maxlength="3000" ${ro}>${esc(r.positivos || "")}</textarea></label><label class="f">Pontos de melhoria<textarea class="inp" id="rMel" maxlength="3000" ${ro}>${esc(r.melhorias || "")}</textarea></label></div>
       <datalist id="dlPessoas">${nomesPessoas().map(n => `<option value="${esc(n)}">`).join("")}</datalist>`,
       `${!novo && pode ? `<button class="btn ghost esq" data-act="excluirReuniao" data-id="${esc(r.id)}">${ico("lixo")}Excluir</button>` : '<span class="esq"></span>'}
-       ${!novo ? `<button class="btn ghost" data-act="enviarAta" data-id="${esc(r.id)}">${ico("mail")}Enviar ata</button>` : ""}
+       ${!novo ? `<button class="btn ghost" data-act="enviarAta" data-id="${esc(r.id)}">${ico("mail")}Gerar PDF e enviar</button>` : ""}
        ${pode ? `<button class="btn" data-act="salvarReuniao" data-id="${esc(r.id)}">${novo ? "Registrar reunião" : "Salvar ata"}</button>` : ""}`);
+  }
+  function lerAta() {
+    const part = $$("#rPartL [data-part]").map(d => ({ nome: str(d.querySelector("[data-nome]").value, 80), p: d.querySelector("[data-pres]").value })).filter(x => x.nome);
+    const pauta = $$("#rPautaL [data-pauta]").map(d => ({ t: str(d.querySelector("[data-t]").value, 300), hora: str(d.querySelector("[data-hora]").value, 40), resp: str(d.querySelector("[data-resp]").value, 80), ok: d.querySelector("[data-ok]").checked })).filter(x => x.t);
+    const enc = $$("#rEncL [data-enc]").map(d => ({ titulo: str(d.querySelector("[data-acao]").value, 160), resp: str(d.querySelector("[data-resp]").value, 80), prazo: d.querySelector("[data-prazo]").value })).filter(x => x.titulo);
+    return { titulo: str($("#rTit").value, 140), data: $("#rData").value, tipo: $("#rTipo").value, horaIni: $("#rIni").value, horaFim: $("#rFim").value, conducao: str($("#rCond").value, 120),
+      participantes: part.map(x => x.nome), presenca: Object.fromEntries(part.map(x => [x.nome, x.p])), pautaItens: pauta, pauta: pauta.map(x => x.t).join("\n"),
+      decisoes: str($("#rDec").value, 8000), positivos: str($("#rPos").value, 3000), melhorias: str($("#rMel").value, 3000), _enc: enc };
+  }
+
+  /* PDF da ata (html2canvas + jsPDF, carregados só quando precisa) */
+  const carregarScript = src => new Promise((ok, falha) => { if ([...document.scripts].some(s => s.src === src)) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => falha(new Error("não carregou " + src)); document.head.appendChild(s); });
+  async function pdfAta(r) {
+    await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    const ts = S.data.tarefas.filter(t => t.origem === r.id), est = Object.fromEntries(ESTADOS.map(e => [e.id, e.l]));
+    const part = ataPart(r), pauta = ataPauta(r), defs = String(r.decisoes || "").split(/\n+/).map(x => x.trim()).filter(Boolean);
+    const titulo = /^ata\b/i.test(r.titulo || "") ? r.titulo : "ATA · " + (r.titulo || "Reunião");
+    const host = document.createElement("div"); host.className = "ata-pdf";
+    host.innerHTML = `
+      <header><img src="assets/gomes-de-matos.png" alt=""><h1>${esc(titulo.toUpperCase())}</h1><img src="assets/simbolo.svg" alt="" class="nat"></header>
+      <div class="sec">Dados da reunião</div>
+      <div class="dados"><div><span>Data</span><b>${r.data ? dataBR(r.data) : "—"}</b></div><div><span>Horário de início</span><b>${esc(r.horaIni || "—")}</b></div><div><span>Horário de fim</span><b>${esc(r.horaFim || "—")}</b></div><div><span>Tipo</span><b>${esc(r.tipo || "—")}</b></div></div>
+      <div class="sec">Participantes <small>P = Presente · NP = Não presente · J = Justificado</small></div>
+      <div class="parts">${part.map(x => `<div><i class="p-${x.p}">${x.p}</i>${esc(x.nome)}</div>`).join("")}</div>
+      <p class="cond"><b>Condução:</b> ${esc(r.conducao || "Gomes de Matos Consultoria")}</p>
+      <table><thead><tr><th>Pauta</th><th style="width:22%">Horário</th><th style="width:22%">Resp.</th><th style="width:10%">Status</th></tr></thead><tbody>
+        ${pauta.length ? pauta.map(x => `<tr><td>${esc(x.t)}</td><td>${esc(x.hora || "")}</td><td>${esc(x.resp || "")}</td><td class="c">${x.ok ? "✓" : ""}</td></tr>`).join("") : `<tr><td colspan="4" class="vaz">—</td></tr>`}</tbody></table>
+      <div class="sec">Definições da reunião</div>
+      ${defs.length ? `<ol class="defs">${defs.map(d => `<li>${esc(d.replace(/^\d+[.)]\s*/, ""))}</li>`).join("")}</ol>` : '<p class="vaz">—</p>'}
+      <table><thead><tr><th>Encaminhamentos</th><th style="width:18%">Responsável</th><th style="width:11%">Prazo</th><th style="width:11%">Novo prazo</th><th style="width:13%">Status</th></tr></thead><tbody>
+        ${ts.length ? ts.map(t => `<tr><td>${esc(t.titulo)}</td><td>${esc(t.resp || "")}</td><td class="c">${t.prazo ? dataBR(t.prazo) : ""}</td><td class="c">${t.novoPrazo ? dataBR(t.novoPrazo) : ""}</td><td class="c">${esc(est[t.status] || "A fazer")}</td></tr>`).join("") : `<tr><td colspan="5" class="vaz">—</td></tr>`}</tbody></table>
+      <div class="pm"><div><div class="sec">Pontos positivos</div><p>${esc(r.positivos || "—").replace(/\n/g, "<br>")}</p></div><div><div class="sec">Pontos de melhoria</div><p>${esc(r.melhorias || "—").replace(/\n/g, "<br>")}</p></div></div>
+      <footer>Gomes de Matos Consultoria · Projeto Naturalle Ice Up · gerado em ${new Date().toLocaleDateString("pt-BR")}</footer>`;
+    document.body.appendChild(host);
+    try {
+      await Promise.all([...host.querySelectorAll("img")].map(i => i.complete ? 0 : new Promise(ok => { i.onload = i.onerror = ok; })));
+      const canvas = await html2canvas(host, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const { jsPDF } = window.jspdf, pdf = new jsPDF({ unit: "mm", format: "a4" }), W = 210, H = 297, M = 8;
+      const pxPorMm = canvas.width / (W - 2 * M), alturaPag = Math.floor((H - 2 * M) * pxPorMm);
+      for (let y = 0, pg = 0; y < canvas.height; y += alturaPag, pg++) {
+        const fatia = document.createElement("canvas"); fatia.width = canvas.width; fatia.height = Math.min(alturaPag, canvas.height - y);
+        fatia.getContext("2d").drawImage(canvas, 0, y, canvas.width, fatia.height, 0, 0, canvas.width, fatia.height);
+        if (pg) pdf.addPage();
+        pdf.addImage(fatia.toDataURL("image/jpeg", 0.92), "JPEG", M, M, W - 2 * M, fatia.height / pxPorMm);
+      }
+      const nome = `ATA - ${(r.titulo || "Reunião").replace(/[\\/:*?"<>|]/g, "")} - ${r.data ? dataBR(r.data).replace(/\//g, ".") : "sem data"}.pdf`;
+      pdf.save(nome);
+      return nome;
+    } finally { host.remove(); }
   }
   function lerEncaminhamentos(txt, ano) {
     return String(txt || "").split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => {
@@ -590,7 +666,7 @@
   const linkPlat = (hash = "") => (CFG.urlPublica || location.href.split("#")[0]) + hash;
   const mailCasca = (titulo, corpo) => `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#2A1F17"><div style="background:#2B1A10;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-weight:bold;font-size:16px">Naturalle · Plataforma comercial</div><div style="border:1px solid #E6DCCD;border-top:0;padding:20px;border-radius:0 0 12px 12px"><h2 style="margin:0 0 12px;font-size:18px">${esc(titulo)}</h2>${corpo}<p style="margin-top:22px"><a href="${esc(linkPlat("#encaminhamentos"))}" style="background:#A15F1D;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir a plataforma</a></p></div></div>`;
   const mailTarefa = (t, intro) => mailCasca(t.titulo, `<p>${esc(intro)}</p><p><b>Prazo:</b> ${t.prazo ? dataBR(t.prazo) : "sem prazo"}<br><b>Prioridade:</b> ${esc(PRIOS[t.prioridade] || "")}</p>${t.descricao ? `<p style="white-space:pre-wrap">${esc(t.descricao)}</p>` : ""}`);
-  const textoAta = r => { const ts = S.data.tarefas.filter(t => t.origem === r.id); return `${r.titulo}\n${r.data ? "Data: " + dataBR(r.data) + "\n" : ""}Participantes: ${(r.participantes || []).join(", ")}\n\nPauta\n${r.pauta || "-"}\n\nDecisões\n${r.decisoes || "-"}\n\nEncaminhamentos\n${ts.map(t => `- ${t.titulo} · ${t.resp || "sem responsável"}${t.prazo ? " · até " + dataBR(t.prazo) : ""}`).join("\n") || "-"}\n\n${linkPlat("#encaminhamentos/reunioes")}`; };
+  const textoAta = r => { const ts = S.data.tarefas.filter(t => t.origem === r.id), pres = r.presenca || {}; return `${r.titulo}\n${r.data ? "Data: " + dataBR(r.data) + (r.horaIni ? " · " + r.horaIni + (r.horaFim ? " às " + r.horaFim : "") : "") + "\n" : ""}Participantes: ${(r.participantes || []).map(n => n + (pres[n] && pres[n] !== "P" ? " (" + pres[n] + ")" : "")).join(", ")}\nCondução: ${r.conducao || "Gomes de Matos Consultoria"}\n\nPauta\n${(r.pautaItens || []).map(p => "- " + p.t + (p.resp ? " · " + p.resp : "")).join("\n") || r.pauta || "-"}\n\nDefinições\n${r.decisoes || "-"}\n\nEncaminhamentos\n${ts.map(t => `- ${t.titulo} · ${t.resp || "sem responsável"}${t.prazo ? " · até " + dataBR(t.prazo) : ""}`).join("\n") || "-"}\n\n${linkPlat("#encaminhamentos/reunioes")}`; };
 
   /* =================================================================
      5d. PLANEJAMENTO COMERCIAL · metas do ano e frentes com iniciativas
@@ -841,17 +917,33 @@
     novaReuniao: () => gavetaReuniao({ id: uid(), titulo: "", data: hojeISO(), tipo: "Semanal comercial", participantes: [], pauta: "", decisoes: "" }, true),
     abrirReuniao: b => { const r = S.data.reunioes.find(x => x.id === b.dataset.id); if (r) gavetaReuniao(r, false); },
     salvarReuniao: async b => {
-      const id = b.dataset.id, d = { titulo: str($("#rTit").value, 140), data: $("#rData").value, tipo: $("#rTipo").value, participantes: $("#rPart").value.split(",").map(x => str(x, 80)).filter(Boolean), pauta: str($("#rPauta").value, 4000), decisoes: str($("#rDec").value, 8000), atualizadoEm: new Date().toISOString(), atualizadoPor: S.me.nome };
+      const id = b.dataset.id, a = lerAta(), novos = a._enc; delete a._enc;
+      const d = { ...a, atualizadoEm: new Date().toISOString(), atualizadoPor: S.me.nome };
       if (!d.titulo) return toast("Dê um título à reunião.");
-      const novos = lerEncaminhamentos($("#rEnc")?.value, +(d.data || hojeISO()).slice(0, 4));
+      if (novos.some(n => !n.resp || !n.prazo) && !(await confirmar({ titulo: "Há encaminhamento sem responsável ou sem data", texto: "Encaminhamento sem dono e sem prazo costuma ficar parado. Salvar mesmo assim?", ok: "Salvar assim" }))) return;
       if (!S.data.reunioes.some(x => x.id === id)) d.criadoEm = new Date().toISOString();
       const ok = await guardar(async () => { await S.store.set("reunioes", id, d); for (const n of novos) await salvarTarefa({ id: uid(), ...n, status: "afazer", prioridade: "media", origem: id, area: "", descricao: `Encaminhamento da reunião "${d.titulo}"${d.data ? " de " + dataBR(d.data) : ""}.`, checklist: [] }, "criou a partir da ata"); }, novos.length ? `Ata salva e ${novos.length} ${novos.length === 1 ? "encaminhamento criado" : "encaminhamentos criados"}` : "Ata salva");
       if (ok) fecharGaveta();
     },
+    ataAdd: b => { const t = b.dataset.tipo, alvo = t === "part" ? "#rPartL" : t === "pauta" ? "#rPautaL" : "#rEncL";
+      $(alvo).insertAdjacentHTML("beforeend", t === "part" ? linhaPart({ nome: "", p: "P" }, "") : t === "pauta" ? linhaPauta({ t: "" }, "") : linhaEnc({}, ""));
+      const l = $(alvo).lastElementChild; if (l) l.querySelector("input").focus(); },
+    ataRm: b => b.closest(".ata-l").remove(),
     excluirReuniao: async b => { const r = S.data.reunioes.find(x => x.id === b.dataset.id); if (!r || !(await confirmar({ titulo: "Excluir esta reunião?", texto: "Os encaminhamentos criados a partir dela continuam no quadro.", ok: "Excluir", perigo: true }))) return; fecharGaveta(); await guardar(() => S.store.del("reunioes", r.id), "Reunião excluída"); },
-    enviarAta: async b => { const r = S.data.reunioes.find(x => x.id === b.dataset.id); if (!r) return; const emails = (r.participantes || []).map(n => normEmail(pessoaPorNome(n)?.email)).filter(emailOk);
-      if (S.modo === "cloud" && emails.length) { if (!(await confirmar({ titulo: `Enviar a ata para ${emails.length} ${emails.length === 1 ? "pessoa" : "pessoas"}?`, texto: emails.join(", "), ok: "Enviar ata" }))) return; await guardar(() => Mail.fila(emails.map(e => ({ para: e, assunto: `Ata: ${r.titulo}`, html: mailCasca(r.titulo, `<pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${esc(textoAta(r))}</pre>`) }))), "Ata na fila de envio"); }
-      else Mail.mailto(emails.join(","), `Ata: ${r.titulo}`, textoAta(r)); },
+    enviarAta: async b => {
+      const r = S.data.reunioes.find(x => x.id === b.dataset.id); if (!r) return;
+      // se a gaveta está aberta, guarda o que foi digitado antes de gerar o PDF
+      if ($("#rTit") && podeEditar("encaminhamentos")) {
+        const a = lerAta(); if (a._enc.length) return toast("Clique em Salvar ata primeiro: os novos encaminhamentos ainda não foram criados.");
+        delete a._enc; Object.assign(r, a); await guardar(() => S.store.set("reunioes", r.id, { ...a, atualizadoEm: new Date().toISOString(), atualizadoPor: S.me.nome }), "");
+      }
+      b.disabled = true; const rotulo = b.innerHTML; b.textContent = "Gerando PDF…";
+      let nome = ""; try { nome = await pdfAta(r); } catch (e) { console.error(e); toast("Não consegui gerar o PDF: " + (e.message || e)); } finally { b.disabled = false; b.innerHTML = rotulo; }
+      const emails = (r.participantes || []).map(n => normEmail(pessoaPorNome(n)?.email)).filter(emailOk);
+      if (S.modo === "cloud" && emails.length) { if (!(await confirmar({ titulo: `Enviar a ata para ${emails.length} ${emails.length === 1 ? "pessoa" : "pessoas"}?`, texto: emails.join(", "), ok: "Enviar ata" }))) return; await guardar(() => Mail.fila(emails.map(e => ({ para: e, assunto: `Ata: ${r.titulo}`, html: mailCasca(r.titulo, `<pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${esc(textoAta(r))}</pre>`) }))), "Ata na fila de envio"); return; }
+      if (!nome) return;
+      toast(`PDF baixado: ${nome}. Anexe no e-mail que abriu.`);
+      Mail.mailto(emails.join(","), `Ata: ${r.titulo}${r.data ? " · " + dataBR(r.data) : ""}`, textoAta(r) + "\n\nA ata completa segue em PDF, em anexo."); },
     /* planejamento */
     novaFrente: () => gavetaFrente({ id: uid(), nome: "", descricao: "" }, true),
     editarFrente: b => { const f = S.data.frentes.find(x => x.id === b.dataset.id); if (f) gavetaFrente(f, false); },
@@ -932,8 +1024,8 @@
     }
     S.modo = "local"; S.store = new LocalStore(KEY + "-dados-v1"); if (S.store.vazio()) S.store.semear(SEED());
     const ses = ssGet(KEY + "-sessao", null);
-    if (ses?.chave) {
-      try { S.chaveVendas = ses.chave; S.links = await VendasDados.abrirCofre(await VendasDados.chaveDeBase64(ses.chave), CFG.cofreVendas); S.me = { nome: lsGet(KEY + "-nome", "") || "Equipe Naturalle", email: "", papel: "admin", abas: Object.fromEntries(ABA_IDS.map(a => [a, true])) }; return iniciarApp(); }
+    if (ses?.t) {
+      try { S.token = ses.t; S.links = true; S.me = { nome: lsGet(KEY + "-nome", "") || "Equipe Naturalle", email: "", papel: "admin", abas: Object.fromEntries(ABA_IDS.map(a => [a, true])) }; return iniciarApp(); }
       catch (_) { ssDel(KEY + "-sessao"); }
     }
     telaEntrada();

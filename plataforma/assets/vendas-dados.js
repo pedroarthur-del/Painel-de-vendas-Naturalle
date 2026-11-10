@@ -11,7 +11,7 @@
   const tira = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
   const MESES_UP = ["JANEIRO", "FEVEREIRO", "MARCO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
   const GRUPO_CASA = "Vendedores da casa", GRUPO_REP = "Representantes", GRUPO_CANAIS = "Outros canais";
-  const CASA = ["ALLYSON", "ALLYSSON", "GENESIA", "LAUDEMIR", "GLEICY", "RODRIGO"];
+  const CASA = ["ALLYSON", "ALLYSSON", "GENESIA", "LAUDEMIR", "REBECA", "GLEICY", "RODRIGO"];
   const REP = ["RODRIGO SORVETES", "RAIMUNDO JR", "RAIMUNDO", "PAULO SERGIO"];
 
   function grupoDe(vend, bloco) {
@@ -107,5 +107,35 @@
     try { return await emAndamento; } finally { emAndamento = null; }
   }
 
-  window.VendasDados = { parseCSV, parseVendas, carregar, chaveDaSenha, chaveDeBase64, chaveParaBase64, abrirCofre, normSenha, GRUPO_CASA, GRUPO_REP, GRUPO_CANAIS };
+  /* ---------- portal seguro (Apps Script): a planilha não é mais publicada na web ---------- */
+  async function api(url, corpo) {
+    let r;
+    try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(corpo), cache: "no-store", redirect: "follow", credentials: "omit" }); }
+    catch (e) { throw new Error("sem conexão com o servidor"); }
+    if (!r.ok) throw new Error("o servidor respondeu " + r.status);
+    const j = await r.json();
+    if (!j.ok) { const e = new Error(j.erro || "não foi possível concluir"); e.api = true; e.sessao = /sess[aã]o expirada/i.test(j.erro || ""); throw e; }
+    return j;
+  }
+  async function desgz(b64x) {
+    const bin = Uint8Array.from(atob(b64x), c => c.charCodeAt(0));
+    return JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+  }
+  let cacheApi = null, andamentoApi = null;
+  async function carregarApi(url, token, forcar) {
+    if (cacheApi && !forcar && Date.now() - cacheApi.em < 5 * 60e3) return cacheApi;
+    if (andamentoApi) return andamentoApi;
+    andamentoApi = (async () => {
+      const j = await api(url, { acao: "dados", t: token, forcar: !!forcar });
+      const d = Object.assign(await desgz(j.gz), j.extra || {});
+      const recs = parseVendas((d.abas && d.abas.vendas) || []);
+      if (!recs.length) throw new Error("Não encontrei blocos de período na aba Vendas.");
+      (d.metas || []).forEach(m => { if (m.grupo === "__all" && m.vend !== "__all" && m.meta > 0) recs.forEach(r => { if (r.ano === m.ano && r.mes === m.mes && NORM(r.vendedor) === NORM(m.vend)) r.meta = m.meta; }); });
+      cacheApi = { recs, em: Date.now(), metas: d.metas || [] };
+      return cacheApi;
+    })();
+    try { return await andamentoApi; } finally { andamentoApi = null; }
+  }
+
+  window.VendasDados = { api, carregarApi, parseCSV, parseVendas, carregar, chaveDaSenha, chaveDeBase64, chaveParaBase64, abrirCofre, normSenha, GRUPO_CASA, GRUPO_REP, GRUPO_CANAIS };
 })();

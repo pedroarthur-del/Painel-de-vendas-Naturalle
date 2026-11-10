@@ -525,6 +525,66 @@
   #prodVend td small.sub{color:var(--muted); font-weight:700}
   .prod-fonte{font-size:11.5px; color:var(--muted); margin:10px 2px 0}
   @media (max-width:900px){ #tabProdutos .row2{grid-template-columns:minmax(0,1fr)} }
+  /* ---------- login com picolé ---------- */
+  .login-box{width:min(860px,100%); display:grid; grid-template-columns:1fr 1fr; background:var(--card); border:1px solid var(--line); border-radius:28px; box-shadow:var(--shadow); overflow:hidden; animation:rise .6s var(--ease) backwards}
+  .login-arte{position:relative; background:radial-gradient(120% 90% at 30% 20%, #FFE9CC 0%, #F6D2A6 45%, #E9B47A 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:34px 20px 26px; min-height:440px}
+  .login-arte::before{content:""; position:absolute; inset:auto -20% -30% -20%; height:60%; background:radial-gradient(closest-side, rgba(161,95,29,.25), transparent); pointer-events:none}
+  .picole-big{width:min(270px,78%); height:auto; filter:drop-shadow(0 18px 22px rgba(110,63,18,.28)); animation:flutua 4.5s ease-in-out infinite; transform-origin:50% 90%}
+  .picole-big .pg-gota{animation:pinga 3.2s ease-in infinite; transform-box:fill-box; transform-origin:50% 0}
+  .picole-big .pg-gota.g2{animation-delay:1.4s}
+  @keyframes flutua{ 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-10px) rotate(2deg)} }
+  @keyframes pinga{ 0%,55%{transform:scaleY(1); opacity:1} 80%{transform:translateY(18px) scaleY(1.3); opacity:.9} 100%{transform:translateY(46px) scaleY(.6); opacity:0} }
+  .login-arte-txt{margin-top:14px; text-align:center; color:var(--marca-esc)}
+  .login-arte-txt b{display:block; font:800 30px/1 var(--display); letter-spacing:-.02em}
+  .login-arte-txt span{font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75}
+  .login-box .login-card{border:0; box-shadow:none; border-radius:0; width:auto; display:flex; flex-direction:column; justify-content:center; padding:40px 34px; animation:none}
+  .login-box .login-card input[type=text], .login-box .login-card input[type=password]{width:100%; font:700 16px var(--body); padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--creme); color:var(--ink); text-align:left; letter-spacing:0; margin-bottom:10px}
+  .login-card input:focus{outline:2px solid var(--marca); outline-offset:1px}
+  .login-dica{font-size:12.5px!important; margin:10px 0 0!important}
+  @media (max-width:720px){ .login-box{grid-template-columns:1fr} .login-arte{min-height:0; padding:24px 16px 14px} .picole-big{width:130px} .login-arte-txt b{font-size:24px} .login-box .login-card{padding:24px 20px 26px} }
+  @media (prefers-reduced-motion:reduce){ .picole-big, .picole-big .pg-gota{animation:none} }
+  /* ---------- modo vendedor: só o que é dele ---------- */
+  html.modo-vendedor #tabBtnRankings, html.modo-vendedor #tabBtnConfig, html.modo-vendedor #tabRankings, html.modo-vendedor #tabConfig,
+  html.modo-vendedor #btnPDF, html.modo-vendedor #btnRMR, html.modo-vendedor #resumoWrap, html.modo-vendedor #btnSemana, html.modo-vendedor #btnFile,
+  html.modo-vendedor .fld:has(#fGrupo), html.modo-vendedor .fld:has(#fVend), html.modo-vendedor .fld:has(#fEmpresa), html.modo-vendedor #rowCanais,
+  html.modo-vendedor label[for=feriadosInput], html.modo-vendedor #feriadosInput, html.modo-vendedor .so-equipe{display:none!important}
+  html.modo-vendedor #metaInput{pointer-events:none; border-color:transparent; background:transparent}
+  html.modo-equipe .so-vendedor{display:none!important}
+  #avisoRapido{position:fixed; left:50%; bottom:22px; transform:translate(-50%,30px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px; font-weight:800; font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:9999; max-width:calc(100vw - 32px)}
+  #avisoRapido.on{opacity:1; transform:translate(-50%,0)} #avisoRapido.erro{background:var(--bad)}
+  /* ---------- remuneração ---------- */
+  .rem-hero .kcap{font-size:12px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.06em}
+  .rem-hero .rem-val{font:800 clamp(34px,5vw,48px)/1 var(--display); color:var(--marca-esc); letter-spacing:-.03em; margin:6px 0 10px}
+  .rem-prox{background:var(--marca-cl); border-radius:12px; padding:10px 12px; font-weight:700; margin:12px 0 0}
+  .rem-form h3{font:800 15px var(--display); margin:16px 0 8px}
+  .rem-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; align-items:end}
+  .rem-grid label, .rem-obs{display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:800; color:var(--muted)}
+  .rem-form input, .rem-form textarea, .acs-novo input{font:700 14px var(--body); padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--creme); color:var(--ink)}
+  .rem-fx{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:6px 0; font-size:13px; font-weight:700; color:var(--muted)}
+  .rem-fx input{width:80px}
+  .rem-obs{margin-top:12px} .rem-pub{justify-content:flex-start!important; margin:12px 0!important}
+  .btn.sm{padding:6px 10px; font-size:12.5px}
+  .tbl-wrap{overflow-x:auto}
+  /* ---------- faturamento por canal ---------- */
+  #rowCanais .kpistat .ksub b{color:var(--ink)}
+  /* ---------- resultado da semana ---------- */
+  .sem-card{background:#FBF7F1; border:1px solid var(--line); border-radius:16px; padding:16px; margin:12px 0}
+  .sc-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:10px; color:var(--marca-esc)} .sc-top b{font:800 18px var(--display)} .sc-top span{font-size:12.5px; font-weight:800; color:var(--muted)}
+  .sc-l{display:grid; grid-template-columns:22px minmax(0,1fr) 92px 92px 110px; gap:8px; align-items:center; padding:7px 0; border-top:1px solid var(--line-2); font-size:13px}
+  .sc-p{font:800 13px var(--display); color:var(--ant)} .sc-n{font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .sc-v{font:800 13px var(--display); text-align:right} .sc-v small{display:block; font:700 10.5px var(--body); color:var(--muted)}
+  .sc-b{position:relative; height:18px; background:var(--track); border-radius:99px; overflow:hidden} .sc-b i{position:absolute; inset:0 auto 0 0; background:var(--marca); border-radius:99px} .sc-b em{position:relative; display:block; text-align:center; font:800 11px/18px var(--body); font-style:normal; color:var(--ink)}
+  .sc-tot{margin-top:8px; padding-top:8px; border-top:2px solid var(--line); font-size:13px}
+  #semTxt, #chvTxt{width:100%; font:600 13px/1.45 var(--body); border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--creme); color:var(--ink)}
+  @media (max-width:640px){ .sc-l{grid-template-columns:18px minmax(0,1fr) 78px 78px} .sc-b{display:none} }
+  /* ---------- acessos ---------- */
+  .acs td{vertical-align:middle} .acs .sub{color:var(--muted); font-weight:700}
+  .acs-bt{white-space:nowrap} .acs-bt .btn{margin:2px}
+  .chip-ok, .chip-off{display:inline-block; padding:2px 8px; border-radius:99px; font-size:11.5px; font-weight:800}
+  .chip-ok{background:var(--ok-soft); color:var(--ok)} .chip-off{background:var(--track); color:var(--muted)}
+  .acs-novo{margin-top:12px} .acs-novo summary{cursor:pointer; font-weight:800; color:var(--marca-esc); margin-bottom:10px}
+  .sq-form{display:flex; flex-wrap:wrap; gap:10px; align-items:end} .sq-form label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:800; color:var(--muted)}
+  .sq-form input{font:700 14px var(--body); padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--creme)}
   /* ---------- acesso por senha ---------- */
   html:not(.aberto) .wrap{display:none}
   html.aberto .login{display:none}
@@ -621,16 +681,39 @@
 </style>
 
 <div class="login" id="login">
-  <form class="login-card" id="loginForm" autocomplete="off">
-    <svg class="marca-n login-n" viewBox="110 77 227 293" aria-hidden="true" focusable="false"><path d="M152.2 365.6C152.6 365.3 153.1 364.6 153.4 364.0L154.0 362.9L154.1 273.6C154.1 190.5 154.2 184.1 154.6 180.9C155.8 171.1 156.9 166.7 160.0 159.1C161.4 155.5 164.6 150.0 167.5 146.1C169.8 143.0 175.1 137.6 178.2 135.0C182.1 131.9 187.5 128.4 190.5 127.1C191.2 126.7 192.4 126.2 193.1 125.9C197.1 124.0 200.1 123.0 205.1 121.9C209.7 120.9 211.8 120.6 216.4 120.2C220.0 119.9 231.2 120.1 232.9 120.5C233.4 120.6 235.2 120.9 236.8 121.0C240.2 121.3 242.1 121.8 242.6 122.6C243.1 123.3 243.1 124.8 242.5 127.1C242.0 128.9 241.9 129.8 241.9 135.2C241.9 141.7 241.9 141.9 243.4 147.6C245.5 155.6 249.5 163.4 254.8 170.0C257.6 173.5 262.9 178.6 266.7 181.4C270.0 183.9 275.5 187.2 278.9 188.7C281.1 189.7 287.9 192.0 288.5 192.0C288.8 192.0 289.7 192.3 290.6 192.8C291.8 193.3 292.4 193.8 292.9 194.6L293.6 195.6L293.8 279.0C293.8 341.8 293.9 362.5 294.2 362.9C294.6 363.6 295.8 364.7 296.5 364.9C296.9 365.1 304.6 365.2 314.2 365.1C331.0 365.1 331.2 365.1 331.9 364.6C332.3 364.3 332.8 363.7 333.1 363.2C333.5 362.4 333.5 357.9 333.4 275.6C333.4 193.3 333.4 188.8 332.9 188.2C332.2 187.0 331.3 186.7 327.6 186.5C321.5 186.1 318.2 185.5 314.4 184.4C306.5 182.2 301.0 179.5 295.0 175.3C289.7 171.5 282.3 164.6 278.5 159.9C271.5 151.2 266.8 142.0 264.2 131.8C262.8 126.3 262.6 125.6 262.0 120.5C261.0 112.9 261.3 99.5 262.6 93.5C263.1 91.1 263.1 88.3 262.6 87.5C262.0 86.7 261.5 86.3 260.8 86.0C259.7 85.5 254.3 84.0 253.8 84.0C253.6 84.0 252.7 83.8 251.9 83.6C249.2 82.9 244.4 82.2 238.8 81.6C231.1 80.8 215.7 81.0 207.1 82.0C195.2 83.4 181.7 87.2 172.1 92.1C160.9 97.7 149.5 106.5 140.7 116.4C135.0 122.8 130.5 129.6 126.4 137.8C125.5 139.6 124.6 141.3 124.5 141.5C124.0 142.6 121.3 149.4 120.5 152.1C119.6 154.6 118.1 160.2 117.3 163.6C116.3 167.8 115.1 176.4 114.8 182.3C114.0 194.7 114.0 198.7 114.1 280.2C114.2 370.1 114.1 364.1 115.5 365.4C115.9 365.7 116.3 366.0 116.6 366.1C116.9 366.1 124.9 366.2 134.3 366.2C151.3 366.1 151.5 366.1 152.2 365.6Z"/></svg>
-    <h1>Painel Comercial</h1>
-    <p>Acesso restrito à equipe Naturalle. Digite a senha para entrar.</p>
-    <label for="senha" class="vh">Senha</label>
-    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
-    <label class="lembrar"><input type="checkbox" id="lembrar" checked> Manter conectado neste aparelho</label>
-    <button class="btn" type="submit" id="btnEntrar">Entrar no painel</button>
-    <p class="login-erro" id="loginErro" role="alert"></p>
-  </form>
+  <div class="login-box">
+    <div class="login-arte" aria-hidden="true">
+      <svg class="picole-big" viewBox="0 0 240 400" focusable="false">
+        <defs>
+          <linearGradient id="pgCorpo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2B36B"/><stop offset=".55" stop-color="#D98A3D"/><stop offset="1" stop-color="#A15F1D"/></linearGradient>
+          <linearGradient id="pgPalito" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E4C08E"/><stop offset=".5" stop-color="#F3DDB8"/><stop offset="1" stop-color="#D8AE72"/></linearGradient>
+          <mask id="pgMordida"><rect width="240" height="400" fill="#fff"/><circle cx="196" cy="58" r="22" fill="#000"/><circle cx="214" cy="86" r="20" fill="#000"/><circle cx="176" cy="40" r="16" fill="#000"/></mask>
+        </defs>
+        <g class="pg-palito"><rect x="100" y="268" width="40" height="120" rx="20" fill="url(#pgPalito)"/><path d="M112 300v60M128 296v70" stroke="#C99A5B" stroke-width="2" stroke-linecap="round" opacity=".55"/></g>
+        <g class="pg-corpo" mask="url(#pgMordida)">
+          <path d="M28 120C28 62 70 22 120 22s92 40 92 98v142c0 14-11 24-24 24H52c-13 0-24-10-24-24Z" fill="url(#pgCorpo)"/>
+          <path d="M56 70c10-18 26-30 44-34" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".28" fill="none"/>
+          <path d="M48 100v130" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".18"/>
+          <g transform="translate(74 92) scale(.4) translate(-110 -77)" fill="#FFF8EE"><path d="M152.2 365.6C152.6 365.3 153.1 364.6 153.4 364.0L154.0 362.9L154.1 273.6C154.1 190.5 154.2 184.1 154.6 180.9C155.8 171.1 156.9 166.7 160.0 159.1C161.4 155.5 164.6 150.0 167.5 146.1C169.8 143.0 175.1 137.6 178.2 135.0C182.1 131.9 187.5 128.4 190.5 127.1C191.2 126.7 192.4 126.2 193.1 125.9C197.1 124.0 200.1 123.0 205.1 121.9C209.7 120.9 211.8 120.6 216.4 120.2C220.0 119.9 231.2 120.1 232.9 120.5C233.4 120.6 235.2 120.9 236.8 121.0C240.2 121.3 242.1 121.8 242.6 122.6C243.1 123.3 243.1 124.8 242.5 127.1C242.0 128.9 241.9 129.8 241.9 135.2C241.9 141.7 241.9 141.9 243.4 147.6C245.5 155.6 249.5 163.4 254.8 170.0C257.6 173.5 262.9 178.6 266.7 181.4C270.0 183.9 275.5 187.2 278.9 188.7C281.1 189.7 287.9 192.0 288.5 192.0C288.8 192.0 289.7 192.3 290.6 192.8C291.8 193.3 292.4 193.8 292.9 194.6L293.6 195.6L293.8 279.0C293.8 341.8 293.9 362.5 294.2 362.9C294.6 363.6 295.8 364.7 296.5 364.9C296.9 365.1 304.6 365.2 314.2 365.1C331.0 365.1 331.2 365.1 331.9 364.6C332.3 364.3 332.8 363.7 333.1 363.2C333.5 362.4 333.5 357.9 333.4 275.6C333.4 193.3 333.4 188.8 332.9 188.2C332.2 187.0 331.3 186.7 327.6 186.5C321.5 186.1 318.2 185.5 314.4 184.4C306.5 182.2 301.0 179.5 295.0 175.3C289.7 171.5 282.3 164.6 278.5 159.9C271.5 151.2 266.8 142.0 264.2 131.8C262.8 126.3 262.6 125.6 262.0 120.5C261.0 112.9 261.3 99.5 262.6 93.5C263.1 91.1 263.1 88.3 262.6 87.5C262.0 86.7 261.5 86.3 260.8 86.0C259.7 85.5 254.3 84.0 253.8 84.0C253.6 84.0 252.7 83.8 251.9 83.6C249.2 82.9 244.4 82.2 238.8 81.6C231.1 80.8 215.7 81.0 207.1 82.0C195.2 83.4 181.7 87.2 172.1 92.1C160.9 97.7 149.5 106.5 140.7 116.4C135.0 122.8 130.5 129.6 126.4 137.8C125.5 139.6 124.6 141.3 124.5 141.5C124.0 142.6 121.3 149.4 120.5 152.1C119.6 154.6 118.1 160.2 117.3 163.6C116.3 167.8 115.1 176.4 114.8 182.3C114.0 194.7 114.0 198.7 114.1 280.2C114.2 370.1 114.1 364.1 115.5 365.4C115.9 365.7 116.3 366.0 116.6 366.1C116.9 366.1 124.9 366.2 134.3 366.2C151.3 366.1 151.5 366.1 152.2 365.6Z"/></g>
+        </g>
+        <path class="pg-gota" d="M70 284c0 10 6 18 12 18s12-8 12-18" fill="#C97A2C"/>
+        <path class="pg-gota g2" d="M150 284c0 7 4 12 8 12s8-5 8-12" fill="#C97A2C"/>
+      </svg>
+      <div class="login-arte-txt"><b>Naturalle</b><span>Painel comercial</span></div>
+    </div>
+    <form class="login-card" id="loginForm" autocomplete="on">
+      <h1>Entrar no painel</h1>
+      <p>Use o usuário e a senha que você recebeu.</p>
+      <label for="usuario" class="vh">Usuário</label>
+      <input type="text" id="usuario" placeholder="Usuário" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" required>
+      <label for="senha" class="vh">Senha</label>
+      <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" maxlength="80" required>
+      <label class="lembrar"><input type="checkbox" id="lembrar" checked> Manter conectado neste aparelho</label>
+      <button class="btn" type="submit" id="btnEntrar">Entrar</button>
+      <p class="login-erro" id="loginErro" role="alert"></p>
+      <p class="login-dica">Cada vendedor vê só os próprios números.</p>
+    </form>
+  </div>
 </div>
 <div class="wrap">
   <header class="top">
@@ -658,6 +741,10 @@
           <button type="button" data-fmt="pdf">Baixar como PDF</button>
         </div>
       </div>
+      <button class="btn ghost hidden" id="btnSemana" type="button" title="Texto e imagem do resultado da semana para os grupos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v12H8l-4 3z" stroke="#6E4C50" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="#6E4C50" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Resultado da semana
+      </button>
       <button class="btn" id="btnRefresh" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Atualizar dados
@@ -690,13 +777,13 @@
 
   <div class="state" id="empty">
     <svg class="big" viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="30" rx="4" stroke="#C97A2C" stroke-width="2"/><path d="M6 18h36M14 26h9M14 32h16" stroke="#C97A2C" stroke-width="2" stroke-linecap="round"/><circle cx="34" cy="28" r="7" fill="#FBF7F1" stroke="#8C6469" stroke-width="2"/><path d="M34 25v6m-3-3h6" stroke="#8C6469" stroke-width="2" stroke-linecap="round"/></svg>
-    <h2>Carregando dados do Google Sheets…</h2>
-    <p>O painel busca a aba <code>Vendas</code> direto da planilha publicada na web. Isso leva só alguns segundos.</p>
+    <h2>Carregando seus dados…</h2>
+    <p>O painel busca os números no servidor seguro da planilha. Isso leva alguns segundos.</p>
   </div>
 
   <div class="state err hidden" id="error">
     <svg class="big" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="19" stroke="#B0492F" stroke-width="2"/><path d="M24 15v13m0 5h.02" stroke="#B0492F" stroke-width="2.4" stroke-linecap="round"/></svg>
-    <h2>Não consegui ler a planilha</h2><p id="errmsg"></p>
+    <h2>Não consegui carregar os dados</h2><p id="errmsg"></p>
   </div>
 
   <div id="dash" class="hidden">
@@ -715,9 +802,16 @@
       <button type="button" id="tabBtnCarteira">Carteira</button>
       <button type="button" id="tabBtnProdutos">Produtos</button>
       <button type="button" id="tabBtnCampanha">Campanhas</button>
+      <button type="button" id="tabBtnRemuneracao">Remuneração</button>
     </div>
 
     <div id="tabGeral">
+
+    <div class="row3" id="rowCanais">
+      <div class="panel"><div class="kpistat" id="kpiCanalVend"></div></div>
+      <div class="panel"><div class="kpistat" id="kpiCanalDist"></div></div>
+      <div class="panel"><div class="kpistat" id="kpiCanalTot"></div></div>
+    </div>
 
     <div class="grid">
       <div class="panel">
@@ -846,13 +940,13 @@
 
           <div class="cfg-section">
             <h3>Meta geral do mês</h3>
-            <p class="desc">Meta da empresa inteira (todos os vendedores e canais somados). É a mesma usada no banner do topo.</p>
+            <p class="desc">Meta da empresa inteira (todos os vendedores e canais somados). É a mesma usada no banner do topo e vale para toda a equipe.</p>
             <div class="cfg-meta-geral"><span>R$</span><input type="text" id="cfgMetaGeral" placeholder="digitar"></div>
           </div>
 
           <div class="cfg-section">
             <h3>Metas por vendedor</h3>
-            <p class="desc">Sobrescreve a meta que está na planilha, só pra essa visão — a planilha original não é alterada. Afeta os rankings, o painel diário e o atingimento. Deixe em branco pra voltar a usar o valor da planilha.</p>
+            <p class="desc">Sobrescreve a meta da planilha e vale para toda a equipe (fica salva no servidor, na aba "Metas do painel"). O vendedor vê a meta dele. Afeta rankings, painel diário, atingimento, campanha e remuneração. Deixe em branco pra voltar a usar o valor da planilha.</p>
             <div id="cfgVendedoresWrap"></div>
           </div>
 
@@ -865,6 +959,20 @@
             <h3>Por SKU <span class="badge-warn">em breve</span></h3>
             <div class="cfg-soon">Ainda não temos venda quebrada por produto/SKU — só o total por vendedor. Quando existir, a meta por SKU entra aqui.</div>
           </div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h2>Acessos dos vendedores</h2>
+          <p class="desc">Cada vendedor entra com o próprio usuário e chave e vê só os números dele: vendas, meta, carteira, produtos, campanha e remuneração. Encaminhamentos, atas e o faturamento da empresa ficam de fora, pelo servidor.</p>
+          <div id="acessosBody"></div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h2>Senha da equipe</h2>
+          <p class="desc">Usuário <code>equipe</code>: vê tudo. Use uma senha longa e troque quando alguém sair da equipe.</p>
+          <form class="sq-form" id="sqForm"><label>Senha atual<input type="password" id="sqAtual" autocomplete="current-password" required></label><label>Nova senha (mín. 10)<input type="password" id="sqNova" autocomplete="new-password" minlength="10" required></label><button class="btn" type="submit">Trocar senha</button><span class="desc" id="sqMsg"></span></form>
         </div>
       </div>
     </div><!-- /tabConfig -->
@@ -946,6 +1054,8 @@
       </div>
       </div>
     </div><!-- /tabProdutos -->
+
+    <div id="tabRemuneracao" class="hidden"><div id="remBody"></div></div><!-- /tabRemuneracao -->
 
     <div id="tabCarteira" class="hidden">
       <div class="state-note hidden" id="cartAviso"></div>
@@ -1037,6 +1147,24 @@
     <p class="dt" id="rodapeData"></p>
     <button class="btn ghost sair" type="button" id="btnSair">Sair do painel</button>
   </footer>
+  <dialog class="rmr-dlg" id="semDlg" aria-labelledby="semTit">
+    <form method="dialog">
+      <h2 id="semTit">Resultado da semana</h2>
+      <p class="rmr-sub">Texto pronto para colar nos grupos e imagem para enviar. Vendedores e representantes, ordenados pelo % da meta.</p>
+      <label class="rmr-txt">Semana<select id="semSel"></select></label>
+      <div class="sem-card" id="semCard"></div>
+      <label class="rmr-txt">Texto para o WhatsApp<textarea id="semTxt" rows="9"></textarea></label>
+      <div class="rmr-acoes"><button class="btn ghost" value="fechar">Fechar</button><button class="btn ghost" type="button" id="semPng">Baixar imagem</button><button class="btn" type="button" id="semCopiar">Copiar texto</button></div>
+    </form>
+  </dialog>
+  <dialog class="rmr-dlg" id="chvDlg" aria-labelledby="chvTit">
+    <form method="dialog">
+      <h2 id="chvTit">Acesso de <span id="chvNome"></span></h2>
+      <p class="rmr-sub">Esta chave aparece só agora. Copie a mensagem e envie direto para o vendedor (de preferência no privado).</p>
+      <textarea id="chvTxt" rows="8" readonly></textarea>
+      <div class="rmr-acoes"><button class="btn ghost" value="fechar">Fechar</button><button class="btn" type="button" id="chvCopiar">Copiar mensagem</button></div>
+    </form>
+  </dialog>
   <dialog class="rmr-dlg" id="rmrDlg" aria-labelledby="rmrTit">
     <form id="rmrForm" method="dialog">
       <h2 id="rmrTit">Gerar RMR</h2>
@@ -1221,7 +1349,7 @@ function mesFromName(name){
 const GRUPO1_CASA = 'Grupo 1 — Vendedores da Casa';
 const GRUPO2_REP  = 'Grupo 2 — Representantes / Food Service';
 const GRUPO3_CANAIS = 'Outros Canais';
-const GRUPO1_NAMES = ['ALLYSON','ALLYSSON','GENESIA','LAUDEMIR','GLEICY','RODRIGO'];
+const GRUPO1_NAMES = ['ALLYSON','ALLYSSON','GENESIA','LAUDEMIR','REBECA','GLEICY','RODRIGO'];
 const GRUPO2_NAMES = ['RODRIGO SORVETES','RAIMUNDO JR','RAIMUNDO','PAULO SERGIO','PAULO SÉRGIO'];
 function classifyGrupo(vendedor, blockGrupo){
   const vu = stripAccents(NORM(vendedor));
@@ -1342,27 +1470,19 @@ function showError(m){ $('#empty').classList.add('hidden'); $('#dash').classList
 
 async function carregarDados(manual){
   const btn=$('#btnRefresh');
-  if(manual){ showLoading(); btn.disabled=true; }
-  if(!SHEET_CSV_URL || SHEET_CSV_URL.indexOf('COLE_AQUI')===0){
-    showError('O link da planilha publicada ainda não foi configurado neste painel (constante <code>SHEET_CSV_URL</code>, no início do script). Veja o passo a passo de publicação.');
-    if(manual) btn.disabled=false;
-    return;
-  }
+  if(manual){ showLoading(); btn.disabled=true; if(EH_EQUIPE()) $('#empty h2').textContent='Lendo a planilha agora (leva até 40 segundos)…'; }
   try{
-    const url = SHEET_CSV_URL + (SHEET_CSV_URL.includes('?')?'&':'?') + '_=' + Date.now(); // evita cache do navegador
-    const resp = await fetch(url, {cache:'no-store'});
-    if(!resp.ok) throw new Error('o Google Sheets respondeu com erro '+resp.status);
-    const text = await resp.text();
-    if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('recebi uma página do Google em vez do CSV — confira se a planilha ainda está "Publicada na Web" (Arquivo → Compartilhar → Publicar na Web) e se o link em SHEET_CSV_URL é o do formato CSV');
-    const rows = normalizarLinhasCSV(parseCSV(text));
+    const j = await api('dados', {forcar: !!manual && EH_EQUIPE()});
+    if(j.papel!==SESSAO.papel){ sessaoExpirada(); return; }
+    DADOS_API = Object.assign(await desgz(j.gz), j.extra||{});
+    aplicarDadosApi();
+    const rows = normalizarLinhasCSV(linhasApi('vendas'));
     const {recs,error} = parseVendasBlocks(rows);
-    if(error){ showError(error); return; }
-    if(!recs.length){ showError('A aba Vendas não retornou nenhum dado reconhecível.'); return; }
-    RECS_ALL=recs;
+    if(error){ showError(MODO_VENDEDOR() ? 'Ainda não há vendas suas lançadas na planilha. Fale com o supervisor.' : error); return; }
+    if(!recs.length){ showError(MODO_VENDEDOR() ? 'Ainda não há vendas suas lançadas na planilha. Fale com o supervisor.' : 'A aba Vendas não retornou nenhum dado reconhecível.'); return; }
+    RECS_ALL=aplicarMetasNasLinhas(recs);
 
-    // abas por empresa (Naturalle/Selecto) são opcionais: se não estiverem configuradas, ou a busca falhar,
-    // o painel principal continua funcionando normal — só o filtro "Empresa" fica indisponível.
-    // a aba Carteira também é opcional: carrega em paralelo e, se falhar, só ela mostra o aviso
+    // abas por empresa e as abas de carteira/campanha/produtos são opcionais: se falharem, só elas avisam
     const [natRes, selRes] = await Promise.allSettled([
       fetchVendasCSV(SHEET_CSV_URL_NATURALLE),
       fetchVendasCSV(SHEET_CSV_URL_SELECTO),
@@ -1374,35 +1494,34 @@ async function carregarDados(manual){
     RECS_SEL = selRes.status==='fulfilled' ? selRes.value : null;
 
     lastMeta={filename:'Google Sheets (ao vivo)', savedAt:Date.now()};
-    $('#fname').innerHTML='Fonte: <b>Google Sheets</b> · atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    $('#btnPDF').classList.remove('hidden');
-    $('#btnRMR').classList.remove('hidden');
-    $('#resumoWrap').classList.remove('hidden');
-    $('#btnFile').classList.add('hidden');
+    const lidoEm = DADOS_API.em ? new Date(DADOS_API.em) : new Date();
+    $('#fname').innerHTML='Fonte: <b>planilha de vendas</b> · lida às '+lidoEm.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if(EH_EQUIPE()){
+      $('#btnPDF').classList.remove('hidden');
+      $('#btnRMR').classList.remove('hidden');
+      $('#resumoWrap').classList.remove('hidden');
+      $('#btnSemana').classList.remove('hidden');
+    }
     boot();
+    if(EH_EQUIPE()) migrarMetasLocais();
   }catch(err){
-    showError('Não consegui carregar os dados do Google Sheets ('+err.message+'). Pode tentar de novo em "Atualizar dados", ou usar "Anexar manualmente" enquanto isso.');
-    $('#btnFile').classList.remove('hidden');
+    if(err.sessao){ sessaoExpirada(); return; }
+    showError('Não consegui carregar os dados ('+esc(err.message)+'). Tente de novo em "Atualizar dados".');
   }finally{
     if(manual) btn.disabled=false;
   }
 }
 // busca uma aba "Vendas X" opcional (mesmo formato de blocos da aba Vendas principal).
-// retorna null se a URL ainda não foi configurada; lança erro se a busca/parse falhar.
 async function fetchVendasCSV(url){
-  if(!url || url.indexOf('COLE_AQUI')===0) return null;
-  const u = url + (url.includes('?')?'&':'?') + '_=' + Date.now();
-  const resp = await fetch(u, {cache:'no-store'});
-  if(!resp.ok) throw new Error('HTTP '+resp.status);
-  const text = await resp.text();
-  if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('recebeu HTML em vez de CSV');
-  const rows = normalizarLinhasCSV(parseCSV(text));
+  if(!url) return null;
+  const rows = await fetchCSVRows(url);
+  if(!rows || !rows.length) return null;
   const {recs,error} = parseVendasBlocks(rows);
   if(error) throw new Error(error);
   return recs||[];
 }
 $('#btnRefresh').onclick=()=>carregarDados(true);
-setInterval(()=>{ if(PAINEL_ABERTO) carregarDados(false); }, AUTO_REFRESH_MS);
+setInterval(()=>{ if(PAINEL_ABERTO && !document.hidden) carregarDados(false); }, AUTO_REFRESH_MS);
 
 /* ---------- alternativa manual (só aparece se a busca ao vivo falhar) ---------- */
 $('#btnFile').onclick=()=>$('#file').click();
@@ -1429,8 +1548,9 @@ function readFileManual(file){
   rd.readAsArrayBuffer(file);
 }
 
-const TABS=['Geral','Rankings','Carteira','Produtos','Config','Campanha'];
+const TABS=['Geral','Rankings','Carteira','Produtos','Config','Campanha','Remuneracao'];
 function irParaAba(nome){
+  if(MODO_VENDEDOR() && (nome==='Rankings'||nome==='Config')) nome='Geral';
   TABS.forEach(n=>{
     $('#tab'+n).classList.toggle('hidden', n!==nome);
     $('#tabBtn'+n).classList.toggle('active', n===nome);
@@ -1439,6 +1559,8 @@ function irParaAba(nome){
   if(nome==='Carteira'){ try{ renderCarteira(); }catch(e){ console.error(e); } } // redesenha o gráfico já visível
   if(nome==='Campanha'){ try{ renderCampanha(); }catch(e){ console.error(e); } }
   if(nome==='Produtos'){ try{ renderProdutos(); }catch(e){ console.error(e); } }
+  if(nome==='Remuneracao'){ try{ renderRemuneracao(); }catch(e){ console.error(e); } }
+  if(nome==='Config'){ try{ renderAcessos(); }catch(e){ console.error(e); } }
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 
@@ -1579,12 +1701,8 @@ const cartUI = {lista:'nc', sort:{nc:['ant','desc'], cm:['var_rs','asc'], nv:['a
 function cartConfigurada(u){ return u && u.indexOf('COLE_AQUI')!==0; }
 async function fetchCSVRows(url){
   if(!cartConfigurada(url)) return null;
-  const u = url + (url.includes('?')?'&':'?') + '_=' + Date.now();
-  const resp = await fetch(u, {cache:'no-store'});
-  if(!resp.ok) throw new Error('HTTP '+resp.status);
-  const text = await resp.text();
-  if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('recebeu HTML em vez de CSV');
-  return normalizarLinhasCSV(parseCSV(text));
+  if(String(url).indexOf('api:')===0) return normalizarLinhasCSV(linhasApi(String(url).slice(4)));
+  return null;
 }
 function cartData(v){
   if(v==null || v==='') return null;
@@ -2629,7 +2747,7 @@ function campNotas(){
   [...(CARTEIRA.anterior||[]), ...(CARTEIRA.atual||[])].forEach(d=>{ const k=campChaveNota(d); if(vistos.has(k)) return; vistos.add(k); out.push(d); });
   return out;
 }
-const campVendNorm = v => { const s=stripAccents(NORM(v)); return s==='REBECA' ? 'GLEICY' : s; };
+const campVendNorm = v => { const s=stripAccents(NORM(v)); return s==='GLEICY' ? 'REBECA' : s; };
 
 function computeCorridinha(ano, mes){
   const cfg=(CAMP_CFG||[]).filter(c=>c.ano===ano && c.mes===mes);
@@ -3056,66 +3174,329 @@ function renderProdutos(){
 }
 document.querySelectorAll('#prodMetrica button').forEach(b=>b.onclick=()=>{ prodUI.metrica=b.dataset.m; renderProdutos(); });
 
-/* ---------- ACESSO: senha da equipe ----------
-   Os links das planilhas ficam criptografados (AES-GCM) com uma chave derivada da senha (PBKDF2, 250 mil voltas).
-   Sem a senha certa o painel não consegue nem descobrir de onde vêm os dados. Para trocar a senha, peça ao Pedro
-   para gerar um novo COFRE. */
-const COFRE = {"salt": "TAjqhc1YRDxvKaX/HMtTlw==", "iv": "ePXvTgc3Iid4xIQd", "dados": "c7dxS068edvC0pXWVdwqKy7/q5KcSmqARNYu4eAs9EPo6HX31NJGM0EVropDgLxYv2KoCHjfD454pEQ677OQhoNEeBbvptw3n+D3l/j7ePRmwponHfDtnz8Jrx+Xvkubq7tieCOI1bMOb2kVUOnA+zCmsnQW/OA4IkLYAXLBUSfuhBH8xJLvUapo/Ea3jRBDrHNtRCJV3aL1CsFmCRXl2vRxSIQJd17b9nWPo6Uf+a9KvpCl4F86FODmPtWaWQ6dFCzeOT694a/tsrch9sk7Kn4nbQZEgKA016KSZH/pJ4jM93qkGK72I42cXmrWCRFtk+fRyhFNDlphgC+u/EHAAe6CAX96xLNXN0LtgkULCFCTw8ZG8Fq+1fTbg2phQvoQ7mue4+WjCeULfNYLNT8+HiSeKtU/KLil7jWR1udrUMmJjvTo9rpXu/OPRl4KgHzXW1GYxAee3zah80/sCUBiB312UHjEWeSLfAhTbad02g5+8qYr+jO3OWhogz1g/qdE5ulvWxwju2hEE90arY4sBf7oK29Rqt+89T+U36hrs2rixdoIxWzQ+0BAXsr//cliePuUYFxCnJj6QmuGRSxB9VZhOh7TuRmy88OCFxCkvT0RXwVDe/h4WT/Ca9rK8eSH68jxfnG1+F1QNvC9s5y9DTTK5pwQZ7XORLVNgZeaZ9SxhrGsNVDZs6xujchRz1ES74NUEC05GqBpmaPaxTJXlQjBOlTCo31w32Y35ew6gWxH700b6kY/v2zbUXaFgSIYtGnNK8k24ur9TE6ymrrWbfgyailh46hWtiV/BeF4+qCoXfnUwvBCmdWrxyvKS8+eSYsi3hzp24cDEr4EAktjyqTZ+t/qFdpNGaB3IS1aFgwPhaxKC6linP3MMVGVqnzgw8HduuIov1aRowSPmbRSK1ejHY31oN86J5fE7Q3lIVDZtq3KHUo5V0a6y4+XVTbE9HezvIeqw0UkB19rsE8fet8kpwEC9QvI+j1dnuBb+EfZ7IcQxt+xMuzbSRIs4rlWRXLKlpvuMqIWJqikzISqik+Ju3Bmeeu6PVl7jTEhlHe1JBTlF0XnFNnpHhACi+l0T4bbauvtlyeSdOcQPzdNbQpinjwhioGNnFlVMtNDUcxjg5sjgvkFjC+1DeXVrKVfOTeuQJss06fvPm3glL05PaB4z1l5/5n/V2yuVW3NUVg/zjHjdFxb20yJz3LwwjyQK0YdYDFEEhKavw5SRR8XmctoeEqzb52Sc0KYYrudIYkIPvN5dU4fv3QMOV2TyBi8qoIApaMvSAJqMrPWr7vY7iCiYcUC9sBujBlMR1B0agBIrOut189JqJrMKsS1Q5doKqQbCIPm51x5UVd9rJRkZYlCGVrKjzPyeI3MUST2a31WjkDuOOYw9yYIcvaK5l6Jb4dBK+cgUPN7BbvxIY5hs5q992PQ4StwpuCsaRI4+AZ/SoBGsQhClEULsoYqc0ecJZ8aUe8/WdOHX6Yxti7dRAAJ3KDYwbH3hJsH816ur+OqXq2cVfB5/pXfqMYzSo4uKYA4kdpMoYiGbx5lQseyC5H3dkCdYA04XbWcqqcBnTdOsGOGYl38Nmnx7gVB4ZymvrjywJMw7MCpY8IvY50iLpUvpWGWmTZJPBDNZp1D+PS/PgUXtJX4dAnddzpwiIeRFxF23AQsbYfKzdoiX/8tlye13cHRZRhW87qAXtgZXjOZnlJDR8fm92e6dvr5V2yBew0kz+yzSH/cUvD50YvusP+C2PM2Wtm55873SmMLJUBx06R+4RRpH5WNjrCKQZFLPMtgOnLN1N5tD1fMn6FCiO+2qzhagRvkDw47v73qe0bS6KGfv1q7Gf8NiRB00qkzy9SUxzH6wcnqpei6t80XAsdbwv+MV5y/knE89Cmu59L5aq44TA732Hsvdc5/9hmE4bH+Sv+RGCVOHnLaaUu9SeppJjJKeaamQW18mfZaMdSyMvN234l5wLREovq7FvUU1qNkZOygO/ySk7MPkvFNOOxC0Ma567sDcRd0qA+Lr0o9/mrJSLRX2ztyKGbtHdG+QwgIZQIKSxOaQkLuhNLkhQTqqrcZFR0zgAPAritTWDczy7kRAFSSGf9UyXalL/INsDWIEhyF3q6RqHO/iEytYxC6Z7rH5m/9ffc1rGA1trY=", "iter": 250000};
-const CHAVE_LS = 'naturalle_painel_chave';
-let PAINEL_ABERTO = false;
-const b64bytes = b => Uint8Array.from(atob(b), c=>c.charCodeAt(0));
-const normSenha = v => String(v||'').trim().toUpperCase().replace(/\s+/g,'');
-async function chaveDaSenha(senha){
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2', salt:b64bytes(COFRE.salt), iterations:COFRE.iter, hash:'SHA-256'},
-    base, {name:'AES-GCM', length:256}, true, ['decrypt']);
+/* ---------- FATURAMENTO POR CANAL (vendedores · distribuidores/iFood · total) ---------- */
+function renderCanais(){
+  const box=$('#rowCanais'); if(!box) return;
+  if(MODO_VENDEDOR()){ box.innerHTML=''; return; }
+  const {ano,mes}=state, RECS=pickRecs()||[];
+  const mesR=RECS.filter(r=>r.ano===ano && r.mes===mes);
+  const pAno=mes===1?ano-1:ano, pMes=mes===1?12:mes-1;
+  const ant=RECS.filter(r=>r.ano===pAno && r.mes===pMes);
+  const corte=(()=>{ let mx=0; mesR.forEach(r=>(r.dias||[]).forEach(d=>{ if(d.valor) mx=Math.max(mx,d.dia); })); return mx; })();
+  const ateCorte=r=> r.dias ? sum(r.dias.filter(d=>d.dia<=corte), d=>d.valor) : r.venda;
+  const vend=r=>r.grupo!==GRUPO3_CANAIS, can=r=>r.grupo===GRUPO3_CANAIS;
+  const bloco=(id, cap, f)=>{
+    const rs=mesR.filter(f), v=sum(rs,r=>r.venda), meta=sum(rs.filter(r=>r.meta!=null),r=>r.meta);
+    const tot=sum(mesR,r=>r.venda), sh=tot? v/tot*100 : 0;
+    const a=corte? sum(ant.filter(f), ateCorte) : null, va=a? (v/a-1)*100 : null;
+    $(id).innerHTML=`<div class="kcap">${cap}</div><div class="kval num">${cnt(v,'brl',id)}</div>
+      <div class="ksub">${id==='#kpiCanalTot'?'100%':Math.round(sh)+'% do total'}${meta? ` · <b>${Math.round(v/meta*100)}%</b> da meta (${BRL.format(meta)})`:''}</div>
+      ${va!=null?`<div class="ksub"><span class="${cartCls(va)}">${cartPct(va)}</span> vs ${MESES[pMes-1]} até o dia ${corte}</div>`:''}`;
+  };
+  bloco('#kpiCanalVend','Faturamento dos vendedores', vend);
+  bloco('#kpiCanalDist','Distribuidores, iFood e venda direta', can);
+  bloco('#kpiCanalTot','Faturamento total', ()=>true);
+  animar(box);
 }
-async function abrirCofre(chave){
-  const claro = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64bytes(COFRE.iv)}, chave, b64bytes(COFRE.dados));
-  const L = JSON.parse(new TextDecoder().decode(claro));
-  SHEET_CSV_URL=L.SHEET_CSV_URL; SHEET_CSV_URL_NATURALLE=L.SHEET_CSV_URL_NATURALLE; SHEET_CSV_URL_SELECTO=L.SHEET_CSV_URL_SELECTO;
-  SHEET_CSV_URL_SEMIMP_NATURALLE=L.SHEET_CSV_URL_SEMIMP_NATURALLE; SHEET_CSV_URL_SEMIMP_SELECTO=L.SHEET_CSV_URL_SEMIMP_SELECTO;
-  SHEET_CSV_URL_CARTEIRA_ANTERIOR=L.SHEET_CSV_URL_CARTEIRA_ANTERIOR;
-  SHEET_CSV_URL_CORRIDINHA=L.SHEET_CSV_URL_CORRIDINHA||'';
-  SHEET_CSV_URL_ITENS=L.SHEET_CSV_URL_ITENS||'';
+
+/* ---------- REMUNERAÇÃO ---------- */
+const REMUN_PADRAO = { publicada:false, vendedor:{ pct:2, fixo:0, bonusMeta:0, faixas:[{de:0,mult:0.5},{de:80,mult:0.8},{de:100,mult:1},{de:120,mult:1.2}] }, individuais:{}, observacao:'' };
+const remunMult=(faixas,at)=>{ if(at==null) return 1; let m=0; (faixas||[]).slice().sort((a,b)=>a.de-b.de).forEach(f=>{ if(at>=f.de) m=+f.mult; }); return m; };
+function remunLinha(rg, r){
+  const ind=(rg.individuais||{})[stripAccents(NORM(r.vendedor))]||{}, base=rg.vendedor||{};
+  const pct = ind.pct>0 ? +ind.pct : (+base.pct||0), fixo = ind.fixo>0 ? +ind.fixo : (+base.fixo||0);
+  const at = r.meta ? r.venda/r.meta*100 : null, mult=remunMult(base.faixas, at), comissao=r.venda*pct/100*mult, bonus=at!=null && at>=100 ? (+base.bonusMeta||0) : 0;
+  const prox=(base.faixas||[]).slice().sort((a,b)=>a.de-b.de).find(f=>at!=null && f.de>at);
+  return {vendedor:r.vendedor, venda:r.venda, meta:r.meta, at, pct, mult, comissao, bonus, fixo, total:fixo+comissao+bonus, prox};
+}
+function renderRemuneracao(){
+  const el=$('#remBody'); if(!el) return;
+  const rgSrv=DADOS_API && DADOS_API.remun, {ano,mes}=state;
+  const linhas=(RECS_ALL||[]).filter(r=>r.ano===ano && r.mes===mes && r.grupo!==GRUPO3_CANAIS);
+  if(MODO_VENDEDOR()){
+    if(!rgSrv){ el.innerHTML=`<div class="panel rem-vazio"><h2>Sua remuneração</h2><p class="cart-take">A política de comissão de ${MESES_L[mes-1]} ainda está sendo definida pela diretoria. Assim que for publicada, você acompanha aqui quanto já ganhou e quanto falta para a próxima faixa.</p></div>`; return; }
+    const ls=linhas.map(r=>remunLinha(rgSrv,r)), tot=sum(ls,l=>l.total), venda=sum(ls,l=>l.venda), meta=sum(ls.filter(l=>l.meta),l=>l.meta);
+    const fer=feriadosPorMes[ano+'_'+mes]||[], duT=bizDaysTotalCalc(ano,mes,fer), duF=bizDaysElapsedByDate(ano,mes,fer);
+    const proj = duF>0 && duF<duT ? venda/duF*duT : null;
+    const projL = proj!=null ? linhas.map(r=>remunLinha(rgSrv,{...r, venda:r.venda/duF*duT})) : null, projTot=projL? sum(projL,l=>l.total) : null;
+    const prox=ls.find(l=>l.prox);
+    el.innerHTML=`<div class="grid"><div class="panel rem-hero">
+        <div><div class="kcap">Sua comissão estimada · ${MESES_L[mes-1]}/${ano}</div><div class="rem-val num">${BRL2.format(tot)}</div>
+        <p class="cart-take">Com ${BRL.format(venda)} vendidos${meta? ` (${Math.round(venda/meta*100)}% da sua meta de ${BRL.format(meta)})`:''}.${projTot!=null? ` No ritmo atual você fecha o mês com cerca de <b>${BRL.format(proj)}</b> e <b>${BRL2.format(projTot)}</b> de comissão.`:''}</p>
+        ${prox? `<p class="rem-prox">Chegando a <b>${prox.prox.de}%</b> da meta (${BRL.format(prox.meta*prox.prox.de/100)}), sua escala sobe para <b>${String(prox.prox.mult).replace('.',',')}×</b>. Faltam ${BRL.format(Math.max(0,prox.meta*prox.prox.de/100-prox.venda))}.</p>`:''}
+        ${rgSrv.observacao? `<p class="desc">${esc(rgSrv.observacao)}</p>`:''}</div></div></div>
+      <div class="grid"><div class="panel"><h2>Como a comissão é calculada</h2><p class="desc">Faturamento sem imposto × percentual × escala pelo atingimento da meta${(rgSrv.vendedor||{}).bonusMeta? `, mais bônus de ${BRL.format(rgSrv.vendedor.bonusMeta)} ao bater 100%`:''}. Valor estimado: o oficial é o do fechamento do mês.</p>
+        ${remunTabela(ls)}
+        <p class="desc" style="margin-top:10px">Escala: ${(rgSrv.vendedor.faixas||[]).slice().sort((a,b)=>a.de-b.de).map(f=>`a partir de ${f.de}% da meta → ${String(f.mult).replace('.',',')}×`).join(' · ')}</p></div></div>`;
+    return;
+  }
+  // equipe
+  const rg = rgSrv || REMUN_PADRAO, ls=linhas.map(r=>remunLinha(rg,r)).sort((a,b)=>b.total-a.total), tot=sum(ls,l=>l.total), fat=sum(ls,l=>l.venda);
+  el.innerHTML=`<div class="state-note">${rgSrv? (rgSrv.publicada? '<b>Publicada:</b> cada vendedor vê só a própria comissão, com estas regras.' : '<b>Ainda não publicada:</b> os vendedores veem "em definição". Publique quando a política estiver aprovada.') : '<b>Regra de exemplo</b> (2% com escala por atingimento), só para mostrar a tela. Cadastre a política real abaixo antes de publicar.'}</div>
+    <div class="row3"><div class="panel"><div class="kpistat"><div class="kcap">Comissão total · ${MESES[mes-1]}/${ano}</div><div class="kval num">${BRL.format(tot)}</div><div class="ksub">vendedores e representantes</div></div></div>
+      <div class="panel"><div class="kpistat"><div class="kcap">Custo sobre o faturamento</div><div class="kval num">${fat? (tot/fat*100).toFixed(2).replace('.',',')+'%':'—'}</div><div class="ksub">base ${BRL.format(fat)}</div></div></div>
+      <div class="panel"><div class="kpistat"><div class="kcap">Status da política</div><div class="kval">${rgSrv&&rgSrv.publicada?'Publicada':'Rascunho'}</div><div class="ksub">${rgSrv&&rgSrv.em? 'salva em '+new Date(rgSrv.em).toLocaleDateString('pt-BR'):'não salva'}</div></div></div></div>
+    <div class="grid"><div class="panel"><h2>Por vendedor</h2><p class="desc">Distribuidores, iFood e venda direta ficam fora da base.</p>${remunTabela(ls)}</div></div>
+    <div class="grid"><div class="panel"><h2>Regras de comissão</h2><p class="desc">Comissão = faturamento sem imposto × % × escala do atingimento. Bônus ao bater 100%. Percentual individual sobrescreve o geral.</p>
+      <form id="remForm" class="rem-form">
+        <div class="rem-grid"><label>% geral<input id="rgPct" inputmode="decimal" value="${rg.vendedor.pct}"></label><label>Fixo (R$)<input id="rgFixo" inputmode="decimal" value="${rg.vendedor.fixo||0}"></label><label>Bônus ao bater a meta (R$)<input id="rgBonus" inputmode="decimal" value="${rg.vendedor.bonusMeta||0}"></label></div>
+        <h3>Escala por atingimento</h3>
+        <div id="rgFaixas">${(rg.vendedor.faixas||[]).slice().sort((a,b)=>a.de-b.de).map(f=>`<div class="rem-fx">a partir de <input data-de value="${f.de}" inputmode="decimal">% da meta paga <input data-mult value="${f.mult}" inputmode="decimal">× <button type="button" class="btn ghost sm" data-rmfx>remover</button></div>`).join('')}</div>
+        <button type="button" class="btn ghost sm" id="rgAddFx">+ faixa</button>
+        <h3>Percentual individual <small>(opcional)</small></h3>
+        <div class="rem-grid">${[...new Set(linhas.map(r=>r.vendedor))].map(v=>`<label>${esc(v)}<input data-ind="${esc(stripAccents(NORM(v)))}" inputmode="decimal" placeholder="geral" value="${((rg.individuais||{})[stripAccents(NORM(v))]||{}).pct||''}"></label>`).join('')}</div>
+        <label class="rem-obs">Observação para os vendedores<textarea id="rgObs" rows="2" maxlength="400">${esc(rg.observacao||'')}</textarea></label>
+        <label class="lembrar rem-pub"><input type="checkbox" id="rgPub" ${rgSrv&&rgSrv.publicada?'checked':''}> Publicar para os vendedores (cada um vê só a própria comissão)</label>
+        <div><button class="btn" type="submit">Salvar regras</button> <span class="desc" id="rgMsg"></span></div>
+      </form></div></div>`;
+  const num=v=>{ const n=+String(v||'').replace(/\./g,'').replace(',','.'); return isFinite(n)?n:0; };
+  $('#rgAddFx').onclick=()=>$('#rgFaixas').insertAdjacentHTML('beforeend',`<div class="rem-fx">a partir de <input data-de inputmode="decimal">% da meta paga <input data-mult inputmode="decimal">× <button type="button" class="btn ghost sm" data-rmfx>remover</button></div>`);
+  $('#rgFaixas').onclick=e=>{ if(e.target.matches('[data-rmfx]')) e.target.closest('.rem-fx').remove(); };
+  $('#remForm').onsubmit=async e=>{ e.preventDefault();
+    const regras={ publicada:$('#rgPub').checked, observacao:$('#rgObs').value, vendedor:{ pct:num($('#rgPct').value), fixo:num($('#rgFixo').value), bonusMeta:num($('#rgBonus').value),
+      faixas:[...document.querySelectorAll('#rgFaixas .rem-fx')].map(d=>({de:num(d.querySelector('[data-de]').value), mult:num(d.querySelector('[data-mult]').value)})).filter(f=>f.mult>=0) }, individuais:{} };
+    document.querySelectorAll('[data-ind]').forEach(i=>{ const v=num(i.value); if(v>0) regras.individuais[i.dataset.ind]={pct:v}; });
+    $('#rgMsg').textContent='Salvando…';
+    try{ await api('remunSalvar',{regras}); DADOS_API.remun=Object.assign({em:new Date().toISOString()}, regras); $('#rgMsg').textContent='Regras salvas.'; renderRemuneracao(); avisoRapido('Regras de comissão salvas'); }
+    catch(er){ $('#rgMsg').textContent='Não salvou: '+er.message; }
+  };
+}
+function remunTabela(ls){
+  if(!ls.length) return '<p class="desc">Sem vendas neste mês.</p>';
+  return `<div class="tbl-wrap"><table class="rank-table"><thead><tr><th>Linha</th><th class="num">Faturado</th><th class="num">Meta</th><th class="num">Ating.</th><th class="num">%</th><th class="num">Escala</th><th class="num">Comissão</th><th class="num">Bônus</th><th class="num">Total</th></tr></thead><tbody>
+    ${ls.map(l=>`<tr><td>${esc(l.vendedor)}</td><td class="num">${BRL.format(l.venda)}</td><td class="num">${l.meta?BRL.format(l.meta):'—'}</td><td class="num">${l.at!=null?Math.round(l.at)+'%':'sem meta'}</td><td class="num">${String(l.pct).replace('.',',')}%</td><td class="num">${String(l.mult).replace('.',',')}×</td><td class="num">${BRL2.format(l.comissao)}</td><td class="num">${l.bonus?BRL2.format(l.bonus):'—'}</td><td class="num"><b>${BRL2.format(l.total)}</b></td></tr>`).join('')}</tbody></table></div>`;
+}
+const BRL2=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------- RESULTADO DA SEMANA (texto e imagem para os grupos) ---------- */
+function semanasDoMes(ano,mes){
+  const fim=new Date(ano,mes,0).getDate(), out=[]; let ini=1;
+  for(let d=1; d<=fim; d++){ const w=new Date(ano,mes-1,d).getDay(); if(w===0 || d===fim){ out.push({de:ini, ate:d}); ini=d+1; } }
+  return out.filter(s=>s.de<=s.ate);
+}
+function resultadoSemana(ano,mes,sem){
+  const rs=(RECS_ALL||[]).filter(r=>r.ano===ano && r.mes===mes && r.grupo!==GRUPO3_CANAIS);
+  const linhas=rs.map(r=>{ const dias=r.dias||[]; const naSemana=sum(dias.filter(d=>d.dia>=sem.de && d.dia<=sem.ate), d=>d.valor), ate=sum(dias.filter(d=>d.dia<=sem.ate), d=>d.valor);
+    return {nome:r.vendedor, semana:naSemana, mes:ate, meta:r.meta, pct:r.meta? ate/r.meta*100 : null}; }).filter(l=>l.mes>0 || l.meta);
+  linhas.sort((a,b)=>(b.pct??-1)-(a.pct??-1) || b.mes-a.mes);
+  const cm=linhas.filter(l=>l.meta);
+  return {linhas, totSem:sum(linhas,l=>l.semana), totMes:sum(linhas,l=>l.mes), totMeta:sum(cm,l=>l.meta), totMesComMeta:sum(cm,l=>l.mes)};
+}
+function textoSemana(ano,mes,sem,R){
+  const NOMES={GENESIA:'Genésia','PAULO SERGIO':'Paulo Sérgio'};
+  const nome=v=>NOMES[stripAccents(NORM(v))]||v.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+  const med=['🥇','🥈','🥉'];
+  return `🍦 *Resultado da semana* · ${String(sem.de).padStart(2,'0')}/${String(mes).padStart(2,'0')} a ${String(sem.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}\n\n`+
+    R.linhas.map((l,i)=>`${med[i]||'▫️'} *${nome(l.nome)}*: ${BRL.format(l.semana)} na semana · ${BRL.format(l.mes)} no mês${l.pct!=null?` (*${Math.round(l.pct)}%* da meta)`:''}`).join('\n')+
+    `\n\n*Equipe*: ${BRL.format(R.totSem)} na semana · ${BRL.format(R.totMes)} no mês${R.totMeta?` (${Math.round(R.totMesComMeta/R.totMeta*100)}% da meta)`:''}\n\nBora pra cima! 💪`;
+}
+function abrirSemana(){
+  const dlg=$('#semDlg'), {ano,mes}=state, sems=semanasDoMes(ano,mes);
+  const hoje=new Date(), diaRef = (hoje.getFullYear()===ano && hoje.getMonth()+1===mes) ? hoje.getDate() : 31;
+  let idx=sems.findIndex(s=>s.ate>=diaRef-1 && s.de<=diaRef-1); if(idx<0) idx=sems.length-1;
+  $('#semSel').innerHTML=sems.map((s,i)=>`<option value="${i}" ${i===idx?'selected':''}>${String(s.de).padStart(2,'0')} a ${String(s.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}</option>`).join('');
+  const desenhar=()=>{ const s=sems[+$('#semSel').value], R=resultadoSemana(ano,mes,s);
+    $('#semTxt').value=textoSemana(ano,mes,s,R);
+    $('#semCard').innerHTML=`<div class="sc-top"><b>Resultado da semana</b><span>${String(s.de).padStart(2,'0')} a ${String(s.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}</span></div>
+      ${R.linhas.map((l,i)=>`<div class="sc-l"><span class="sc-p">${i+1}</span><span class="sc-n">${esc(l.nome)}</span><span class="sc-v">${BRL.format(l.semana)}<small>na semana</small></span><span class="sc-v">${BRL.format(l.mes)}<small>no mês</small></span><span class="sc-b"><i style="width:${Math.min(100,l.pct||0).toFixed(0)}%"></i><em>${l.pct!=null?Math.round(l.pct)+'%':'—'}</em></span></div>`).join('')}
+      <div class="sc-tot">Equipe: <b>${BRL.format(R.totSem)}</b> na semana · <b>${BRL.format(R.totMes)}</b> no mês${R.totMeta?` · ${Math.round(R.totMesComMeta/R.totMeta*100)}% da meta`:''}</div>`; };
+  $('#semSel').onchange=desenhar; desenhar();
+  dlg.showModal();
+}
+async function semCopiar(){ try{ await navigator.clipboard.writeText($('#semTxt').value); avisoRapido('Texto copiado: é só colar no grupo'); }catch(e){ $('#semTxt').select(); document.execCommand('copy'); avisoRapido('Texto copiado'); } }
+async function semImagem(){
+  if(typeof html2canvas==='undefined') return avisoRapido('Não consegui gerar a imagem agora', true);
+  const c=await html2canvas($('#semCard'),{scale:2, backgroundColor:'#FBF7F1'});
+  const a=document.createElement('a'); a.download=`resultado-semana-${state.ano}-${String(state.mes).padStart(2,'0')}.png`; a.href=c.toDataURL('image/png'); a.click();
+}
+
+/* ---------- ACESSOS DOS VENDEDORES (Config, só equipe) ---------- */
+let VEND_LISTA=null;
+async function renderAcessos(){
+  const el=$('#acessosBody'); if(!el || !EH_EQUIPE()) return;
+  if(!VEND_LISTA){ el.innerHTML='<p class="desc">Carregando…</p>'; try{ VEND_LISTA=(await api('vendedores')).lista; }catch(e){ el.innerHTML='<p class="desc">Não consegui carregar: '+esc(e.message)+'</p>'; return; } }
+  const linhasDisp=[...new Set((RECS_ALL||[]).filter(r=>r.grupo!==GRUPO3_CANAIS).map(r=>r.vendedor))].sort();
+  el.innerHTML=`<div class="tbl-wrap"><table class="rank-table acs"><thead><tr><th>Vendedor</th><th>Usuário</th><th>Linhas da aba Vendas</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${VEND_LISTA.map(v=>`<tr data-id="${esc(v.id)}"><td><b>${esc(v.nome)}</b>${v.corr?`<small class="sub"> · corridinha: ${esc(v.corr)}</small>`:''}</td><td><code>${esc(v.id)}</code></td><td>${v.linhas.map(esc).join(' + ')}</td>
+      <td>${v.ativo?`<span class="chip-ok">liberado</span>${v.ultimoAcesso?`<small class="sub"> último acesso ${new Date(v.ultimoAcesso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>`:'<small class="sub"> ainda não entrou</small>'}`:'<span class="chip-off">sem acesso</span>'}</td>
+      <td class="acs-bt"><button class="btn sm" data-acs="chave">${v.temChave?'Nova chave':'Gerar acesso'}</button>${v.ativo?'<button class="btn ghost sm" data-acs="bloq">Bloquear</button>':''}<button class="btn ghost sm" data-acs="edit">Editar</button></td></tr>`).join('')}</tbody></table></div>
+    <details class="acs-novo"><summary>Adicionar ou editar vendedor</summary>
+      <form id="acsForm" class="rem-grid"><label>Usuário (sem espaço)<input id="acsId" maxlength="30" placeholder="ex.: carlos"></label><label>Nome<input id="acsNome" maxlength="60" placeholder="ex.: Carlos"></label>
+        <label>Linhas na aba Vendas<input id="acsLinhas" list="dlLinhas" placeholder="ex.: CARLOS ou RODRIGO + RODRIGO SORVETES"></label><label>Nome na Corridinha<input id="acsCorr" maxlength="60" placeholder="opcional"></label>
+        <div><button class="btn" type="submit">Salvar</button></div></form>
+      <datalist id="dlLinhas">${linhasDisp.map(l=>`<option value="${esc(l)}">`).join('')}</datalist></details>
+    <p class="desc">A chave aparece uma vez só. Ao gerar uma nova, a anterior para de funcionar na hora. Bloquear tira o acesso imediatamente.</p>`;
+  el.querySelectorAll('[data-acs]').forEach(b=>b.onclick=async()=>{
+    const id=b.closest('tr').dataset.id, v=VEND_LISTA.find(x=>x.id===id);
+    if(b.dataset.acs==='edit'){ $('#acsId').value=v.id; $('#acsNome').value=v.nome; $('#acsLinhas').value=v.linhas.join(' + '); $('#acsCorr').value=v.corr||''; el.querySelector('.acs-novo').open=true; $('#acsNome').focus(); return; }
+    if(b.dataset.acs==='bloq'){ if(!confirm(`Bloquear o acesso de ${v.nome}? Ele sai do painel na hora.`)) return; try{ VEND_LISTA=(await api('vendedorBloquear',{id})).lista; renderAcessos(); avisoRapido('Acesso bloqueado'); }catch(e){ avisoRapido(e.message,true); } return; }
+    if(v.temChave && !confirm(`Gerar uma nova chave para ${v.nome}? A chave atual deixa de funcionar.`)) return;
+    try{ const j=await api('vendedorChave',{id}); VEND_LISTA=j.lista; renderAcessos(); mostrarChave(v, j.chave); }catch(e){ avisoRapido(e.message,true); }
+  });
+  $('#acsForm').onsubmit=async e=>{ e.preventDefault();
+    try{ VEND_LISTA=(await api('vendedorSalvar',{id:$('#acsId').value, nome:$('#acsNome').value, linhas:$('#acsLinhas').value, corr:$('#acsCorr').value})).lista; renderAcessos(); avisoRapido('Vendedor salvo'); }
+    catch(er){ avisoRapido(er.message,true); } };
+}
+function mostrarChave(v, chave){
+  const link=location.origin+location.pathname;
+  $('#chvNome').textContent=v.nome;
+  $('#chvTxt').value=`Olá, ${v.nome}! Seu acesso ao painel de vendas da Naturalle:\n\n${link}\nUsuário: ${v.id}\nChave: ${chave}\n\nA chave é pessoal: não compartilhe. No painel você vê só os seus números.`;
+  $('#chvDlg').showModal();
+}
+async function trocarSenhaEquipe(e){
+  e.preventDefault(); const msg=$('#sqMsg'); msg.textContent='Salvando…';
+  try{ await api('equipeSenha',{atual:$('#sqAtual').value, nova:$('#sqNova').value}); msg.textContent='Senha trocada. Todos da equipe vão precisar entrar de novo com a nova senha.'; $('#sqAtual').value=''; $('#sqNova').value=''; }
+  catch(er){ msg.textContent='Não trocou: '+er.message; }
+}
+
+$('#btnSemana').onclick=()=>abrirSemana();
+$('#semCopiar').onclick=()=>semCopiar();
+$('#semPng').onclick=()=>semImagem();
+$('#chvCopiar').onclick=async()=>{ try{ await navigator.clipboard.writeText($('#chvTxt').value); avisoRapido('Mensagem copiada'); }catch(e){ $('#chvTxt').select(); document.execCommand('copy'); } };
+$('#sqForm').onsubmit=trocarSenhaEquipe;
+
+/* ---------- ACESSO: portal seguro (Google Apps Script) ----------
+   O painel não conhece mais o link da planilha. Ele entra com usuário e senha na API do portal, que
+   devolve um token assinado e, depois, SÓ os dados que aquele usuário pode ver:
+   • usuário "equipe" (gestão): todas as abas;
+   • vendedor (ex.: "allyson"): só as linhas, notas, clientes e produtos dele — filtrados no servidor.
+   Nada da empresa ou de outro vendedor chega ao navegador do vendedor, então não há o que "achar" no código. */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzavM1NerZ3fO0CcX-GDCwobIeiB9Z3UZC-OCMxK0-w-8foQsIFWuYl4Bg9fGTtlS8zig/exec';
+const SESSAO_LS = 'naturalle_sessao';
+let SESSAO = null;          // {t, papel:'equipe'|'vendedor', nome, id}
+let DADOS_API = null;       // resposta de "dados", já descompactada
+let PAINEL_ABERTO = false;
+const MODO_VENDEDOR = () => !!(SESSAO && SESSAO.papel === 'vendedor');
+const EH_EQUIPE = () => !!(SESSAO && SESSAO.papel === 'equipe');
+try{ localStorage.removeItem('naturalle_painel_chave'); }catch(_){}   // chave do sistema antigo (cofre)
+
+function lerSessao(){
+  for(const st of [sessionStorage, localStorage]){
+    try{ const s = JSON.parse(st.getItem(SESSAO_LS)||'null'); if(s && s.t && s.papel) return s; }catch(_){}
+  }
+  return null;
+}
+function gravarSessao(s, lembrar){
+  try{ sessionStorage.setItem(SESSAO_LS, JSON.stringify(s)); }catch(_){}
+  try{ if(lembrar) localStorage.setItem(SESSAO_LS, JSON.stringify(s)); else localStorage.removeItem(SESSAO_LS); }catch(_){}
+}
+function apagarSessao(){ try{ sessionStorage.removeItem(SESSAO_LS); }catch(_){} try{ localStorage.removeItem(SESSAO_LS); }catch(_){} SESSAO=null; }
+
+async function api(acao, dados){
+  const corpo = Object.assign({acao}, dados||{});
+  if(corpo.t===undefined && SESSAO) corpo.t = SESSAO.t;
+  let r;
+  try{ r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(corpo), cache:'no-store', redirect:'follow', credentials:'omit'}); }
+  catch(e){ throw new Error('sem conexão com o servidor'); }
+  if(!r.ok) throw new Error('o servidor respondeu '+r.status);
+  let j; try{ j = await r.json(); }catch(e){ throw new Error('resposta inválida do servidor'); }
+  if(!j.ok){ const e = new Error(j.erro||'não foi possível concluir'); e.api = true; e.sessao = /sess[aã]o expirada/i.test(j.erro||''); throw e; }
+  return j;
+}
+async function desgz(b64){
+  const bin = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+  if(typeof DecompressionStream === 'undefined') throw new Error('navegador desatualizado: atualize o Chrome/Safari para abrir o painel');
+  const txt = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return JSON.parse(txt);
+}
+/* as abas chegam como linhas de texto, iguais ao CSV publicado: o resto do painel lê do mesmo jeito */
+function linhasApi(chave){ const rows = DADOS_API && DADOS_API.abas && DADOS_API.abas[chave]; return Array.isArray(rows) ? rows.map(r=>r.map(x=>x==null?'':String(x))) : []; }
+function aplicarDadosApi(){
+  SHEET_CSV_URL='api:vendas'; SHEET_CSV_URL_NATURALLE='api:vendasN'; SHEET_CSV_URL_SELECTO='api:vendasS';
+  SHEET_CSV_URL_SEMIMP_NATURALLE='api:semN'; SHEET_CSV_URL_SEMIMP_SELECTO='api:semS';
+  SHEET_CSV_URL_CARTEIRA_ANTERIOR='api:hist'; SHEET_CSV_URL_CORRIDINHA='api:corr'; SHEET_CSV_URL_ITENS='api:itens';
+  // metas e feriados: vêm do servidor (valem para todos), não mais do navegador de quem digitou
+  metaOverrides = {};
+  (DADOS_API.metas||[]).forEach(m=>{ if(m.meta>0) metaOverrides[metaOverrideKey(m.ano,m.mes,m.grupo,m.vend)] = m.meta; });
+  feriadosPorMes = Object.assign({}, DADOS_API.feriados||{});
+}
+/* meta individual digitada no painel vale também para a linha do vendedor (somas, rankings, visão do vendedor) */
+function aplicarMetasNasLinhas(recs){
+  (recs||[]).forEach(r=>{ const v = metaOverrides[metaOverrideKey(r.ano,r.mes,'__all',r.vendedor)]; if(v>0) r.meta = v; });
+  return recs;
+}
+async function migrarMetasLocais(){
+  // uma vez: leva para o servidor as metas que estavam salvas só neste navegador
+  if(!EH_EQUIPE()) return;
+  let locais = null; try{ locais = JSON.parse(localStorage.getItem('naturalle_meta_overrides')||'null'); }catch(_){}
+  let fer = null; try{ fer = JSON.parse(localStorage.getItem('naturalle_feriados_mes')||'null'); }catch(_){}
+  const env = [];
+  if(locais) Object.entries(locais).forEach(([k,v])=>{ const m=/^(\d{4})_(\d{1,2})_(.+)$/.exec(k); if(!m || !(v>0)) return;
+    const resto=m[3]; let grupo, vend;
+    if(resto.startsWith('__all_')){ grupo='__all'; vend=resto.slice(6); } else { const i=resto.lastIndexOf('_'); grupo=resto.slice(0,i); vend=resto.slice(i+1); }
+    if(vend==='GLEICY') vend='REBECA'; // a carteira da Gleicy passou para a Rebeca
+    if(!metaOverrides[metaOverrideKey(+m[1],+m[2],grupo,vend)]) env.push({ano:+m[1],mes:+m[2],grupo,vend,valor:v}); });
+  for(const x of env){ try{ await api('metaSalvar', x); metaOverrides[metaOverrideKey(x.ano,x.mes,x.grupo,x.vend)]=x.valor; }catch(e){ console.warn('meta', e); return; } }
+  if(fer) for(const [k,dias] of Object.entries(fer)){ const [a,m]=k.split('_').map(Number); if(!feriadosPorMes[k] && Array.isArray(dias) && dias.length){ try{ await api('feriadosSalvar',{ano:a,mes:m,dias}); feriadosPorMes[k]=dias; }catch(e){ console.warn('feriados', e); return; } } }
+  try{ localStorage.removeItem('naturalle_meta_overrides'); localStorage.removeItem('naturalle_feriados_mes'); }catch(_){}
+  if(env.length) render();
+}
+/* gravação de metas e feriados: no servidor (equipe) */
+saveMetaOverride = function(ano,mes,grupo,vend,valor){
+  if(!EH_EQUIPE()) return;
+  const key=metaOverrideKey(ano,mes,grupo,vend), antes=metaOverrides[key];
+  if(valor==null) delete metaOverrides[key]; else metaOverrides[key]=valor;
+  if(grupo==='__all' && vend!=='__all') (RECS_ALL||[]).forEach(r=>{ if(r.ano===ano && r.mes===mes && r.vendedor===vend && valor!=null) r.meta=valor; });
+  api('metaSalvar',{ano,mes,grupo,vend,valor}).then(()=>avisoRapido('Meta salva para toda a equipe')).catch(e=>{
+    if(antes==null) delete metaOverrides[key]; else metaOverrides[key]=antes; avisoRapido('A meta não foi salva: '+e.message, true); render(); });
+};
+saveFeriados = function(ano,mes,lista){
+  if(!EH_EQUIPE()) return;
+  feriadosPorMes[ano+'_'+mes]=lista;
+  api('feriadosSalvar',{ano,mes,dias:lista}).catch(e=>avisoRapido('Feriados não salvos: '+e.message, true));
+};
+function avisoRapido(msg, erro){
+  let el=$('#avisoRapido'); if(!el){ el=document.createElement('div'); el.id='avisoRapido'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent=msg; el.className=erro?'erro on':'on'; clearTimeout(el._t); el._t=setTimeout(()=>el.className=erro?'erro':'', 3200);
+}
+
+function aplicarModo(){
+  const v = MODO_VENDEDOR();
+  document.documentElement.classList.toggle('modo-vendedor', v);
+  document.documentElement.classList.toggle('modo-equipe', !v);
+  const sub = $('.brand-txt .sub');
+  if(sub) sub.textContent = v ? `Olá, ${SESSAO.nome}! Aqui estão os seus números` : 'Painel comercial · performance de vendas';
+  $('#btnSair').textContent = v ? `Sair (${SESSAO.nome})` : 'Sair do painel';
 }
 function liberarPainel(){
   PAINEL_ABERTO = true;
+  aplicarModo();
   document.documentElement.classList.add('aberto');
   carregarDados(false);
 }
-async function iniciarAcesso(){
-  try{
-    const salva = localStorage.getItem(CHAVE_LS);
-    if(salva){
-      const chave = await crypto.subtle.importKey('raw', b64bytes(salva), {name:'AES-GCM'}, true, ['decrypt']);
-      await abrirCofre(chave); liberarPainel(); return;
-    }
-  }catch(e){ try{ localStorage.removeItem(CHAVE_LS); }catch(_){} }
-  setTimeout(()=>$('#senha').focus(), 50);
+function iniciarAcesso(){
+  SESSAO = lerSessao();
+  if(SESSAO){ liberarPainel(); return; }
+  setTimeout(()=>$('#usuario').focus(), 50);
 }
 $('#loginForm').onsubmit = async e=>{
   e.preventDefault();
   const btn=$('#btnEntrar'), card=$('#loginForm'); btn.disabled=true; btn.textContent='Conferindo…'; $('#loginErro').textContent='';
   try{
-    const chave = await chaveDaSenha(normSenha($('#senha').value));
-    await abrirCofre(chave);
-    if($('#lembrar').checked){
-      try{ const raw = new Uint8Array(await crypto.subtle.exportKey('raw', chave)); localStorage.setItem(CHAVE_LS, btoa(String.fromCharCode(...raw))); }catch(_){}
-    }
+    const lembrar = $('#lembrar').checked;
+    const j = await api('login', {u:$('#usuario').value, s:$('#senha').value, lembrar, t:null});
+    SESSAO = {t:j.t, papel:j.papel, nome:j.nome, id:j.id};
+    gravarSessao(SESSAO, lembrar);
+    $('#senha').value='';
     liberarPainel();
   }catch(err){
-    $('#loginErro').textContent = 'Senha incorreta. Confira com o supervisor e tente de novo.';
+    $('#loginErro').textContent = err.api ? (err.message.charAt(0).toUpperCase()+err.message.slice(1)+'.') : 'Não consegui falar com o servidor. Confira a internet e tente de novo.';
     card.classList.remove('erro'); void card.offsetWidth; card.classList.add('erro');
     $('#senha').select();
-  }finally{ btn.disabled=false; btn.textContent='Entrar no painel'; }
+  }finally{ btn.disabled=false; btn.textContent='Entrar'; }
 };
-$('#btnSair').onclick = ()=>{ try{ localStorage.removeItem(CHAVE_LS); }catch(_){} location.reload(); };
+$('#btnSair').onclick = ()=>{ apagarSessao(); location.reload(); };
+function sessaoExpirada(){
+  apagarSessao(); PAINEL_ABERTO=false;
+  document.documentElement.classList.remove('aberto','modo-vendedor','modo-equipe');
+  $('#loginErro').textContent='Sua sessão terminou. Entre de novo.';
+}
 
-/* ---------- abrir: pede a senha (ou usa a chave lembrada neste aparelho) ---------- */
+/* ---------- abrir: usa a sessão salva neste aparelho ou pede o login ---------- */
 iniciarAcesso();
 
 /* ---------- boot ---------- */
+let BOOT_JA=false;
 function boot(){
   $('#empty').classList.add('hidden'); $('#error').classList.add('hidden');
   $('#filters').classList.remove('hidden'); $('#dash').classList.remove('hidden');
@@ -3131,11 +3512,16 @@ function boot(){
   // periodo mais recente disponivel
   const periods=[...new Set(RECS_ALL.map(r=>r.ano*100+r.mes))].sort((a,b)=>a-b);
   const lastP=periods[periods.length-1];
-  state.ano=Math.floor(lastP/100); state.mes=lastP%100; state.grupo='__all'; state.vend='__all'; state.empresa='__all';
+  const manter = state.ano && periods.includes(state.ano*100+state.mes) && BOOT_JA;
+  if(!manter){ state.ano=Math.floor(lastP/100); state.mes=lastP%100; state.grupo='__all'; state.vend='__all'; state.empresa='__all'; }
+  if(state.vend!=='__all' && !vends.includes(state.vend)) state.vend='__all';
+  if(state.grupo!=='__all' && !grupos.includes(state.grupo)) state.grupo='__all';
+  if(MODO_VENDEDOR()){ state.grupo='__all'; state.vend='__all'; state.empresa='__all'; }
+  BOOT_JA=true;
   selA.value=state.ano;
   fillMeses(state.ano);
   $('#fMes').value=state.mes;
-  $('#fGrupo').value='__all'; $('#fVend').value='__all'; $('#fEmpresa').value='__all';
+  $('#fGrupo').value=state.grupo; $('#fVend').value=state.vend; $('#fEmpresa').value=state.empresa;
 
   selA.onchange=e=>{ state.ano=+e.target.value; fillMeses(state.ano);
     const mesesDisp=[...new Set(RECS_ALL.filter(r=>r.ano===state.ano).map(r=>r.mes))];
@@ -3437,6 +3823,8 @@ function render(){
   renderConfig(k);
   try{ renderCarteira(); }catch(e){ console.error('aba Carteira:', e); }
   try{ renderCampanha(); }catch(e){ console.error('aba Campanhas:', e); }
+  try{ renderCanais(); }catch(e){ console.error('canais:', e); }
+  try{ if(!$('#tabRemuneracao').classList.contains('hidden')) renderRemuneracao(); }catch(e){ console.error('remuneração:', e); }
   try{ if(!$('#tabProdutos').classList.contains('hidden')) renderProdutos(); }catch(e){ console.error('aba Produtos:', e); }
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
