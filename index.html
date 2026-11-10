@@ -577,6 +577,17 @@
   .sc-tot{margin-top:8px; padding-top:8px; border-top:2px solid var(--line); font-size:13px}
   #semTxt, #chvTxt{width:100%; font:600 13px/1.45 var(--body); border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--creme); color:var(--ink)}
   @media (max-width:640px){ .sc-l{grid-template-columns:18px minmax(0,1fr) 78px 78px} .sc-b{display:none} }
+  .sem-filtros{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .si-g{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:4px}
+  .si-b{background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:10px 12px}
+  .si-b span{display:block; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
+  .si-b b{display:block; font:800 19px/1.2 var(--display); color:var(--ink); margin-top:3px; overflow-wrap:anywhere}
+  .si-b small{display:block; font-size:12px; font-weight:700; color:var(--muted); margin-top:2px}
+  .si-bar{margin-top:10px; height:22px} .si-bar em{line-height:22px; font-size:12px}
+  /* ---------- painel dentro da plataforma ---------- */
+  html.embed header.top .brand, html.embed #btnSair, html.embed .tabnav, html.embed .login{display:none!important}
+  html.embed header.top{padding-top:4px; justify-content:flex-end}
+  html.embed body{background:transparent}
   /* ---------- acessos ---------- */
   .acs td{vertical-align:middle} .acs .sub{color:var(--muted); font-weight:700}
   .acs-bt{white-space:nowrap} .acs-bt .btn{margin:2px}
@@ -961,20 +972,6 @@
           </div>
         </div>
       </div>
-      <div class="grid">
-        <div class="panel">
-          <h2>Acessos dos vendedores</h2>
-          <p class="desc">Cada vendedor entra com o próprio usuário e chave e vê só os números dele: vendas, meta, carteira, produtos, campanha e remuneração. Encaminhamentos, atas e o faturamento da empresa ficam de fora, pelo servidor.</p>
-          <div id="acessosBody"></div>
-        </div>
-      </div>
-      <div class="grid">
-        <div class="panel">
-          <h2>Senha da equipe</h2>
-          <p class="desc">Usuário <code>equipe</code>: vê tudo. Use uma senha longa e troque quando alguém sair da equipe.</p>
-          <form class="sq-form" id="sqForm"><label>Senha atual<input type="password" id="sqAtual" autocomplete="current-password" required></label><label>Nova senha (mín. 10)<input type="password" id="sqNova" autocomplete="new-password" minlength="10" required></label><button class="btn" type="submit">Trocar senha</button><span class="desc" id="sqMsg"></span></form>
-        </div>
-      </div>
     </div><!-- /tabConfig -->
 
     <div id="tabCampanha" class="hidden">
@@ -1150,8 +1147,8 @@
   <dialog class="rmr-dlg" id="semDlg" aria-labelledby="semTit">
     <form method="dialog">
       <h2 id="semTit">Resultado da semana</h2>
-      <p class="rmr-sub">Texto pronto para colar nos grupos e imagem para enviar. Vendedores e representantes, ordenados pelo % da meta.</p>
-      <label class="rmr-txt">Semana<select id="semSel"></select></label>
+      <p class="rmr-sub">Escolha a semana e a pessoa. "Equipe toda" traz o ranking; cada vendedor traz vendas, meta, clientes novos, carteira, produto, comissão e campanha. Texto pronto para o grupo e imagem para enviar.</p>
+      <div class="sem-filtros"><label class="rmr-txt">Semana<select id="semSel"></select></label><label class="rmr-txt">Quem<select id="semQuem"></select></label></div>
       <div class="sem-card" id="semCard"></div>
       <label class="rmr-txt">Texto para o WhatsApp<textarea id="semTxt" rows="9"></textarea></label>
       <div class="rmr-acoes"><button class="btn ghost" value="fechar">Fechar</button><button class="btn ghost" type="button" id="semPng">Baixar imagem</button><button class="btn" type="button" id="semCopiar">Copiar texto</button></div>
@@ -1473,7 +1470,7 @@ async function carregarDados(manual){
   if(manual){ showLoading(); btn.disabled=true; if(EH_EQUIPE()) $('#empty h2').textContent='Lendo a planilha agora (leva até 40 segundos)…'; }
   try{
     const j = await api('dados', {forcar: !!manual && EH_EQUIPE()});
-    if(j.papel!==SESSAO.papel){ sessaoExpirada(); return; }
+    if((j.papel==='vendedor') !== MODO_VENDEDOR()){ sessaoExpirada(); return; }
     DADOS_API = Object.assign(await desgz(j.gz), j.extra||{});
     aplicarDadosApi();
     const rows = normalizarLinhasCSV(linhasApi('vendas'));
@@ -1503,6 +1500,8 @@ async function carregarDados(manual){
       $('#btnSemana').classList.remove('hidden');
     }
     boot();
+    if(EMBED && location.hash && !window.__abaInicial){ window.__abaInicial=true; const a=location.hash.slice(1); if(TABS.includes(a)) irParaAba(a); }
+    if(window.__abrirSemana){ window.__abrirSemana=false; abrirSemana(); }
     if(EH_EQUIPE()) migrarMetasLocais();
   }catch(err){
     if(err.sessao){ sessaoExpirada(); return; }
@@ -1560,7 +1559,6 @@ function irParaAba(nome){
   if(nome==='Campanha'){ try{ renderCampanha(); }catch(e){ console.error(e); } }
   if(nome==='Produtos'){ try{ renderProdutos(); }catch(e){ console.error(e); } }
   if(nome==='Remuneracao'){ try{ renderRemuneracao(); }catch(e){ console.error(e); } }
-  if(nome==='Config'){ try{ renderAcessos(); }catch(e){ console.error(e); } }
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
 
@@ -3290,24 +3288,101 @@ function textoSemana(ano,mes,sem,R){
     R.linhas.map((l,i)=>`${med[i]||'▫️'} *${nome(l.nome)}*: ${BRL.format(l.semana)} na semana · ${BRL.format(l.mes)} no mês${l.pct!=null?` (*${Math.round(l.pct)}%* da meta)`:''}`).join('\n')+
     `\n\n*Equipe*: ${BRL.format(R.totSem)} na semana · ${BRL.format(R.totMes)} no mês${R.totMeta?` (${Math.round(R.totMesComMeta/R.totMeta*100)}% da meta)`:''}\n\nBora pra cima! 💪`;
 }
+/* pessoas que aparecem no filtro: participantes da Corridinha (juntam linhas, ex.: Rodrigo) + demais vendedores */
+function semPessoas(ano,mes){
+  const linhasMes=[...new Set((RECS_ALL||[]).filter(r=>r.ano===ano && r.mes===mes && r.grupo!==GRUPO3_CANAIS).map(r=>stripAccents(NORM(r.vendedor))))];
+  const out=[], usadas=new Set();
+  (CAMP_CFG||[]).filter(c=>c.ano===ano && c.mes===mes).forEach(c=>{ const ls=c.linhas.filter(l=>linhasMes.includes(l)); if(!ls.length) return; ls.forEach(l=>usadas.add(l)); out.push({nome:c.nome, linhas:ls}); });
+  linhasMes.filter(l=>!usadas.has(l)).forEach(l=>out.push({nome:l.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()), linhas:[l]}));
+  return out.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+}
+/* resultado individual da semana: vendas, meta, clientes novos, carteira, produto, comissão e campanha */
+function semIndividual(ano,mes,sem,P){
+  const ehDele=v=>P.linhas.includes(stripAccents(NORM(v)));
+  const recs=(RECS_ALL||[]).filter(r=>r.ano===ano && r.mes===mes && ehDele(r.vendedor));
+  const dia=(r,f)=>sum((r.dias||[]).filter(f), d=>d.valor);
+  const semana=sum(recs,r=>dia(r,d=>d.dia>=sem.de && d.dia<=sem.ate)), mesAte=sum(recs,r=>dia(r,d=>d.dia<=sem.ate));
+  const meta=sum(recs.filter(r=>r.meta),r=>r.meta), pct=meta? mesAte/meta*100 : null;
+  const pAno=mes===1?ano-1:ano, pMes=mes===1?12:mes-1, ppAno=pMes===1?pAno-1:pAno, ppMes=pMes===1?12:pMes-1;
+  const semAnt=sum((RECS_ALL||[]).filter(r=>r.ano===pAno && r.mes===pMes && ehDele(r.vendedor)), r=>dia(r,d=>d.dia>=sem.de && d.dia<=sem.ate));
+  let cart=null;
+  if(CARTEIRA.status==='ok'){
+    const at=CARTEIRA.atual.filter(n=>n.ano===ano && n.mes===mes && ehDele(n.vendedor));
+    const ant=CARTEIRA.anterior.filter(n=>ehDele(n.vendedor));
+    const doMes=(a,m)=>new Set(ant.filter(n=>n.ano===a && n.mes===m).map(n=>cartChave(n.cliente)));
+    const mesPass=doMes(pAno,pMes), base=new Set([...mesPass, ...doMes(ppAno,ppMes)]);
+    const antes=new Set(at.filter(n=>n.dia<sem.de).map(n=>cartChave(n.cliente))), naSem=new Set(at.filter(n=>n.dia>=sem.de && n.dia<=sem.ate).map(n=>cartChave(n.cliente)));
+    const ateAgora=new Set([...antes,...naSem]);
+    const novos=[...naSem].filter(c=>!base.has(c) && !antes.has(c));
+    const voltaram=[...naSem].filter(c=>mesPass.has(c) && !antes.has(c));
+    const jaCompraram=[...mesPass].filter(c=>ateAgora.has(c)).length;
+    const nome=c=>{ const n=at.find(x=>cartChave(x.cliente)===c); return n? cartNomeLimpo(n.cliente) : c; };
+    cart={lojasSemana:naSem.size, novos:novos.map(nome), voltaram:voltaram.length, mesPass:mesPass.size, jaCompraram, faltam:mesPass.size-jaCompraram};
+  }
+  let prod=null;
+  if(PRODUTOS.status==='ok'){
+    const it=PRODUTOS.itens.filter(i=>i.ano===ano && i.mes===mes && i.dia>=sem.de && i.dia<=sem.ate && ehDele(i.vendedor) && !PROD_OUTROS.test(stripAccents(NORM(i.produto))));
+    const m=new Map(); it.forEach(i=>{ const k=i.produto, x=m.get(k)||{produto:k, valor:0, qtde:0}; x.valor+=i.valor; x.qtde+=i.qtde; m.set(k,x); });
+    const top=[...m.values()].sort((a,b)=>b.valor-a.valor);
+    if(top.length) prod={nome:prodNome(top[0].produto), valor:top[0].valor, qtde:top[0].qtde, segundo:top[1]? prodNome(top[1].produto) : ''};
+  }
+  let com=null; const rg=DADOS_API && DADOS_API.remun;
+  if(rg){ const ls=recs.map(r=>remunLinha(rg,{...r, venda:dia(r,d=>d.dia<=sem.ate)})); com={total:sum(ls,l=>l.total), publicada:!!rg.publicada}; }
+  let camp=null;
+  try{ const K=computeCorridinha(ano,mes), L=(K.linhas||[]).find(l=>l.linhas && l.linhas.some(x=>P.linhas.includes(x)));
+    if(L) camp={pct:L.pct, apto:L.apto, cupons:L.total||0, falta95:L.falta95, novos:L.novos||0}; }catch(e){}
+  return {nome:P.nome, semana, semAnt, mesAte, meta, pct, cart, prod, com, camp};
+}
+function textoIndividual(ano,mes,sem,R){
+  const per=`${String(sem.de).padStart(2,'0')}/${String(mes).padStart(2,'0')} a ${String(sem.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+  const l=[`🍦 *${R.nome}* · semana de ${per}`, '', `💰 Vendeu *${BRL.format(R.semana)}* na semana${R.semAnt? ` (${R.semana>=R.semAnt?'+':''}${Math.round((R.semana/R.semAnt-1)*100)}% vs a mesma semana do mês passado)`:''}`,
+    `📈 No mês: *${BRL.format(R.mesAte)}*${R.meta? ` de ${BRL.format(R.meta)} → *${Math.round(R.pct)}% da meta*`:''}`];
+  if(R.cart){ l.push(`🏪 Atendeu ${R.cart.lojasSemana} ${R.cart.lojasSemana===1?'loja':'lojas'} na semana · *${R.cart.novos.length} ${R.cart.novos.length===1?'cliente novo':'clientes novos'}*${R.cart.novos.length? ' ('+R.cart.novos.slice(0,3).join(', ')+(R.cart.novos.length>3?'…':'')+')':''}`);
+    l.push(`🔁 Carteira do mês passado: ${R.cart.jaCompraram} de ${R.cart.mesPass} lojas já compraram${R.cart.voltaram? ` (${R.cart.voltaram} voltaram nesta semana)`:''}. Faltam *${R.cart.faltam}*.`); }
+  if(R.prod) l.push(`⭐ Produto que mais vendeu: *${R.prod.nome}* (${BRL.format(R.prod.valor)} · ${Math.round(R.prod.qtde).toLocaleString('pt-BR')} un.)`);
+  if(R.com) l.push(`💵 Comissão estimada até agora: *${BRL2.format(R.com.total)}*${R.com.publicada?'':' (prévia, política em definição)'}`);
+  if(R.camp) l.push(R.camp.apto ? `🏁 Corridinha do Sorvete: *apto ao sorteio* com ${R.camp.cupons} ${R.camp.cupons===1?'cupom':'cupons'}` : `🏁 Corridinha do Sorvete: ${R.camp.pct!=null?Math.round(R.camp.pct)+'% da meta · ':''}faltam ${BRL.format(R.camp.falta95||0)} para os 95% e entrar no sorteio`);
+  l.push('', 'Bora pra cima! 💪');
+  return l.join('\n');
+}
+function cardIndividual(ano,mes,sem,R){
+  const per=`${String(sem.de).padStart(2,'0')} a ${String(sem.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
+  const bloco=(cap,val,sub)=>`<div class="si-b"><span>${cap}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  return `<div class="sc-top"><b>${esc(R.nome)}</b><span>Semana de ${per}</span></div>
+    <div class="si-g">
+      ${bloco('Faturamento na semana', BRL.format(R.semana), R.semAnt? `${R.semana>=R.semAnt?'+':''}${Math.round((R.semana/R.semAnt-1)*100)}% vs mesma semana de ${MESES[(mes+10)%12]}`:'')}
+      ${bloco('No mês', BRL.format(R.mesAte), R.meta? `${Math.round(R.pct)}% da meta de ${BRL.format(R.meta)}`:'sem meta cadastrada')}
+      ${R.cart? bloco('Clientes novos na semana', R.cart.novos.length, R.cart.novos.slice(0,2).map(esc).join(', ')||`${R.cart.lojasSemana} lojas atendidas`) : ''}
+      ${R.cart? bloco('Carteira do mês passado', `${R.cart.jaCompraram} de ${R.cart.mesPass}`, `já compraram · faltam ${R.cart.faltam}`) : ''}
+      ${R.prod? bloco('Produto que mais vendeu', esc(R.prod.nome), `${BRL.format(R.prod.valor)} · ${Math.round(R.prod.qtde).toLocaleString('pt-BR')} un.`) : ''}
+      ${R.com? bloco('Comissão estimada', BRL2.format(R.com.total), R.com.publicada? 'até agora no mês' : 'prévia · política em definição') : ''}
+      ${R.camp? bloco('Corridinha do Sorvete', R.camp.apto? `${R.camp.cupons} ${R.camp.cupons===1?'cupom':'cupons'}` : (R.camp.pct!=null? Math.round(R.camp.pct)+'%' : '—'), R.camp.apto? 'apto ao sorteio' : `faltam ${BRL.format(R.camp.falta95||0)} para 95%`) : ''}
+    </div>
+    ${R.meta? `<div class="sc-b si-bar"><i style="width:${Math.min(100,R.pct||0).toFixed(0)}%"></i><em>${Math.round(R.pct)}% da meta do mês</em></div>`:''}`;
+}
 function abrirSemana(){
   const dlg=$('#semDlg'), {ano,mes}=state, sems=semanasDoMes(ano,mes);
   const hoje=new Date(), diaRef = (hoje.getFullYear()===ano && hoje.getMonth()+1===mes) ? hoje.getDate() : 31;
   let idx=sems.findIndex(s=>s.ate>=diaRef-1 && s.de<=diaRef-1); if(idx<0) idx=sems.length-1;
   $('#semSel').innerHTML=sems.map((s,i)=>`<option value="${i}" ${i===idx?'selected':''}>${String(s.de).padStart(2,'0')} a ${String(s.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}</option>`).join('');
-  const desenhar=()=>{ const s=sems[+$('#semSel').value], R=resultadoSemana(ano,mes,s);
-    $('#semTxt').value=textoSemana(ano,mes,s,R);
-    $('#semCard').innerHTML=`<div class="sc-top"><b>Resultado da semana</b><span>${String(s.de).padStart(2,'0')} a ${String(s.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}</span></div>
-      ${R.linhas.map((l,i)=>`<div class="sc-l"><span class="sc-p">${i+1}</span><span class="sc-n">${esc(l.nome)}</span><span class="sc-v">${BRL.format(l.semana)}<small>na semana</small></span><span class="sc-v">${BRL.format(l.mes)}<small>no mês</small></span><span class="sc-b"><i style="width:${Math.min(100,l.pct||0).toFixed(0)}%"></i><em>${l.pct!=null?Math.round(l.pct)+'%':'—'}</em></span></div>`).join('')}
-      <div class="sc-tot">Equipe: <b>${BRL.format(R.totSem)}</b> na semana · <b>${BRL.format(R.totMes)}</b> no mês${R.totMeta?` · ${Math.round(R.totMesComMeta/R.totMeta*100)}% da meta`:''}</div>`; };
-  $('#semSel').onchange=desenhar; desenhar();
+  const pessoas=semPessoas(ano,mes);
+  $('#semQuem').innerHTML='<option value="">Equipe toda (ranking)</option>'+pessoas.map((p,i)=>`<option value="${i}">${esc(p.nome)}</option>`).join('');
+  const desenhar=()=>{ const s=sems[+$('#semSel').value], q=$('#semQuem').value;
+    if(q===''){ const R=resultadoSemana(ano,mes,s); $('#semTxt').value=textoSemana(ano,mes,s,R);
+      $('#semCard').innerHTML=`<div class="sc-top"><b>Resultado da semana</b><span>${String(s.de).padStart(2,'0')} a ${String(s.ate).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}</span></div>
+        ${R.linhas.map((l,i)=>`<div class="sc-l"><span class="sc-p">${i+1}</span><span class="sc-n">${esc(l.nome)}</span><span class="sc-v">${BRL.format(l.semana)}<small>na semana</small></span><span class="sc-v">${BRL.format(l.mes)}<small>no mês</small></span><span class="sc-b"><i style="width:${Math.min(100,l.pct||0).toFixed(0)}%"></i><em>${l.pct!=null?Math.round(l.pct)+'%':'—'}</em></span></div>`).join('')}
+        <div class="sc-tot">Equipe: <b>${BRL.format(R.totSem)}</b> na semana · <b>${BRL.format(R.totMes)}</b> no mês${R.totMeta?` · ${Math.round(R.totMesComMeta/R.totMeta*100)}% da meta`:''}</div>`;
+      return; }
+    const R=semIndividual(ano,mes,s,pessoas[+q]); $('#semTxt').value=textoIndividual(ano,mes,s,R); $('#semCard').innerHTML=cardIndividual(ano,mes,s,R); };
+  $('#semSel').onchange=desenhar; $('#semQuem').onchange=desenhar; desenhar();
   dlg.showModal();
 }
 async function semCopiar(){ try{ await navigator.clipboard.writeText($('#semTxt').value); avisoRapido('Texto copiado: é só colar no grupo'); }catch(e){ $('#semTxt').select(); document.execCommand('copy'); avisoRapido('Texto copiado'); } }
 async function semImagem(){
   if(typeof html2canvas==='undefined') return avisoRapido('Não consegui gerar a imagem agora', true);
   const c=await html2canvas($('#semCard'),{scale:2, backgroundColor:'#FBF7F1'});
-  const a=document.createElement('a'); a.download=`resultado-semana-${state.ano}-${String(state.mes).padStart(2,'0')}.png`; a.href=c.toDataURL('image/png'); a.click();
+  const quem=$('#semQuem').selectedOptions[0]?.textContent||'equipe', slug=stripAccents(NORM(quem.startsWith('Equipe')?'equipe':quem)).toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const a=document.createElement('a'); a.download=`resultado-semana-${slug}-${state.ano}-${String(state.mes).padStart(2,'0')}-${$('#semSel').selectedOptions[0]?.textContent.slice(0,2)||''}.png`; a.href=c.toDataURL('image/png'); a.click();
 }
 
 /* ---------- ACESSOS DOS VENDEDORES (Config, só equipe) ---------- */
@@ -3353,7 +3428,6 @@ $('#btnSemana').onclick=()=>abrirSemana();
 $('#semCopiar').onclick=()=>semCopiar();
 $('#semPng').onclick=()=>semImagem();
 $('#chvCopiar').onclick=async()=>{ try{ await navigator.clipboard.writeText($('#chvTxt').value); avisoRapido('Mensagem copiada'); }catch(e){ $('#chvTxt').select(); document.execCommand('copy'); } };
-$('#sqForm').onsubmit=trocarSenhaEquipe;
 
 /* ---------- ACESSO: portal seguro (Google Apps Script) ----------
    O painel não conhece mais o link da planilha. Ele entra com usuário e senha na API do portal, que
@@ -3361,13 +3435,16 @@ $('#sqForm').onsubmit=trocarSenhaEquipe;
    • usuário "equipe" (gestão): todas as abas;
    • vendedor (ex.: "allyson"): só as linhas, notas, clientes e produtos dele — filtrados no servidor.
    Nada da empresa ou de outro vendedor chega ao navegador do vendedor, então não há o que "achar" no código. */
+const EMBED = /[?&]embed=1/.test(location.search) || window.top !== window;
+if(!EMBED && !/[?&]painel=1/.test(location.search)) location.replace('plataforma/' + location.hash); // uma plataforma só
+if(EMBED) document.documentElement.classList.add('embed');
 const API_URL = 'https://script.google.com/macros/s/AKfycbzavM1NerZ3fO0CcX-GDCwobIeiB9Z3UZC-OCMxK0-w-8foQsIFWuYl4Bg9fGTtlS8zig/exec';
 const SESSAO_LS = 'naturalle_sessao';
 let SESSAO = null;          // {t, papel:'equipe'|'vendedor', nome, id}
 let DADOS_API = null;       // resposta de "dados", já descompactada
 let PAINEL_ABERTO = false;
 const MODO_VENDEDOR = () => !!(SESSAO && SESSAO.papel === 'vendedor');
-const EH_EQUIPE = () => !!(SESSAO && SESSAO.papel === 'equipe');
+const EH_EQUIPE = () => !!(SESSAO && SESSAO.papel && SESSAO.papel !== 'vendedor');
 try{ localStorage.removeItem('naturalle_painel_chave'); }catch(_){}   // chave do sistema antigo (cofre)
 
 function lerSessao(){
@@ -3467,6 +3544,7 @@ function liberarPainel(){
 function iniciarAcesso(){
   SESSAO = lerSessao();
   if(SESSAO){ liberarPainel(); return; }
+  if(EMBED){ document.documentElement.classList.add('aberto'); showError('Sua sessão terminou. Saia e entre de novo na plataforma.'); return; }
   setTimeout(()=>$('#usuario').focus(), 50);
 }
 $('#loginForm').onsubmit = async e=>{
@@ -3475,7 +3553,7 @@ $('#loginForm').onsubmit = async e=>{
   try{
     const lembrar = $('#lembrar').checked;
     const j = await api('login', {u:$('#usuario').value, s:$('#senha').value, lembrar, t:null});
-    SESSAO = {t:j.t, papel:j.papel, nome:j.nome, id:j.id};
+    SESSAO = {t:j.t, papel:j.papel==='vendedor'?'vendedor':'equipe', papelReal:j.papel, nome:j.nome, id:j.id};
     gravarSessao(SESSAO, lembrar);
     $('#senha').value='';
     liberarPainel();
@@ -3487,6 +3565,7 @@ $('#loginForm').onsubmit = async e=>{
 };
 $('#btnSair').onclick = ()=>{ apagarSessao(); location.reload(); };
 function sessaoExpirada(){
+  if(EMBED){ try{ window.top.postMessage({tipo:'naturalle-sessao-expirada'}, location.origin); }catch(_){} showError('Sua sessão terminou. Entre de novo na plataforma.'); return; }
   apagarSessao(); PAINEL_ABERTO=false;
   document.documentElement.classList.remove('aberto','modo-vendedor','modo-equipe');
   $('#loginErro').textContent='Sua sessão terminou. Entre de novo.';
@@ -3496,6 +3575,8 @@ function sessaoExpirada(){
 iniciarAcesso();
 
 /* ---------- boot ---------- */
+window.painelIr = nome => { if(TABS.includes(nome)) irParaAba(nome); };
+window.painelSemana = () => { if(RECS_ALL && RECS_ALL.length && BOOT_JA) abrirSemana(); else window.__abrirSemana = true; };
 let BOOT_JA=false;
 function boot(){
   $('#empty').classList.add('hidden'); $('#error').classList.add('hidden');

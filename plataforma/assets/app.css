@@ -295,3 +295,22 @@ table.t .inp{padding:6px 8px; font-size:14px; max-width:140px}
 .ata-pdf .defs{margin:0; padding-left:20px} .ata-pdf .defs li{margin:3px 0} .ata-pdf .vaz{color:#9A8A7E; text-align:center}
 .ata-pdf .pm{display:grid; grid-template-columns:1fr 1fr; gap:14px} .ata-pdf .pm p{margin:0}
 .ata-pdf footer{margin-top:20px; border-top:1px solid #E6DCCD; padding-top:8px; font-size:10.5px; color:#76665A; text-align:center}
+
+/* ---------- entrada com o picolé ---------- */
+.lg-art.lg-picole{background:radial-gradient(120% 90% at 30% 20%, #FFE9CC 0%, #F6D2A6 45%, #E9B47A 100%); color:var(--caramelo-esc, #6E3F12); justify-content:flex-start; align-items:center; text-align:center}
+.lg-art.lg-picole .marca{color:#5A3412; align-self:flex-start}
+.lg-pic{flex:1; display:flex; align-items:center; justify-content:center; width:100%}
+.lg-pic .picole-big{width:min(300px,60%); height:auto; filter:drop-shadow(0 22px 26px rgba(110,63,18,.3)); animation:pFlutua 4.5s ease-in-out infinite; transform-origin:50% 90%}
+.lg-pic .pg-gota{animation:pPinga 3.2s ease-in infinite; transform-box:fill-box; transform-origin:50% 0} .lg-pic .pg-gota.g2{animation-delay:1.4s}
+@keyframes pFlutua{0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-12px) rotate(2deg)}}
+@keyframes pPinga{0%,55%{transform:scaleY(1); opacity:1} 80%{transform:translateY(18px) scaleY(1.3); opacity:.9} 100%{transform:translateY(46px) scaleY(.6); opacity:0}}
+.lg-pic-txt b{display:block; font:800 clamp(26px,3vw,36px)/1.05 var(--display); color:#5A3412} .lg-pic-txt span{display:block; margin-top:6px; font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#8A5524}
+.lg-lembrar{margin:2px 0 6px}
+@media (max-width:860px){ .lg-art.lg-picole{min-height:0; padding:20px 18px} .lg-pic .picole-big{width:120px} .lg-pic-txt b{font-size:22px} }
+@media (prefers-reduced-motion:reduce){ .lg-pic .picole-big, .lg-pic .pg-gota{animation:none} }
+/* ---------- submenu de vendas ---------- */
+.nav-sub{display:flex; flex-direction:column; gap:2px; margin:2px 0 6px 30px; padding-left:10px; border-left:1px solid var(--choc-3)}
+.nav-s{border:0; background:transparent; color:var(--choc-mut); text-align:left; padding:7px 10px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; white-space:nowrap}
+.nav-s:hover{background:var(--choc-2); color:#fff} .nav-s[aria-current="page"]{background:var(--choc-3); color:#fff}
+.app.mini .nav-sub{display:none}
+.frame-cfg .vendas-frame{min-height:calc(100vh - 190px); border-radius:14px}

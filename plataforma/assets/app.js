@@ -157,12 +157,15 @@
     gestor: { l: "Gestor", d: "Cria e edita tudo nas abas liberadas." },
     membro: { l: "Membro", d: "Vê as abas liberadas, cria encaminhamentos e edita os que estão no nome dele." },
     leitor: { l: "Leitor", d: "Só visualiza as abas liberadas." },
+    vendedor: { l: "Vendedor", d: "Vê só os próprios números: Vendas e Remuneração." },
   };
   const S = { modo: "local", store: null, fb: null, me: null, data: {}, unsub: [], view: "inicio", sub: {}, f: { busca: "", resp: "", prio: "", origem: "" }, vendas: null, vendasErro: "", chaveVendas: null, links: null, charts: [], iniciado: false };
   COLS.forEach(c => S.data[c] = []);
   const cfgDoc = id => S.data.config.find(d => d.id === id) || {};
   const ehAdmin = () => S.me?.papel === "admin";
-  const veAba = id => !!S.me && (ABAS.find(a => a.id === id)?.livre || ehAdmin() || !!(S.me.abas || {})[id]);
+  const ehVendedor = () => S.me?.papel === "vendedor";
+  const veAba = id => !!S.me && (ehVendedor() ? (id === "vendas" || id === "remuneracao") : (ABAS.find(a => a.id === id)?.livre || ehAdmin() || !!(S.me.abas || {})[id]));
+  const ehGestao = () => ehAdmin() || S.me?.papel === "gestor";
   const podeEditar = aba => !!S.me && veAba(aba) && (ehAdmin() || S.me.papel === "gestor");
   const meuNome = () => norm(S.me?.nome);
   const meuEmail = () => normEmail(S.me?.email);
@@ -190,6 +193,7 @@
   function telaEntrada(msg = "") {
     $("#app").hidden = true; $("#login").hidden = false;
     const nuvem = S.modo === "cloud";
+    if (!nuvem) return telaEntradaPortal(msg);
     $("#login").innerHTML = `
       <section class="lg-art" aria-hidden="true">
         <div class="marca"><img src="assets/simbolo.svg" alt="">Naturalle</div>
@@ -219,6 +223,29 @@
       catch (er) { $("#lgErro").textContent = erroAuth(er); }
     };
   }
+  function telaEntradaPortal(msg) {
+    $("#login").innerHTML = `
+      <section class="lg-art lg-picole" aria-hidden="true">
+        <div class="marca"><img src="assets/simbolo.svg" alt="">Naturalle</div>
+        <div class="lg-pic"><svg class="picole-big" viewBox="0 0 240 400" focusable="false">         <defs>           <linearGradient id="pgCorpo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2B36B"/><stop offset=".55" stop-color="#D98A3D"/><stop offset="1" stop-color="#A15F1D"/></linearGradient>           <linearGradient id="pgPalito" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E4C08E"/><stop offset=".5" stop-color="#F3DDB8"/><stop offset="1" stop-color="#D8AE72"/></linearGradient>           <mask id="pgMordida"><rect width="240" height="400" fill="#fff"/><circle cx="196" cy="58" r="22" fill="#000"/><circle cx="214" cy="86" r="20" fill="#000"/><circle cx="176" cy="40" r="16" fill="#000"/></mask>         </defs>         <g class="pg-palito"><rect x="100" y="268" width="40" height="120" rx="20" fill="url(#pgPalito)"/><path d="M112 300v60M128 296v70" stroke="#C99A5B" stroke-width="2" stroke-linecap="round" opacity=".55"/></g>         <g class="pg-corpo" mask="url(#pgMordida)">           <path d="M28 120C28 62 70 22 120 22s92 40 92 98v142c0 14-11 24-24 24H52c-13 0-24-10-24-24Z" fill="url(#pgCorpo)"/>           <path d="M56 70c10-18 26-30 44-34" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".28" fill="none"/>           <path d="M48 100v130" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".18"/>           <g transform="translate(74 92) scale(.4) translate(-110 -77)" fill="#FFF8EE"><path d="M152.2 365.6C152.6 365.3 153.1 364.6 153.4 364.0L154.0 362.9L154.1 273.6C154.1 190.5 154.2 184.1 154.6 180.9C155.8 171.1 156.9 166.7 160.0 159.1C161.4 155.5 164.6 150.0 167.5 146.1C169.8 143.0 175.1 137.6 178.2 135.0C182.1 131.9 187.5 128.4 190.5 127.1C191.2 126.7 192.4 126.2 193.1 125.9C197.1 124.0 200.1 123.0 205.1 121.9C209.7 120.9 211.8 120.6 216.4 120.2C220.0 119.9 231.2 120.1 232.9 120.5C233.4 120.6 235.2 120.9 236.8 121.0C240.2 121.3 242.1 121.8 242.6 122.6C243.1 123.3 243.1 124.8 242.5 127.1C242.0 128.9 241.9 129.8 241.9 135.2C241.9 141.7 241.9 141.9 243.4 147.6C245.5 155.6 249.5 163.4 254.8 170.0C257.6 173.5 262.9 178.6 266.7 181.4C270.0 183.9 275.5 187.2 278.9 188.7C281.1 189.7 287.9 192.0 288.5 192.0C288.8 192.0 289.7 192.3 290.6 192.8C291.8 193.3 292.4 193.8 292.9 194.6L293.6 195.6L293.8 279.0C293.8 341.8 293.9 362.5 294.2 362.9C294.6 363.6 295.8 364.7 296.5 364.9C296.9 365.1 304.6 365.2 314.2 365.1C331.0 365.1 331.2 365.1 331.9 364.6C332.3 364.3 332.8 363.7 333.1 363.2C333.5 362.4 333.5 357.9 333.4 275.6C333.4 193.3 333.4 188.8 332.9 188.2C332.2 187.0 331.3 186.7 327.6 186.5C321.5 186.1 318.2 185.5 314.4 184.4C306.5 182.2 301.0 179.5 295.0 175.3C289.7 171.5 282.3 164.6 278.5 159.9C271.5 151.2 266.8 142.0 264.2 131.8C262.8 126.3 262.6 125.6 262.0 120.5C261.0 112.9 261.3 99.5 262.6 93.5C263.1 91.1 263.1 88.3 262.6 87.5C262.0 86.7 261.5 86.3 260.8 86.0C259.7 85.5 254.3 84.0 253.8 84.0C253.6 84.0 252.7 83.8 251.9 83.6C249.2 82.9 244.4 82.2 238.8 81.6C231.1 80.8 215.7 81.0 207.1 82.0C195.2 83.4 181.7 87.2 172.1 92.1C160.9 97.7 149.5 106.5 140.7 116.4C135.0 122.8 130.5 129.6 126.4 137.8C125.5 139.6 124.6 141.3 124.5 141.5C124.0 142.6 121.3 149.4 120.5 152.1C119.6 154.6 118.1 160.2 117.3 163.6C116.3 167.8 115.1 176.4 114.8 182.3C114.0 194.7 114.0 198.7 114.1 280.2C114.2 370.1 114.1 364.1 115.5 365.4C115.9 365.7 116.3 366.0 116.6 366.1C116.9 366.1 124.9 366.2 134.3 366.2C151.3 366.1 151.5 366.1 152.2 365.6Z"/></g>         </g>         <path class="pg-gota" d="M70 284c0 10 6 18 12 18s12-8 12-18" fill="#C97A2C"/>         <path class="pg-gota g2" d="M150 284c0 7 4 12 8 12s8-5 8-12" fill="#C97A2C"/>       </svg></div>
+        <div class="lg-pic-txt"><b>Plataforma comercial</b><span>Vendas · encaminhamentos · planejamento · remuneração</span></div>
+      </section>
+      <section class="lg-form"><div class="lg-card">
+        <h2>Entrar</h2>
+        <p class="sub">Use o número do seu celular corporativo e a sua senha.</p>
+        <form id="lgForm" autocomplete="on" novalidate>
+          <label class="f">Número do celular<input class="inp" id="lgNum" type="text" inputmode="tel" autocomplete="username" placeholder="(85) 99999-0000" maxlength="40" required></label>
+          <label class="f">Senha<input class="inp" id="lgSenha" type="password" autocomplete="current-password" maxlength="80" required></label>
+          <label class="ck lg-lembrar"><input type="checkbox" id="lgLembrar" checked><span>Manter conectado neste aparelho</span></label>
+          <button class="btn" id="lgBtn" type="submit">Entrar</button>
+          <p class="lg-erro" id="lgErro" role="alert">${esc(msg || "")}</p>
+        </form>
+        <div class="lg-modo">Cada vendedor vê só os próprios números. Encaminhamentos e atas ficam para a gestão.</div>
+        <div class="lg-rodape"><img src="assets/gomes-de-matos.png" alt="Gomes de Matos Consultoria"><span>${esc(CFG.desenvolvidoPor || "")}</span></div>
+      </div></section>`;
+    setTimeout(() => $("#lgNum").focus(), 30);
+    $("#lgForm").onsubmit = entrar;
+  }
   async function entrar(ev) {
     ev.preventDefault();
     const btn = $("#lgBtn"), erro = $("#lgErro"), card = $(".lg-card"), email = S.modo === "cloud" ? normEmail($("#lgEmail").value) : "", senha = $("#lgSenha").value;
@@ -228,18 +255,16 @@
     try {
       if (S.modo === "cloud") { await S.fb.auth().signInWithEmailAndPassword(email, senha); Trava.zerar(email); }
       else {
-        // login no portal seguro (usuário "equipe"); vendedores não entram na plataforma
-        const j = await VendasDados.api(CFG.apiUrl, { acao: "login", u: "equipe", s: senha, lembrar: false });
-        if (j.papel !== "equipe") throw new Error("sem permissão");
-        S.token = j.t; S.links = true;
-        Trava.zerar(""); ssSet(KEY + "-sessao", { t: S.token });
-        sessaoPainel();
-        S.me = { nome: lsGet(KEY + "-nome", "") || "Equipe Naturalle", email: "", papel: "admin", abas: Object.fromEntries(ABA_IDS.map(a => [a, true])) };
+        // login no portal seguro: número do celular (ou "equipe") + senha; o servidor diz o papel e o que a pessoa vê
+        const lembrar = $("#lgLembrar")?.checked;
+        const j = await VendasDados.api(CFG.apiUrl, { acao: "login", u: $("#lgNum").value, s: senha, lembrar: !!lembrar });
+        Trava.zerar("");
+        abrirSessao(j, lembrar);
         iniciarApp();
       }
     } catch (e) {
       Trava.erro(email); const w2 = Trava.espera(email);
-      erro.textContent = (S.modo === "cloud" ? erroAuth(e) : (e.api && /aguarde/.test(e.message) ? "Muitas tentativas erradas. Aguarde 15 minutos." : e.api || e.message === "sem permissão" ? "Senha incorreta." : "Sem conexão com o servidor. Tente de novo.")) + (w2 ? ` Aguarde ${w2 >= 60 ? Math.ceil(w2 / 60) + " min" : w2 + " s"} para tentar de novo.` : "");
+      erro.textContent = (S.modo === "cloud" ? erroAuth(e) : (e.api && /aguarde/.test(e.message) ? "Muitas tentativas erradas. Aguarde 15 minutos." : e.api ? "Número ou senha incorretos." : "Sem conexão com o servidor. Tente de novo.")) + (w2 ? ` Aguarde ${w2 >= 60 ? Math.ceil(w2 / 60) + " min" : w2 + " s"} para tentar de novo.` : "");
       card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
     } finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = "Entrar"; } }
   }
@@ -266,16 +291,26 @@
     await b.commit(); toast(local ? "Dados deste navegador copiados para a nuvem" : "Plataforma preparada com o que já foi combinado no projeto");
   }
 
+  function meDaSessao(j) {
+    const todas = Object.fromEntries(ABA_IDS.map(a => [a, true]));
+    return { nome: j.id === "equipe" ? (lsGet(KEY + "-nome", "") || "Equipe Naturalle") : j.nome, email: "", id: j.id, papel: PAPEIS[j.papel] ? j.papel : "leitor", abas: j.papel === "admin" || !j.abas ? todas : j.abas };
+  }
+  function abrirSessao(j, lembrar) {
+    S.token = j.t; S.links = true; S.me = meDaSessao(j);
+    const ses = { t: j.t, papel: j.papel, nome: j.nome, id: j.id, abas: j.abas || null };
+    ssSet(KEY + "-sessao", ses); if (lembrar) lsSet(KEY + "-sessao", ses); else lsDel(KEY + "-sessao");
+    sessaoPainel();
+  }
   function sessaoPainel() {
     // o painel de vendas (iframe, mesmo endereço) lê a sessão daqui e abre sem pedir a senha de novo
-    if (S.token) try { sessionStorage.setItem("naturalle_sessao", JSON.stringify({ t: S.token, papel: "equipe", nome: "Equipe", id: "equipe" })); } catch (_) { }
+    if (S.token) try { sessionStorage.setItem("naturalle_sessao", JSON.stringify({ t: S.token, papel: S.me?.papel === "vendedor" ? "vendedor" : "equipe", papelReal: S.me?.papel, nome: S.me?.nome || "Equipe", id: S.me?.id || "equipe" })); } catch (_) { }
     try { localStorage.removeItem(CHAVE_PAINEL); } catch (_) { }
   }
   function iniciarApp() {
     $("#login").hidden = true; $("#login").innerHTML = ""; $("#app").hidden = false;
     sessaoPainel(); // abre o painel de vendas sem pedir a senha de novo
     montarMoldura(); conectar(); Ocioso.iniciar(); S.iniciado = true;
-    const [v, sub] = location.hash.slice(1).split("/"); ir(ABAS.some(a => a.id === v) || v === "config" ? v : lsGet(KEY + "-view", "inicio"), sub);
+    const [v, sub] = location.hash.slice(1).split("/"); ir(ABAS.some(a => a.id === v) || v === "config" ? v : (ehVendedor() ? "vendas" : lsGet(KEY + "-view", "inicio")), sub);
     carregarVendas();
   }
   function conectar() {
@@ -287,8 +322,8 @@
   async function sair(msg) {
     Ocioso.parar(); fecharGaveta(); destruirGraficos();
     S.unsub.forEach(f => { try { f(); } catch (_) { } }); S.unsub = []; S.iniciado = false; S.me = null; S.chaveVendas = null; S.links = null; S.token = null; S.vendas = null;
-    ssDel(KEY + "-sessao"); ssDel(KEY + "-abas-ok"); lsDel(CHAVE_PAINEL); ssDel("naturalle_sessao");
-    const fr = $("#vendasFrame"); if (fr) fr.remove();
+    ssDel(KEY + "-sessao"); lsDel(KEY + "-sessao"); ssDel(KEY + "-abas-ok"); lsDel(CHAVE_PAINEL); ssDel("naturalle_sessao"); try { localStorage.removeItem("naturalle_sessao"); } catch (_) { }
+    $$(".vendas-frame").forEach(fr => fr.remove());
     if (S.modo === "cloud") { try { await S.fb.auth().signOut(); } catch (_) { } }
     $("#app").innerHTML = ""; telaEntrada(msg || "");
   }
@@ -324,15 +359,27 @@
     $("#nav").innerHTML = ABAS.map(a => {
       const ok = veAba(a.id), trava = S.modo === "local" && (cfgDoc("abasSenha")[a.id]) && !abaLiberada(a.id);
       if (!ok) return "";
-      return `<button class="nav-i" data-act="ir" data-to="${a.id}" data-tip="${esc(a.nome)}" ${S.view === a.id ? 'aria-current="page"' : ""}>${ico(a.ic)}<span>${esc(a.nome)}</span>${a.id === "encaminhamentos" && atrasados ? `<b class="badge" title="Encaminhamentos atrasados">${atrasados}</b>` : ""}${trava ? ico("cad", "cad") : ""}</button>`;
+      const bt = `<button class="nav-i" data-act="ir" data-to="${a.id}" data-tip="${esc(a.nome)}" ${S.view === a.id && !(a.id === "vendas" && S.view === "vendas") ? 'aria-current="page"' : ""} ${a.id === "vendas" ? `aria-expanded="${S.view === "vendas"}"` : ""}>${ico(a.ic)}<span>${esc(a.nome)}</span>${a.id === "encaminhamentos" && atrasados ? `<b class="badge" title="Encaminhamentos atrasados">${atrasados}</b>` : ""}${trava ? ico("cad", "cad") : ""}</button>`;
+      if (a.id !== "vendas" || S.view !== "vendas") return bt;
+      const atual = subVendas();
+      return bt + `<div class="nav-sub" role="group" aria-label="Vendas">${SUB_VENDAS.filter(x => !x.gestao || !ehVendedor()).map(x => `<button class="nav-s" data-act="ir" data-to="vendas" data-sub="${x.id}" ${atual === x.id ? 'aria-current="page"' : ""}>${esc(x.nome)}</button>`).join("")}</div>`;
     }).join("");
     $$('.side-pe .nav-i[data-to="config"]').forEach(b => b.toggleAttribute("aria-current", S.view === "config"));
   }
+  const SUB_VENDAS = [
+    { id: "geral", nome: "Visão geral", aba: "Geral" },
+    { id: "rankings", nome: "Rankings", aba: "Rankings", gestao: true },
+    { id: "carteira", nome: "Carteira de clientes", aba: "Carteira" },
+    { id: "produtos", nome: "Produtos", aba: "Produtos" },
+    { id: "campanhas", nome: "Campanhas", aba: "Campanha" },
+    { id: "semana", nome: "Resultado da semana", aba: "Geral", acao: "semana", gestao: true },
+  ];
+  const subVendas = () => { const s = S.sub.vendas; return SUB_VENDAS.some(x => x.id === s && (!x.gestao || !ehVendedor())) ? s : "geral"; };
   function sinc(ok, txt) { const s = $("#sync"); if (!s) return; s.classList.toggle("off", !ok); s.lastElementChild.textContent = txt; }
   let rTimer = null; function agendarRender() { clearTimeout(rTimer); rTimer = setTimeout(render, 30); }
 
   function ir(view, sub) {
-    if (view !== "config" && !veAba(view)) view = "inicio";
+    if (view !== "config" && !veAba(view)) view = ehVendedor() ? "vendas" : "inicio";
     S.view = view; if (sub) S.sub[view] = sub; lsSet(KEY + "-view", view);
     const h = "#" + view + (S.sub[view] ? "/" + S.sub[view] : ""); if (location.hash !== h) history.replaceState(null, "", h);
     $("#app").classList.remove("aberta"); render(); $("#conteudo").focus({ preventScroll: true }); scrollTo(0, 0);
@@ -340,11 +387,11 @@
   function render() {
     if (!S.iniciado) return;
     desenharNav(); destruirGraficos();
-    const v = S.view, c = $("#conteudo"), host = $("#vendasHost"), vendas = v === "vendas" && abaLiberada(v);
+    const v = S.view, c = $("#conteudo"), host = $("#vendasHost"), vendas = (v === "vendas" || v === "remuneracao") && abaLiberada(v);
     host.hidden = !vendas; c.hidden = vendas; $("#rodape").hidden = vendas;
     $("#titulo").textContent = v === "config" ? (ehAdmin() ? "Configurações" : "Minha conta") : ABAS.find(a => a.id === v)?.nome || "";
     document.title = $("#titulo").textContent + " · Naturalle";
-    if (vendas) return viewVendas(host);
+    if (vendas) return viewVendas(host, v === "remuneracao" ? "Remuneracao" : (SUB_VENDAS.find(x => x.id === subVendas()) || {}).aba, v === "vendas" && subVendas() === "semana");
     if (!abaLiberada(v)) return viewTrava(c, v);
     const aviso = S.modo === "local" && v !== "vendas" ? `<div class="aviso-modo">${ico("nuvem")}<span>Modo equipe: o que você cadastrar aqui fica salvo só neste navegador.${ehAdmin() ? " Ligue a nuvem para a equipe inteira ver o mesmo quadro." : ""}</span>${ehAdmin() ? `<button class="btn sm ghost" data-act="ir" data-to="config" data-sub="nuvem">Ligar a nuvem</button>` : ""}</div>` : "";
     const fn = { inicio: viewInicio, encaminhamentos: viewEncaminhamentos, planejamento: viewPlanejamento, remuneracao: viewRemuneracao, config: viewConfig }[v];
@@ -367,12 +414,17 @@
   /* =================================================================
      5a. VENDAS · painel atual embutido + dados para os outros módulos
      ================================================================= */
-  function viewVendas(host) {
-    if (!$("#vendasFrame")) {
+  function viewVendas(host, aba, semana) {
+    let fr = $("#vendasFrame");
+    const mandar = () => { try { const w = fr.contentWindow; if (w && w.painelIr) { w.painelIr(aba || "Geral"); if (semana && w.painelSemana) w.painelSemana(); return true; } } catch (_) { } return false; };
+    if (!fr) {
       sessaoPainel();
-      host.innerHTML = `<iframe id="vendasFrame" class="vendas-frame" title="Painel de vendas" src="${esc(CFG.painelVendas || "../index.html")}" referrerpolicy="same-origin"></iframe>`;
-    }
+      host.innerHTML = `<iframe id="vendasFrame" class="vendas-frame" title="Painel de vendas" src="${esc(painelUrl(aba))}" referrerpolicy="same-origin"></iframe>`;
+      fr = $("#vendasFrame");
+      fr.addEventListener("load", () => { let n = 0; const t = setInterval(() => { if (mandar() || ++n > 40) clearInterval(t); }, 150); });
+    } else if (!mandar()) { let n = 0; const t = setInterval(() => { if (mandar() || ++n > 40) clearInterval(t); }, 150); }
   }
+  const painelUrl = aba => (CFG.painelVendas || "../index.html") + "?embed=1#" + (aba || "Geral");
   async function carregarVendas(forcar) {
     if (!S.token || !veAba("vendas") && !veAba("remuneracao") && !veAba("planejamento")) { if (!S.links) S.vendasErro = S.modo === "cloud" ? (ehAdmin() ? "Conecte os dados de vendas em Configurações → Nuvem." : "") : ""; return; }
     try { S.vendas = await VendasDados.carregarApi(CFG.apiUrl, S.token, forcar); S.vendasErro = ""; }
@@ -791,10 +843,10 @@
      5f. CONFIGURAÇÕES
      ================================================================= */
   function viewConfig(el) {
-    const tabs = [["conta", "Minha conta", true], ["pessoas", "Pessoas e acessos", ehAdmin()], ["seguranca", "Segurança", ehAdmin()], ["nuvem", "Nuvem e dados", ehAdmin()], ["sobre", "Privacidade", true]].filter(t => t[2]);
+    const tabs = [["conta", "Minha conta", true], ["pessoas", "Pessoas e acessos", ehAdmin()], ["metas", "Metas e feriados", ehGestao()], ["seguranca", "Segurança", ehAdmin()], ["nuvem", "Nuvem e dados", ehAdmin() && S.modo === "cloud"], ["sobre", "Privacidade", true]].filter(t => t[2]);
     const sub = tabs.some(t => t[0] === S.sub.config) ? S.sub.config : "conta";
     el.innerHTML = `<div class="subabas" role="tablist">${tabs.map(([id, l]) => `<button role="tab" aria-selected="${sub === id}" data-act="sub" data-v="config" data-s="${id}">${l}</button>`).join("")}</div><div id="cfB"></div>`;
-    ({ conta: cfgConta, pessoas: cfgPessoas, seguranca: cfgSeguranca, nuvem: cfgNuvem, sobre: cfgSobre })[sub]($("#cfB"));
+    ({ conta: S.modo === "local" ? cfgContaPortal : cfgConta, pessoas: S.modo === "local" ? cfgAcessos : cfgPessoas, metas: cfgMetas, seguranca: cfgSeguranca, nuvem: cfgNuvem, sobre: cfgSobre })[sub]($("#cfB"));
   }
   function cfgConta(el) {
     el.innerHTML = `<div class="linha l2"><section class="card"><div class="card-h"><div><h2>Seus dados</h2><p class="sub">${S.modo === "cloud" ? esc(S.me.email) : "Modo equipe: o nome fica salvo neste aparelho."}</p></div></div>
@@ -804,6 +856,82 @@
     const fs = $("#ctSenha"); if (fs) fs.onsubmit = async e => { e.preventDefault(); const [a, b, c] = ["#pw0", "#pw1", "#pw2"].map(x => $(x).value), m = $("#pwMsg");
       if (b.length < 8 || !/[a-z]/i.test(b) || !/\d/.test(b)) return m.textContent = "A nova senha precisa de 8 caracteres, com letras e números."; if (b !== c) return m.textContent = "As duas senhas novas não são iguais.";
       try { const u = S.fb.auth().currentUser; await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, a)); await u.updatePassword(b); fs.reset(); m.textContent = ""; toast("Senha trocada"); } catch (er) { m.textContent = erroAuth(er); } };
+  }
+  /* ---------- PESSOAS E ACESSOS pelo número do celular corporativo (servidor) ---------- */
+  const fmtNum = n => { const d = String(n || ""); return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : d.length === 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : d; };
+  const apiP = (acao, dados) => VendasDados.api(CFG.apiUrl, Object.assign({ acao, t: S.token }, dados || {}));
+  let USUARIOS = null;
+  async function cfgAcessos(el) {
+    el.innerHTML = `<section class="card"><div class="card-h"><div><h2>Acessos pelo número do celular</h2><p class="sub">Cada pessoa entra com o número do celular corporativo e uma senha. Se alguém sair, o acesso fica com o número: troque a senha ou desative.</p></div>
+        <div class="dir"><button class="btn" id="acNovo">${ico("mais")}Novo acesso</button></div></div><div id="acLista"><p class="sub">Carregando…</p></div></section>
+      <section class="card mt"><div class="card-h"><div><h2>Senha do acesso "equipe"</h2><p class="sub">Acesso antigo e compartilhado (usuário <b>equipe</b>), que vê tudo. Depois que cada pessoa tiver o próprio número, troque esta senha por uma longa que ninguém usa.</p></div></div>
+        <form id="eqForm" class="grid2" style="align-items:end"><label class="f">Senha atual<input class="inp" type="password" id="eqA" autocomplete="current-password"></label><label class="f">Nova senha (mín. 10)<input class="inp" type="password" id="eqN" autocomplete="new-password"></label><div><button class="btn" type="submit">Trocar senha</button> <span class="sub" id="eqMsg"></span></div></form></section>
+      <div id="pessoasLocais" class="mt"></div>`;
+    $("#acNovo").onclick = () => gavetaAcesso({ ativo: true, papel: "vendedor" }, true);
+    $("#eqForm").onsubmit = async e => { e.preventDefault(); const m = $("#eqMsg"); m.textContent = "Salvando…";
+      try { await apiP("equipeSenha", { atual: $("#eqA").value, nova: $("#eqN").value }); m.textContent = "Senha trocada. Quem entra como equipe vai precisar da senha nova."; $("#eqForm").reset(); } catch (er) { m.textContent = "Não trocou: " + er.message; } };
+    cfgPessoas($("#pessoasLocais"));
+    const h = $("#pessoasLocais h2"); if (h) h.textContent = "Responsáveis dos encaminhamentos";
+    try { USUARIOS = (await apiP("usuarios")).lista; } catch (er) { $("#acLista").innerHTML = `<p class="sub">Não consegui carregar: ${esc(er.message)}</p>`; return; }
+    desenharAcessos();
+  }
+  function desenharAcessos() {
+    const l = $("#acLista"); if (!l) return;
+    if (!USUARIOS.length) { l.innerHTML = `<div class="vazio"><p class="sub">Nenhum acesso por número ainda. Clique em <b>Novo acesso</b> e cadastre o primeiro (comece pelo seu, como Administrador).</p></div>`; return; }
+    l.innerHTML = `<div class="tab-wrap"><table class="t resp"><thead><tr><th>Número</th><th>Pessoa</th><th>Papel</th><th>Vê</th><th>Situação</th><th></th></tr></thead><tbody>
+      ${USUARIOS.map(u => `<tr><td data-l="Número"><b>${esc(fmtNum(u.numero))}</b></td><td data-l="Pessoa">${esc(u.nome)}</td><td data-l="Papel">${esc(PAPEIS[u.papel]?.l || u.papel)}</td>
+        <td data-l="Vê">${u.papel === "vendedor" ? "só os números de " + esc(u.linhas.join(" + ")) : u.papel === "admin" ? "tudo" : (["vendas", "encaminhamentos", "planejamento", "remuneracao"].filter(a => u.abas[a]).map(a => ABAS.find(x => x.id === a).nome).join(", ") || "Início")}</td>
+        <td data-l="Situação">${u.ativo ? `<span class="chip ok">ativo</span>` : `<span class="chip">inativo</span>`}<br><small style="color:var(--muted)">${u.ultimoAcesso ? "entrou " + relTempo(u.ultimoAcesso) : "ainda não entrou"}</small></td>
+        <td><button class="btn sm ghost" data-num="${esc(u.numero)}">Editar</button></td></tr>`).join("")}</tbody></table></div>`;
+    l.querySelectorAll("[data-num]").forEach(b => b.onclick = () => gavetaAcesso(USUARIOS.find(u => u.numero === b.dataset.num), false));
+  }
+  function gavetaAcesso(u, novo) {
+    const linhasDisp = [...new Set((S.vendas?.recs || []).filter(r => r.grupo !== "Outros canais").map(r => r.vendedor))].sort();
+    abrirGaveta(novo ? "Novo acesso" : "Acesso de " + u.nome, `
+      <div class="grid2"><label class="f">Número do celular corporativo<input class="inp" id="aNum" inputmode="tel" placeholder="(85) 99999-0000" value="${esc(fmtNum(u.numero || ""))}"></label><label class="f">Nome<input class="inp" id="aNome" maxlength="60" value="${esc(u.nome || "")}" placeholder="Ex.: Allyson"></label></div>
+      <label class="f">Papel<select class="sel inp" id="aPapel">${["vendedor", "admin", "gestor", "membro", "leitor"].map(k => `<option value="${k}" ${u.papel === k ? "selected" : ""}>${PAPEIS[k].l} · ${PAPEIS[k].d}</option>`).join("")}</select></label>
+      <div id="aVend" class="grid2"><label class="f">Linha na aba Vendas<input class="inp" id="aLinhas" list="dlLinhasV" value="${esc((u.linhas || []).join(" + "))}" placeholder="ALLYSON · para duas: RODRIGO + RODRIGO SORVETES"></label><label class="f">Nome na Corridinha <small>opcional</small><input class="inp" id="aCorr" maxlength="60" value="${esc(u.corr || "")}" placeholder="Ex.: Allyson"></label>
+        <datalist id="dlLinhasV">${linhasDisp.map(x => `<option value="${esc(x)}">`).join("")}</datalist></div>
+      <fieldset id="aAbas" style="border:1px solid var(--linha);border-radius:12px;padding:12px 14px"><legend style="font-size:13px;font-weight:800;color:var(--muted);padding:0 6px">Abas que a pessoa vê</legend><div class="grid2">${ABAS.filter(a => !a.livre).map(a => `<label class="ck"><input type="checkbox" data-aba="${a.id}" ${(u.abas || {})[a.id] ? "checked" : ""}><span>${a.nome}</span></label>`).join("")}</div></fieldset>
+      <label class="f">${novo || !u.temSenha ? "Senha" : "Nova senha"} <small>${novo || !u.temSenha ? "mínimo 6 caracteres" : "deixe em branco para manter a atual"}</small><input class="inp" id="aSenha" type="text" autocomplete="off" maxlength="60" placeholder="${novo ? "Crie a senha" : "••••••"}"></label>
+      <label class="ck"><input type="checkbox" id="aAtivo" ${u.ativo !== false ? "checked" : ""}><span>Acesso ativo</span></label>
+      <p class="sub" style="color:var(--muted)">Ao trocar a senha, mudar o papel ou desativar, quem estiver conectado com esse número sai na hora.</p>
+      <div id="aMsgBox" hidden><label class="f">Mensagem para mandar no WhatsApp<textarea class="inp" id="aMsg" rows="6" readonly></textarea></label><button type="button" class="btn ghost sm" id="aCopiar">Copiar mensagem</button></div>`,
+      `${novo ? '<span class="esq"></span>' : `<button class="btn ghost esq" id="aExcluir">${ico("lixo")}Excluir</button>`}<button class="btn" id="aSalvar">${novo ? "Criar acesso" : "Salvar"}</button>`);
+    const papel = () => $("#aPapel").value;
+    const ver = () => { $("#aVend").hidden = papel() !== "vendedor"; $("#aAbas").hidden = papel() === "vendedor" || papel() === "admin"; };
+    $("#aPapel").onchange = ver; ver();
+    $("#aSalvar").onclick = async () => {
+      const b = $("#aSalvar"), senha = $("#aSenha").value.trim(), abas = {}; $$("#aAbas [data-aba]").forEach(i => { if (i.checked) abas[i.dataset.aba] = true; });
+      b.disabled = true;
+      try {
+        const r = await apiP("usuarioSalvar", { numero: $("#aNum").value, numeroAntigo: u.numero || "", nome: $("#aNome").value, papel: papel(), linhas: $("#aLinhas").value, corr: $("#aCorr").value, abas, senha: senha || null, ativo: $("#aAtivo").checked });
+        USUARIOS = r.lista; desenharAcessos(); toast(novo ? "Acesso criado" : "Acesso salvo");
+        const num = r.lista.find(x => x.nome === $("#aNome").value.trim())?.numero || $("#aNum").value;
+        const link = location.origin + location.pathname;
+        $("#aMsg").value = `Olá, ${$("#aNome").value.trim()}! Seu acesso à plataforma comercial da Naturalle:\n\n${link}\nNúmero: ${fmtNum(num)}\n${senha ? "Senha: " + senha + "\n" : ""}\nA senha é pessoal. ${papel() === "vendedor" ? "Lá você acompanha as suas vendas, meta, carteira de clientes, produtos, campanha e comissão." : ""}`;
+        $("#aMsgBox").hidden = false; $("#aSenha").value = ""; u = r.lista.find(x => x.numero === String(num).replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "")) || u; novo = false;
+      } catch (er) { toast("Não salvou: " + er.message); }
+      finally { b.disabled = false; }
+    };
+    $("#aCopiar").onclick = async () => { try { await navigator.clipboard.writeText($("#aMsg").value); toast("Mensagem copiada"); } catch (_) { $("#aMsg").select(); document.execCommand("copy"); } };
+    const ex = $("#aExcluir"); if (ex) ex.onclick = async () => { if (!(await confirmar({ titulo: `Excluir o acesso de ${u.nome}?`, texto: `O número ${fmtNum(u.numero)} deixa de entrar na hora.`, ok: "Excluir" }))) return; try { USUARIOS = (await apiP("usuarioExcluir", { numero: u.numero })).lista; desenharAcessos(); fecharGaveta(); toast("Acesso excluído"); } catch (er) { toast(er.message); } };
+  }
+  /* metas e feriados do painel de vendas (iframe na aba Config do painel) */
+  function cfgMetas(el) {
+    sessaoPainel();
+    el.innerHTML = `<div class="frame-cfg"><iframe class="vendas-frame" title="Metas e feriados" src="${esc(painelUrl("Config"))}" referrerpolicy="same-origin"></iframe></div>`;
+  }
+  /* minha conta: nome e troca da própria senha */
+  function cfgContaPortal(el) {
+    const numerado = S.me.id && S.me.id !== "equipe";
+    el.innerHTML = `<div class="linha l2"><section class="card"><div class="card-h"><div><h2>Seus dados</h2><p class="sub">${numerado ? "Número " + esc(fmtNum(S.me.id)) + " · " + esc(PAPEIS[S.me.papel]?.l || "") : "Acesso compartilhado da equipe."}</p></div></div>
+        ${numerado ? `<p><b>${esc(S.me.nome)}</b></p><p class="sub" style="color:var(--muted)">O nome e o papel são definidos por um administrador em Pessoas e acessos.</p>` : `<form id="ctNome" class="lista" style="gap:12px"><label class="f">Como você aparece<input class="inp" id="ctN" value="${esc(S.me.nome)}" maxlength="80"></label><div><button class="btn" type="submit">Salvar neste aparelho</button></div></form>`}</section>
+      ${numerado ? `<section class="card"><div class="card-h"><div><h2>Trocar minha senha</h2><p class="sub">Mínimo 6 caracteres.</p></div></div><form id="msF" class="lista" style="gap:12px"><label class="f">Senha atual<input class="inp" id="ms0" type="password" autocomplete="current-password"></label><label class="f">Nova senha<input class="inp" id="ms1" type="password" autocomplete="new-password"></label><div><button class="btn" type="submit">Trocar senha</button> <span class="sub" id="msMsg"></span></div></form></section>` : ""}</div>`;
+    const fn = $("#ctNome"); if (fn) fn.onsubmit = e => { e.preventDefault(); const n = str($("#ctN").value, 80); if (!n) return; S.me.nome = n; lsSet(KEY + "-nome", n); montarMoldura(); render(); toast("Nome salvo"); };
+    const fm = $("#msF"); if (fm) fm.onsubmit = async e => { e.preventDefault(); const m = $("#msMsg"); m.textContent = "Salvando…";
+      try { const r = await apiP("minhaSenha", { atual: $("#ms0").value, nova: $("#ms1").value }); abrirSessao({ t: r.t, papel: S.me.papel, nome: S.me.nome, id: S.me.id, abas: S.me.papel === "admin" ? null : S.me.abas }, !!lsGet(KEY + "-sessao", null)); fm.reset(); m.textContent = "Senha trocada."; toast("Senha trocada"); }
+      catch (er) { m.textContent = "Não trocou: " + er.message; } };
   }
   function cfgPessoas(el) {
     const ps = S.data.pessoas.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
@@ -998,6 +1126,7 @@
     });
     $("#scrim").onclick = fecharGaveta;
     document.addEventListener("click", e => { if ($("#app").classList.contains("aberta") && !e.target.closest(".side") && !e.target.closest(".menu")) $("#app").classList.remove("aberta"); });
+    addEventListener("message", ev => { if (ev.origin === location.origin && ev.data && ev.data.tipo === "naturalle-sessao-expirada" && S.iniciado && S.modo === "local") sair("Sua sessão terminou. Entre de novo."); });
     addEventListener("hashchange", () => { if (!S.iniciado) return; const [v, sub] = location.hash.slice(1).split("/"); if (v && (v !== S.view || (sub && sub !== S.sub[v]))) ir(v, sub); });
     ligarArraste();
     setInterval(() => { if (S.iniciado && S.links && !document.hidden) carregarVendas(true); }, 5 * 60e3);
@@ -1023,10 +1152,10 @@
       return telaEntrada("Não consegui carregar a nuvem. Verifique a internet e recarregue a página.");
     }
     S.modo = "local"; S.store = new LocalStore(KEY + "-dados-v1"); if (S.store.vazio()) S.store.semear(SEED());
-    const ses = ssGet(KEY + "-sessao", null);
-    if (ses?.t) {
-      try { S.token = ses.t; S.links = true; S.me = { nome: lsGet(KEY + "-nome", "") || "Equipe Naturalle", email: "", papel: "admin", abas: Object.fromEntries(ABA_IDS.map(a => [a, true])) }; return iniciarApp(); }
-      catch (_) { ssDel(KEY + "-sessao"); }
+    const ses = ssGet(KEY + "-sessao", null) || lsGet(KEY + "-sessao", null);
+    if (ses?.t && ses.papel) {
+      try { S.token = ses.t; S.links = true; S.me = meDaSessao(ses); ssSet(KEY + "-sessao", ses); return iniciarApp(); }
+      catch (_) { ssDel(KEY + "-sessao"); lsDel(KEY + "-sessao"); }
     }
     telaEntrada();
   }

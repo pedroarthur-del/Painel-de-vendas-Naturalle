@@ -59,23 +59,28 @@ function doPost(e) {
 function portalJson_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function portalFalha_(msg) { throw new Error('PORTAL:' + msg); }
 
+const PAPEIS_EQUIPE = { admin: 1, gestor: 1, membro: 1, leitor: 1 };
+const portalEhEquipe_ = s => s.papel !== 'vendedor';      // vê os dados da empresa inteira
+const portalEhAdmin_ = s => s.papel === 'admin';
 function portalRotear_(p) {
   const acao = String(p.acao || '');
-  if (acao === 'saude') return { ok: true, versao: 3, agora: new Date().toISOString() };
+  if (acao === 'saude') return { ok: true, versao: 5, agora: new Date().toISOString() };
   if (acao === 'login') return portalLogin_(p);
   const s = portalSessao_(p.t); // lança se inválida
-  if (acao === 'eu') return { ok: true, papel: s.papel, nome: s.nome, id: s.u };
-  if (acao === 'dados') { if (p.forcar && s.papel === 'equipe') portalPreaquecer(); return { ok: true, papel: s.papel, nome: s.nome, id: s.u, gz: portalAbasGz_(s), extra: portalExtra_(s) }; }
-  if (s.papel !== 'equipe') portalFalha_('sem permissão');
-  // ---- só equipe ----
-  if (acao === 'metaSalvar') return portalMetaSalvar_(p, s);
-  if (acao === 'vendedores') return { ok: true, lista: portalVendedoresPublico_() };
-  if (acao === 'vendedorSalvar') return portalVendedorSalvar_(p);
-  if (acao === 'vendedorChave') return portalVendedorChave_(p);
-  if (acao === 'vendedorBloquear') return portalVendedorBloquear_(p);
+  if (acao === 'eu') return { ok: true, papel: s.papel, nome: s.nome, id: s.u, abas: s.abas };
+  if (acao === 'dados') { if (p.forcar && portalEhEquipe_(s)) portalPreaquecer(); return { ok: true, papel: s.papel, nome: s.nome, id: s.u, abas: s.abas, gz: portalAbasGz_(s), extra: portalExtra_(s) }; }
+  if (acao === 'minhaSenha') return portalMinhaSenha_(p, s);
+  if (!portalEhEquipe_(s)) portalFalha_('sem permissão');
+  // ---- gestão (admin/gestor) ----
+  if (acao === 'metaSalvar') { if (!(s.papel === 'admin' || s.papel === 'gestor')) portalFalha_('sem permissão'); return portalMetaSalvar_(p, s); }
+  if (acao === 'feriadosSalvar') { if (!(s.papel === 'admin' || s.papel === 'gestor')) portalFalha_('sem permissão'); return portalFeriadosSalvar_(p); }
+  if (!portalEhAdmin_(s)) portalFalha_('sem permissão');
+  // ---- só administrador ----
+  if (acao === 'usuarios') return { ok: true, lista: portalUsuariosPublico_() };
+  if (acao === 'usuarioSalvar') return portalUsuarioSalvar_(p);
+  if (acao === 'usuarioExcluir') return portalUsuarioExcluir_(p);
   if (acao === 'equipeSenha') return portalEquipeSenha_(p);
   if (acao === 'remunSalvar') return portalRemunSalvar_(p);
-  if (acao === 'feriadosSalvar') return portalFeriadosSalvar_(p);
   portalFalha_('ação desconhecida');
 }
 
@@ -101,6 +106,8 @@ function portalHash_(senha, sal) {
 function portalIguais_(a, b) { a = String(a); b = String(b); if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
 const portalNormSenhaEquipe_ = v => String(v || '').trim().toUpperCase().replace(/\s+/g, '');
 const portalNormChave_ = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+/* número de celular: só dígitos, sem o 55 do Brasil → DDD + número (10 ou 11 dígitos) */
+const portalNormNum_ = v => { let d = String(v || '').replace(/\D/g, ''); if (d.length >= 12 && d.indexOf('55') === 0) d = d.slice(2); if (d.length === 11 || d.length === 10) return d; return ''; };
 const portalNormU_ = v => String(v || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 
 function portalTokenCriar_(o) {
@@ -118,11 +125,15 @@ function portalSessao_(t) {
   if (o.p === 'equipe') {
     const eq = portalLerJson_('PORTAL_EQUIPE', null);
     if (!eq || eq.ver !== o.v) portalFalha_('sessão expirada');
-    return { papel: 'equipe', u: 'equipe', nome: 'Equipe' };
+    return { papel: 'admin', u: 'equipe', nome: 'Equipe', abas: null };
   }
-  const reg = portalLerJson_('PORTAL_VENDEDORES', {}), v = reg[o.u];
+  const reg = portalUsuarios_(), v = reg[o.u];
   if (!v || v.ativo === false || !v.hash || v.ver !== o.v) portalFalha_('sessão expirada');
-  return { papel: 'vendedor', u: o.u, nome: v.nome, linhas: v.linhas || [], corr: v.corr || '' };
+  return portalSessaoDe_(o.u, v);
+}
+function portalSessaoDe_(num, v) {
+  const papel = v.papel === 'vendedor' || PAPEIS_EQUIPE[v.papel] ? v.papel : 'leitor';
+  return { papel, u: num, nome: v.nome, linhas: v.linhas || [], corr: v.corr || '', abas: papel === 'vendedor' ? { vendas: true, remuneracao: true } : (papel === 'admin' ? null : (v.abas || {})) };
 }
 function portalBloqueado_(u) {
   const c = CacheService.getScriptCache(), n = Number(c.get('ERR:' + u) || 0);
@@ -133,7 +144,7 @@ function portalErro_(u) {
   c.put(k, String(n), PORTAL.BLOQUEIO_S);
 }
 function portalLogin_(p) {
-  const u = portalNormU_(p.u) || 'equipe';
+  const u = portalNormNum_(p.u) || portalNormU_(p.u) || 'equipe';
   if (portalBloqueado_(u)) portalFalha_('muitas tentativas erradas; aguarde 15 minutos');
   Utilities.sleep(300 + Math.floor(Math.random() * 300)); // dificulta tentativa em massa
   const dur = p.lembrar ? PORTAL.LEMBRAR_D * 864e5 : PORTAL.SESSAO_H * 36e5;
@@ -142,13 +153,15 @@ function portalLogin_(p) {
     if (!eq) portalFalha_('portal não instalado');
     if (!portalIguais_(portalHash_(portalNormSenhaEquipe_(p.s), eq.sal), eq.hash)) { portalErro_(u); portalFalha_('usuário ou senha incorretos'); }
     CacheService.getScriptCache().remove('ERR:' + u);
-    return { ok: true, papel: 'equipe', nome: 'Equipe', id: 'equipe', t: portalTokenCriar_({ p: 'equipe', u: 'equipe', v: eq.ver, exp: Date.now() + dur }) };
+    return { ok: true, papel: 'admin', nome: 'Equipe', id: 'equipe', abas: null, t: portalTokenCriar_({ p: 'equipe', u: 'equipe', v: eq.ver, exp: Date.now() + dur }) };
   }
-  const reg = portalLerJson_('PORTAL_VENDEDORES', {}), v = reg[u];
-  if (!v || v.ativo === false || !v.hash || !portalIguais_(portalHash_(portalNormChave_(p.s), v.sal), v.hash)) { portalErro_(u); portalFalha_('usuário ou senha incorretos'); }
+  const num = portalNormNum_(p.u);
+  const reg = portalUsuarios_(), v = num && reg[num];
+  if (!v || v.ativo === false || !v.hash || !portalIguais_(portalHash_(String(p.s || ''), v.sal), v.hash)) { portalErro_(u); portalFalha_('número ou senha incorretos'); }
   CacheService.getScriptCache().remove('ERR:' + u);
-  v.ultimoAcesso = new Date().toISOString(); reg[u] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
-  return { ok: true, papel: 'vendedor', nome: v.nome, id: u, t: portalTokenCriar_({ p: 'v', u: u, v: v.ver, exp: Date.now() + dur }) };
+  v.ultimoAcesso = new Date().toISOString(); reg[num] = v; portalGravarJson_('PORTAL_USUARIOS', reg);
+  const ses = portalSessaoDe_(num, v);
+  return { ok: true, papel: ses.papel, nome: v.nome, id: num, abas: ses.abas, t: portalTokenCriar_({ p: 'u', u: num, v: v.ver, exp: Date.now() + dur }) };
 }
 
 /* ================= dados ================= */
@@ -178,7 +191,7 @@ function portalLerTudo_() {
 }
 /* abas de cada perfil: equipe recebe tudo; vendedor só o que é dele (linhas e colunas) */
 function portalAbasDe_(abas, s) {
-  if (s.papel === 'equipe') return abas;
+  if (portalEhEquipe_(s)) return abas;
   const meu = {}; (s.linhas || []).forEach(l => { meu[portalNorm_(l)] = 1; });
   const ehMeu = v => !!meu[portalNorm_(v)];
   const out = {};
@@ -208,7 +221,7 @@ function portalAbasDe_(abas, s) {
 function portalExtra_(s) {
   let metas = portalMetasLinhas_(SpreadsheetApp.getActive());
   const remun = portalLerJson_('PORTAL_REMUN', null), feriados = portalLerJson_('PORTAL_FERIADOS', {});
-  if (s.papel === 'equipe') return { metas, remun, feriados, em: portalProps_().getProperty('PORTAL_PRONTO_EM') || '' };
+  if (portalEhEquipe_(s)) return { metas, remun, feriados, em: portalProps_().getProperty('PORTAL_PRONTO_EM') || '' };
   const meu = {}; (s.linhas || []).forEach(l => { meu[portalNorm_(l)] = 1; });
   metas = metas.filter(m => m.vend !== '__all' && meu[portalNorm_(m.vend)]);
   return { metas, feriados, vendedor: { id: s.u, nome: s.nome, linhas: s.linhas }, remun: remun && remun.publicada ? portalRemunDoVendedor_(remun, s.linhas) : null, em: portalProps_().getProperty('PORTAL_PRONTO_EM') || '' };
@@ -248,15 +261,15 @@ function portalCacheLer_(chave) {
 function portalPreaquecer() {
   const lock = LockService.getDocumentLock(); if (!lock.tryLock(60000)) return;
   try {
-    const abas = portalLerTudo_(), reg = portalLerJson_('PORTAL_VENDEDORES', {});
+    const abas = portalLerTudo_(), reg = portalUsuarios_();
     portalCacheGravar_('ABAS:equipe', portalGz_({ v: 4, abas }));
-    Object.keys(reg).forEach(id => { const v = reg[id]; if (v.ativo === false || !v.hash) return;
+    Object.keys(reg).forEach(id => { const v = reg[id]; if (v.papel !== 'vendedor' || v.ativo === false || !v.hash) return;
       portalCacheGravar_('ABAS:' + id, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: id, linhas: v.linhas, corr: v.corr }) })); });
     portalProps_().setProperty('PORTAL_PRONTO_EM', new Date().toISOString());
   } finally { lock.releaseLock(); }
 }
 function portalAbasGz_(s) {
-  const chave = 'ABAS:' + s.u;
+  const chave = portalEhEquipe_(s) ? 'ABAS:equipe' : 'ABAS:' + s.u;
   let gz = portalCacheLer_(chave);
   if (gz) return gz;
   gz = portalGz_({ v: 4, abas: portalAbasDe_(portalLerTudo_(), s) });
@@ -289,41 +302,58 @@ function portalMetaSalvar_(p, s) {
   return { ok: true };
 }
 
-/* ================= vendedores (acessos individuais) ================= */
-function portalRegistro_() {
-  const reg = portalLerJson_('PORTAL_VENDEDORES', null);
-  if (reg) return reg;
-  const novo = {}; Object.keys(VENDEDORES_PADRAO).forEach(k => { novo[k] = Object.assign({ ativo: false, ver: 0 }, VENDEDORES_PADRAO[k]); });
-  portalGravarJson_('PORTAL_VENDEDORES', novo); return novo;
+/* ================= usuários (acesso pelo número do celular corporativo) ================= */
+function portalUsuarios_() { return portalLerJson_('PORTAL_USUARIOS', {}); }
+function portalUsuariosPublico_() {
+  const reg = portalUsuarios_();
+  return Object.keys(reg).sort((a, b) => String(reg[a].nome).localeCompare(String(reg[b].nome))).map(k => { const v = reg[k];
+    return { numero: k, nome: v.nome, papel: v.papel, abas: v.abas || {}, linhas: v.linhas || [], corr: v.corr || '', ativo: v.ativo !== false && !!v.hash, temSenha: !!v.hash, senhaEm: v.senhaEm || '', ultimoAcesso: v.ultimoAcesso || '' }; });
 }
-function portalVendedoresPublico_() {
-  const reg = portalRegistro_();
-  return Object.keys(reg).sort().map(k => ({ id: k, nome: reg[k].nome, linhas: reg[k].linhas || [], corr: reg[k].corr || '', ativo: reg[k].ativo !== false && !!reg[k].hash, temChave: !!reg[k].hash, chaveEm: reg[k].chaveEm || '', ultimoAcesso: reg[k].ultimoAcesso || '' }));
-}
-function portalVendedorSalvar_(p) {
-  const id = portalNormU_(p.id); if (!id || id === 'equipe' || id.length > 30) portalFalha_('usuário inválido');
+function portalUsuarioSalvar_(p) {
+  const num = portalNormNum_(p.numero); if (!num) portalFalha_('número inválido: use DDD + número, ex.: 85 99999-0000');
+  const antigo = portalNormNum_(p.numeroAntigo);
+  const papel = p.papel === 'vendedor' || PAPEIS_EQUIPE[p.papel] ? p.papel : '';
+  if (!papel) portalFalha_('escolha o papel');
+  const nome = String(p.nome || '').trim().slice(0, 60); if (!nome) portalFalha_('informe o nome');
   const linhas = (Array.isArray(p.linhas) ? p.linhas : String(p.linhas || '').split(/[+,;]/)).map(portalNorm_).filter(Boolean).slice(0, 6);
-  if (!linhas.length) portalFalha_('informe pelo menos uma linha da aba Vendas');
-  const reg = portalRegistro_(), v = reg[id] || { ver: 0, ativo: false };
-  v.nome = String(p.nome || id).trim().slice(0, 60); v.linhas = linhas; v.corr = String(p.corr || '').trim().slice(0, 60);
-  reg[id] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
-  CacheService.getScriptCache().remove('ABAS:' + id + ':n');
-  return { ok: true, lista: portalVendedoresPublico_() };
+  if (papel === 'vendedor' && !linhas.length) portalFalha_('informe a linha do vendedor na aba Vendas (ex.: ALLYSON)');
+  const senha = p.senha == null ? '' : String(p.senha);
+  if (senha && senha.length < 6) portalFalha_('a senha precisa de pelo menos 6 caracteres');
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const reg = portalUsuarios_();
+    if (antigo && antigo !== num) { if (reg[num]) portalFalha_('esse número já tem cadastro'); reg[num] = reg[antigo]; delete reg[antigo]; if (reg[num]) reg[num].ver = (Number(reg[num].ver) || 0) + 1; }
+    const v = reg[num] || { ver: 0, criadoEm: new Date().toISOString() };
+    if (!v.hash && !senha) portalFalha_('crie a senha para esse número');
+    const abasOk = {}; ['vendas', 'encaminhamentos', 'planejamento', 'remuneracao'].forEach(a => { if (p.abas && p.abas[a]) abasOk[a] = true; });
+    const mudouAcesso = v.papel !== papel || JSON.stringify(v.linhas || []) !== JSON.stringify(papel === 'vendedor' ? linhas : []);
+    Object.assign(v, { nome, papel, abas: papel === 'vendedor' || papel === 'admin' ? {} : abasOk, linhas: papel === 'vendedor' ? linhas : [], corr: papel === 'vendedor' ? String(p.corr || '').trim().slice(0, 60) : '', ativo: p.ativo !== false });
+    if (senha) { v.sal = portalAleatorio_(24); v.hash = portalHash_(senha, v.sal); v.senhaEm = new Date().toISOString(); }
+    if (senha || mudouAcesso || v.ativo === false) v.ver = (Number(v.ver) || 0) + 1; // derruba sessões antigas
+    reg[num] = v; portalGravarJson_('PORTAL_USUARIOS', reg);
+    CacheService.getScriptCache().remove('ABAS:' + num + ':n');
+    if (papel === 'vendedor' && v.ativo) portalPacoteVendedor_(num, v);
+  } finally { lock.releaseLock(); }
+  return { ok: true, lista: portalUsuariosPublico_() };
 }
-function portalVendedorChave_(p) {
-  const id = portalNormU_(p.id), reg = portalRegistro_(), v = reg[id]; if (!v) portalFalha_('vendedor não encontrado');
-  const ALF = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let chave = '';
-  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid() + Utilities.getUuid() + Date.now());
-  for (let i = 0; i < 12; i++) chave += ALF[(bytes[i] + 256) % ALF.length];
-  v.sal = portalAleatorio_(24); v.hash = portalHash_(chave, v.sal); v.ver = (Number(v.ver) || 0) + 1; v.ativo = true; v.chaveEm = new Date().toISOString();
-  reg[id] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
-  try { const c = portalCacheLer_('ABAS:equipe'); if (c) { const abas = JSON.parse(Utilities.newBlob(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(c), 'application/x-gzip'))).getDataAsString()).abas; portalCacheGravar_('ABAS:' + id, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: id, linhas: v.linhas, corr: v.corr }) })); } } catch (e) { }
-  return { ok: true, id, chave: chave.slice(0, 4) + '-' + chave.slice(4, 8) + '-' + chave.slice(8), lista: portalVendedoresPublico_() };
+function portalPacoteVendedor_(num, v) {
+  try { const c = portalCacheLer_('ABAS:equipe'); if (!c) return;
+    const abas = JSON.parse(Utilities.newBlob(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(c), 'application/x-gzip'))).getDataAsString()).abas;
+    portalCacheGravar_('ABAS:' + num, portalGz_({ v: 4, abas: portalAbasDe_(abas, { papel: 'vendedor', u: num, linhas: v.linhas, corr: v.corr }) }));
+  } catch (e) { }
 }
-function portalVendedorBloquear_(p) {
-  const id = portalNormU_(p.id), reg = portalRegistro_(), v = reg[id]; if (!v) portalFalha_('vendedor não encontrado');
-  v.ativo = false; v.hash = ''; v.sal = ''; v.ver = (Number(v.ver) || 0) + 1; reg[id] = v; portalGravarJson_('PORTAL_VENDEDORES', reg);
-  return { ok: true, lista: portalVendedoresPublico_() };
+function portalUsuarioExcluir_(p) {
+  const num = portalNormNum_(p.numero), reg = portalUsuarios_(); if (!reg[num]) portalFalha_('número não encontrado');
+  delete reg[num]; portalGravarJson_('PORTAL_USUARIOS', reg); CacheService.getScriptCache().remove('ABAS:' + num + ':n');
+  return { ok: true, lista: portalUsuariosPublico_() };
+}
+function portalMinhaSenha_(p, s) {
+  const reg = portalUsuarios_(), v = reg[s.u]; if (!v) portalFalha_('use Configurações → Senha da equipe');
+  if (!portalIguais_(portalHash_(String(p.atual || ''), v.sal), v.hash)) portalFalha_('senha atual incorreta');
+  const nova = String(p.nova || ''); if (nova.length < 6) portalFalha_('a nova senha precisa de pelo menos 6 caracteres');
+  v.sal = portalAleatorio_(24); v.hash = portalHash_(nova, v.sal); v.ver = (Number(v.ver) || 0) + 1; v.senhaEm = new Date().toISOString();
+  reg[s.u] = v; portalGravarJson_('PORTAL_USUARIOS', reg);
+  return { ok: true, t: portalTokenCriar_({ p: 'u', u: s.u, v: v.ver, exp: Date.now() + PORTAL.LEMBRAR_D * 864e5 }) };
 }
 function portalEquipeSenha_(p) {
   const eq = portalLerJson_('PORTAL_EQUIPE', null);
@@ -353,7 +383,6 @@ function portalInstalar(senhaEquipe) {
   const P = portalProps_();
   if (!P.getProperty('PORTAL_SEGREDO')) P.setProperty('PORTAL_SEGREDO', portalAleatorio_(64));
   if (senhaEquipe) { const sal = portalAleatorio_(24), eq = portalLerJson_('PORTAL_EQUIPE', { ver: 0 }); portalGravarJson_('PORTAL_EQUIPE', { sal, hash: portalHash_(portalNormSenhaEquipe_(senhaEquipe), sal), ver: (eq.ver || 0) + 1 }); }
-  portalRegistro_();
   portalAbaMetas_(SpreadsheetApp.getActive());
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'portalPreaquecer').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('portalPreaquecer').timeBased().everyMinutes(10).create();
