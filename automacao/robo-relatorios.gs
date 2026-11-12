@@ -198,9 +198,13 @@ function extrairNotas(rows) {
 /* nome do vendedor no Questor → nome do painel (aba De-Para); quem não está lá é vendedor antigo: fica o 1º nome */
 function nomeVendedor(marca, questor, depara, atuais) {
   const q = semAcento(questor).replace(/\s+/g, ' ').trim(); if (!q) return 'SEM VENDEDOR';
-  const k = (marca === 'NATURALLE' ? 'NATURALLE|' : 'SELECTO|') + q;
-  if (depara[k]) return depara[k];
-  const p = q.replace(/\s*-\s*(JSM|JMJ)\s*$/, '').replace(/\s+(JSM|JMJ)$/, '').split(' ');
+  const limpo = x => x.replace(/\s*-\s*(JSM|JMJ)\s*$/, '').replace(/\s+(JSM|JMJ)$/, '').trim();
+  const outra = marca === 'NATURALLE' ? 'SELECTO' : 'NATURALLE';
+  if (depara[marca + '|' + q]) return depara[marca + '|' + q];
+  if (depara[outra + '|' + q]) return depara[outra + '|' + q]; // mesmo vendedor cadastrado só na outra empresa
+  const ql = limpo(q);
+  for (const k in depara) { const [m, n] = k.split('|'); if (limpo(n) === ql && (m === marca || m === outra)) return depara[k]; }
+  const p = ql.split(' ');
   const um = p[0], dois = p.slice(0, 2).join(' ');
   return (atuais && atuais[um]) ? dois : um;
 }
@@ -495,5 +499,17 @@ function reconstruirItens() {
     console.log('Itens refeitos: ' + tudo.length + ' linhas de ' + lotes.length + ' arquivos: ' + lotes.map(l => l.nome + ' [' + l.marca + ' ' + l.min + '-' + l.max + ']').join(' ; '));
     log_([new Date(), '(reprocessado)', 'Itens / produtos · reconstrução', '', '', tudo.length, 'ok']);
   } finally { trava.releaseLock(); }
+  if (typeof portalInvalidar === 'function') portalInvalidar();
+}
+
+/* reaplica nomes de vendedor no histórico (depois de mudar o De-Para ou a regra de nomes) */
+function revisarNomesHistorico() {
+  const ss = SpreadsheetApp.getActive(), mapa = lerMapa_(ss), dp = lerDepara_(ss);
+  const h = ss.getSheetByName(ROBO.ABA_HIST); if (!h || h.getLastRow() < 2) return;
+  const r = h.getRange(2, 7, h.getLastRow() - 1, 1), ch = h.getRange(2, 1, h.getLastRow() - 1, 5).getValues(), v = r.getValues();
+  let n = 0;
+  ch.forEach((x, i) => { const q = mapa[semAcento(x[0]) + '|' + String(x[4]).trim()]; if (!q) return; const nome = nomeVendedor(semAcento(x[0]), q, dp.m, dp.atuais); if (nome !== v[i][0]) { v[i][0] = nome; n++; } });
+  r.setValues(v);
+  console.log('Nomes revistos: ' + n);
   if (typeof portalInvalidar === 'function') portalInvalidar();
 }
