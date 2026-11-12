@@ -3692,7 +3692,7 @@ function coberturaItens(){
   const m={}; Object.keys(i).forEach(k=>{ m[k]= n[k]? i[k]/n[k] : null; });
   _COB={ref:L, ref2:it, m}; return m;
 }
-const cobOk = (marca, ym) => { const c=coberturaItens()[marca+'|'+ym]; return c==null || (c>=0.9 && c<=1.1); };
+const cobOk = (marca, ym) => { const c=coberturaItens()[marca+'|'+ym]; return c==null || (c>=0.88 && c<=1.13); };
 /* ---------------- ÁRVORE DE REPRESENTATIVIDADE ---------------- */
 const arvUI = {comp:'mes', abertos:new Set(['T','T|NATURALLE','T|SELECTO'])};
 function arvMes(){

@@ -444,7 +444,7 @@
       fr.addEventListener("load", () => { let n = 0; const t = setInterval(() => { if (mandar() || ++n > 40) clearInterval(t); }, 150); });
     } else if (!mandar()) { let n = 0; const t = setInterval(() => { if (mandar() || ++n > 40) clearInterval(t); }, 150); }
   }
-  const PAINEL_VER = "20261112b"; // muda a cada versão do painel: o navegador não usa o painel antigo guardado
+  const PAINEL_VER = "20261112c"; // muda a cada versão do painel: o navegador não usa o painel antigo guardado
   const painelUrl = aba => (CFG.painelVendas || "../index.html") + "?embed=1&v=" + PAINEL_VER + "#" + (aba || "Geral");
   async function carregarVendas(forcar) {
     if (!S.token || !veAba("vendas") && !veAba("remuneracao") && !veAba("planejamento")) { if (!S.links) S.vendasErro = S.modo === "cloud" ? (ehAdmin() ? "Conecte os dados de vendas em Configurações → Nuvem." : "") : ""; return; }
