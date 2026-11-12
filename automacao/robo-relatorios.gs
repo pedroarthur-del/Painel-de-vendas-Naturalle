@@ -25,6 +25,8 @@ const ROBO = {
   GID_ITENS: 1771100000, // id fixo da aba Itens: é o que o painel lê (link publicado ...gid=1771100000)
   ABA_LOG: 'Log de importação',
   ABA_HIST: 'Carteira mes anterior',
+  ABA_MAPA: 'Vendedor por nota', // histórico: nota → vendedor (dos relatórios por vendedor de meses fechados)
+  ABA_DEPARA: 'De-Para',
   ABA_DOC: { NATURALLE: 'Sem Imposto Naturalle', SELECTO: 'Sem Imposto Selecto' },
   ABA_VEND: { NATURALLE: 'Com Imposto Naturalle', SELECTO: 'Com Imposto Selecto' },
   // colunas calculadas da aba Sem Imposto (as mesmas que o painel lê), base 0
@@ -85,6 +87,11 @@ function processarPasta() {
       }
     });
     const ss = SpreadsheetApp.getActive();
+    // 1b) relatório de meses já fechados (ex.: o ano inteiro) não mexe nas abas do mês: vai direto para o histórico
+    const hoje = hojeObj_();
+    const hist = lidos.filter(l => ehHistorico(l.c, hoje)), atuais = lidos.filter(l => !ehHistorico(l.c, hoje));
+    if (hist.length) importarHistoricos_(ss, hist, ok, ruim);
+    lidos.length = 0; atuais.forEach(l => lidos.push(l));
     // 2) guarda no histórico as notas que estão nas abas antes de trocar (protege a virada do mês)
     ['NATURALLE', 'SELECTO'].forEach(m => { if (lidos.some(l => l.c.marca === m && l.c.tipo !== 'ITENS')) guardarHistorico_(ss, m); });
     // 3) grava: vendedor antes de documento (o documento busca o vendedor), itens por último
@@ -102,7 +109,7 @@ function processarPasta() {
       }
     });
     SpreadsheetApp.flush();
-    if (lidos.length && typeof portalInvalidar === 'function') portalInvalidar(); // o painel busca os dados novos
+    if ((lidos.length || hist.length) && typeof portalInvalidar === 'function') portalInvalidar(); // o painel busca os dados novos
     // 4) depois que as fórmulas recalculam, atualiza o histórico com o mês atual
     ['NATURALLE', 'SELECTO'].forEach(m => { if (lidos.some(l => l.c.marca === m && l.c.tipo !== 'ITENS')) guardarHistorico_(ss, m); });
   } finally { trava.releaseLock(); }
@@ -157,6 +164,45 @@ function classificar(rows) {
   if (col >= 0) rows.forEach(x => { const d = x && dataBR(x[col]); if (!d) return; const k = d.ano * 10000 + d.mes * 100 + d.dia; if (min == null || k < min) min = k; if (max == null || k > max) max = k; });
   const fmt = k => k == null ? '' : String(k % 100).padStart(2, '0') + '/' + String(Math.floor(k / 100) % 100).padStart(2, '0') + '/' + Math.floor(k / 10000);
   return { tipo, marca, periodo, min, max, datas: min != null ? fmt(min) + ' a ' + fmt(max) : '' };
+}
+/* relatório de mês fechado? (o supervisor exporta o mês atual "do dia 1 até hoje"; o resto é histórico) */
+function ehHistorico(c, hoje) {
+  if (!c || c.tipo === 'ITENS') return false; // itens já trocam só as datas do arquivo
+  const ini = hoje.ano * 10000 + hoje.mes * 100 + 1;
+  if (c.tipo === 'DOCUMENTO') return c.min != null && c.min < ini;
+  const p = dataBR(String(c.periodo || '').split(' a ')[0]);
+  return !!p && p.ano * 10000 + p.mes * 100 + p.dia < ini;
+}
+/* relatório por vendedor → [documento, nome do vendedor no Questor] */
+function extrairVendedorPorNota(rows) {
+  const out = [];
+  (rows || []).forEach(r => {
+    if (!r || !/^VENDEDOR\s*:/.test(semAcento(r[16]))) return;
+    const doc = String(r[18] == null ? '' : r[18]).trim().replace(/\D/g, ''); if (!doc) return;
+    out.push([doc, String(r[16]).replace(/^\s*Vendedor\s*:/i, '').trim()]);
+  });
+  return out;
+}
+/* relatório por documento → notas [ano, mes, dia, documento, cliente, centavos] (1ª linha de cada nota+CFOP, como a coluna BD da aba) */
+function extrairNotas(rows) {
+  const out = [], vistos = {};
+  (rows || []).forEach(r => {
+    if (!r || r.length < 28) return;
+    const d = dataBR(r[24]); if (!d) return;
+    const doc = String(r[23] == null ? '' : r[23]).trim().replace(/\D/g, ''); if (!doc) return;
+    const k = doc + '|' + String(r[20] == null ? '' : r[20]).trim(); if (vistos[k]) return; vistos[k] = 1;
+    out.push([d.ano, d.mes, d.dia, doc, String(r[25] == null ? '' : r[25]).trim(), Math.round(numBR(r[27]) * 100)]);
+  });
+  return out;
+}
+/* nome do vendedor no Questor → nome do painel (aba De-Para); quem não está lá é vendedor antigo: fica o 1º nome */
+function nomeVendedor(marca, questor, depara, atuais) {
+  const q = semAcento(questor).replace(/\s+/g, ' ').trim(); if (!q) return 'SEM VENDEDOR';
+  const k = (marca === 'NATURALLE' ? 'NATURALLE|' : 'SELECTO|') + q;
+  if (depara[k]) return depara[k];
+  const p = q.replace(/\s*-\s*(JSM|JMJ)\s*$/, '').replace(/\s+(JSM|JMJ)$/, '').split(' ');
+  const um = p[0], dois = p.slice(0, 2).join(' ');
+  return (atuais && atuais[um]) ? dois : um;
 }
 /* converte o texto do relatório no que a importação do Sheets faria (números e datas) */
 /* data à meia-noite no fuso da PLANILHA (o do script pode ser outro: sem isso a data cai no dia
@@ -298,7 +344,7 @@ function log_(linha) {
 }
 
 /* testes fora do Google (node) */
-if (typeof module !== 'undefined') module.exports = { classificar, extrairItens, converter, numBR, dataBR, marcaDe, separadorCSV };
+if (typeof module !== 'undefined') module.exports = { classificar, extrairItens, converter, numBR, dataBR, marcaDe, separadorCSV, ehHistorico, extrairVendedorPorNota, extrairNotas, nomeVendedor };
 
 /* reimporta os relatórios processados hoje (depois de uma correção no robô) */
 function reimportarHoje() {
@@ -308,5 +354,103 @@ function reimportarHoje() {
   while (it.hasNext()) { const f = it.next(); if (Utilities.formatDate(f.getLastUpdated(), Session.getScriptTimeZone(), 'yyyy-MM-dd') === hoje) lista.push(f); }
   lista.forEach(f => f.moveTo(pasta));
   console.log('Reimportando: ' + lista.map(f => f.getName()).join(', '));
+  processarPasta();
+}
+
+/* ================= histórico (meses fechados) ================= */
+function hojeObj_() { const t = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-M-d').split('-'); return { ano: +t[0], mes: +t[1], dia: +t[2] }; }
+function lerDepara_(ss) {
+  const sh = ss.getSheetByName(ROBO.ABA_DEPARA), m = {}, atuais = {};
+  if (!sh || sh.getLastRow() < 2) return { m, atuais };
+  sh.getRange(2, 1, sh.getLastRow() - 1, 3).getDisplayValues().forEach(r => {
+    const marca = semAcento(r[0]).trim(), q = semAcento(r[1]).replace(/\s+/g, ' ').trim(), n = String(r[2]).trim();
+    if (!marca || !q || !n) return; m[(marca.indexOf('NAT') === 0 ? 'NATURALLE' : 'SELECTO') + '|' + q] = n; atuais[semAcento(n).split(' ')[0]] = 1;
+  });
+  return { m, atuais };
+}
+/* grava/atualiza o mapa nota → vendedor e devolve o mapa inteiro por marca */
+function gravarMapa_(ss, marca, pares) {
+  const sh = aba_(ss, ROBO.ABA_MAPA, ['MARCA', 'DOCUMENTO', 'VENDEDOR_QUESTOR']);
+  const v = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : [];
+  const idx = {}; v.forEach((r, i) => { idx[semAcento(r[0]) + '|' + String(r[1]).trim()] = i; });
+  pares.forEach(([doc, nome]) => { const k = marca + '|' + doc; if (idx[k] != null) v[idx[k]][2] = nome; else { idx[k] = v.length; v.push([marca, doc, nome]); } });
+  if (!v.length) return;
+  if (sh.getMaxRows() < v.length + 1) sh.insertRowsAfter(sh.getMaxRows(), v.length + 1 - sh.getMaxRows() + 100);
+  sh.getRange(2, 2, v.length, 1).setNumberFormat('@');
+  sh.getRange(2, 1, v.length, 3).setValues(v);
+}
+function lerMapa_(ss) {
+  const sh = ss.getSheetByName(ROBO.ABA_MAPA), m = {};
+  if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(r => { m[semAcento(r[0]) + '|' + String(r[1]).trim()] = String(r[2]).trim(); });
+  return m;
+}
+/* importa relatórios de meses fechados: vendedor → mapa; documento → aba de histórico (troca os meses do arquivo) */
+function importarHistoricos_(ss, lista, ok, ruim) {
+  const hoje = hojeObj_(), mesAtual = hoje.ano * 100 + hoje.mes;
+  lista.sort((a, b) => (a.c.tipo === 'VENDEDOR' ? 0 : 1) - (b.c.tipo === 'VENDEDOR' ? 0 : 1));
+  const notasPorMarca = { NATURALLE: [], SELECTO: [] }, mesesPorMarca = { NATURALLE: {}, SELECTO: {} };
+  let mapaMudou = false;
+  lista.forEach(({ f, rows, c }) => {
+    try {
+      let n;
+      if (c.tipo === 'VENDEDOR') { const p = c.pares || extrairVendedorPorNota(rows); gravarMapa_(ss, c.marca, p); mapaMudou = true; n = p.length; }
+      else {
+        const notas = (c.notas || extrairNotas(rows)).filter(x => x[0] * 100 + x[1] < mesAtual);
+        notas.forEach(x => { mesesPorMarca[c.marca][x[0] * 100 + x[1]] = 1; notasPorMarca[c.marca].push(x); });
+        n = notas.length;
+      }
+      log_([new Date(), f ? f.getName() : '(reprocessado)', nomeTipo_(c.tipo) + ' · histórico', c.marca, c.datas || c.periodo, n, 'ok (histórico)']);
+      if (f && ok) f.moveTo(ok);
+    } catch (e) {
+      log_([new Date(), f ? f.getName() : '', nomeTipo_(c.tipo) + ' · histórico', c.marca, c.datas || c.periodo, '', 'ERRO: ' + e.message]); if (f && ruim) f.moveTo(ruim);
+    }
+  });
+  regravarHistorico_(ss, notasPorMarca, mesesPorMarca, mapaMudou);
+}
+function regravarHistorico_(ss, notasPorMarca, mesesPorMarca, revisarVendedor) {
+  const mapa = lerMapa_(ss), dp = lerDepara_(ss);
+  const vendDe = (marca, doc) => { const q = mapa[marca + '|' + doc]; return q ? nomeVendedor(marca, q, dp.m, dp.atuais) : 'SEM VENDEDOR'; };
+  const h = aba_(ss, ROBO.ABA_HIST, ROBO.CAB_HIST);
+  const hv = h.getLastRow() > 1 ? h.getRange(2, 1, h.getLastRow() - 1, 8).getValues() : [];
+  const fica = hv.filter(r => { const m = semAcento(r[0]); return Number(r[1]) > 2000 && !(mesesPorMarca[m] && mesesPorMarca[m][Number(r[1]) * 100 + Number(r[2])]); });
+  if (revisarVendedor) fica.forEach(r => { const v = String(r[6]).trim(); if (!v || v === 'SEM VENDEDOR' || v === 'DOC NAO ENCONTRADO' || v.charAt(0) === '#') r[6] = vendDe(semAcento(r[0]), String(r[4]).trim()); });
+  const novas = [];
+  ['NATURALLE', 'SELECTO'].forEach(m => notasPorMarca[m].forEach(x => novas.push([m, x[0], x[1], x[2], x[3], x[4], vendDe(m, x[3]), x[5]])));
+  const vistos = {}, chave = r => semAcento(r[0]) + '|' + Number(r[1]) + '|' + Number(r[2]) + '|' + String(r[4]).trim();
+  const tudo = [];
+  novas.concat(fica).forEach(r => { const k = chave(r); if (vistos[k]) return; vistos[k] = 1; tudo.push(r); });
+  tudo.sort((a, b) => (a[1] * 10000 + a[2] * 100 + a[3]) - (b[1] * 10000 + b[2] * 100 + b[3]) || String(a[0]).localeCompare(String(b[0])));
+  if (h.getMaxRows() < tudo.length + 1) h.insertRowsAfter(h.getMaxRows(), tudo.length + 1 - h.getMaxRows() + 100);
+  if (hv.length) h.getRange(2, 1, hv.length, 8).clearContent();
+  if (tudo.length) { h.getRange(2, 5, tudo.length, 1).setNumberFormat('@'); h.getRange(2, 1, tudo.length, 8).setValues(tudo); }
+  return tudo.length;
+}
+/* conserto de 12/11/2026: refaz o histórico com os relatórios de meses fechados que já estão em Processados
+   e devolve à pasta os relatórios do mês atual mais recentes, para voltarem às abas do mês */
+function reconstruirHistorico() {
+  const trava = LockService.getScriptLock(); if (!trava.tryLock(30000)) throw new Error('o robô está rodando; tente de novo em 1 minuto');
+  const ss = SpreadsheetApp.getActive(), hoje = hojeObj_();
+  const pasta = pegarPasta_(DriveApp.getRootFolder(), ROBO.PASTA), proc = pegarPasta_(pasta, 'Processados');
+  const it = proc.getFiles(), hist = {}, atuais = {};
+  try {
+    while (it.hasNext()) {
+      const f = it.next(); let rows, c;
+      try { rows = lerArquivo_(f); c = classificar(rows); } catch (e) { continue; }
+      if (!c) continue;
+      if (ehHistorico(c, hoje)) {
+        const k = c.tipo + '|' + c.marca + '|' + (c.datas || c.periodo), upd = f.getLastUpdated();
+        if (!hist[k] || hist[k].upd < upd) { // guarda só o extraído (os arquivos são grandes)
+          if (c.tipo === 'VENDEDOR') c.pares = extrairVendedorPorNota(rows); else c.notas = extrairNotas(rows);
+          hist[k] = { nome: f.getName(), upd, c };
+        }
+      }
+      else if (c.tipo !== 'ITENS' || (c.min || 0) >= hoje.ano * 10000 + hoje.mes * 100 + 1) { const k = c.tipo + '|' + c.marca; if (!atuais[k] || atuais[k].getLastUpdated() < f.getLastUpdated()) atuais[k] = f; }
+    }
+    const lista = Object.values(hist).map(x => ({ f: null, rows: null, c: x.c }));
+    console.log('Históricos: ' + Object.values(hist).map(x => x.nome + ' [' + x.c.tipo + ' ' + x.c.marca + ' ' + (x.c.datas || x.c.periodo) + ']').join(' ; '));
+    importarHistoricos_(ss, lista, null, null);
+    Object.values(atuais).forEach(f => f.moveTo(pasta));
+    console.log('Mês atual de volta à pasta: ' + Object.values(atuais).map(f => f.getName()).join(', '));
+  } finally { trava.releaseLock(); }
   processarPasta();
 }

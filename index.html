@@ -254,6 +254,25 @@
 
 
   /* ---------- aba Carteira (clientes mês atual x mês anterior) ---------- */
+  .arv td{vertical-align:top}
+  .arv tr.arv-pode{cursor:pointer}
+  .arv tr.arv-pode:hover td{background:var(--line-2)}
+  .arv .arv-nome{display:inline-flex; gap:6px; align-items:baseline}
+  .arv .arv-seta{display:inline-block; width:12px; color:var(--muted); font-size:11px}
+  .arv tr.arv-n0 td, .arv tr.arv-n1 td{font-weight:700}
+  .arv tr.arv-n1 td{background:#FFF9F1}
+  .arv small{display:block; color:var(--muted); font-size:11.5px; margin:2px 0 0 0; padding-left:inherit}
+  .arv-bar{height:5px; background:var(--line-2); border-radius:3px; margin-top:5px; max-width:260px}
+  .arv-bar i{display:block; height:100%; border-radius:3px}
+  .arv-ev td, .arv-ev th, .cat-tab td, .cat-tab th{white-space:nowrap}
+  tr.arv-forte td{font-weight:700}
+  .cat-dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:baseline}
+  .prod-cat{font-size:12px; color:var(--muted); font-weight:600; display:inline-flex; gap:6px; align-items:center; margin-right:10px}
+  .cli-sel{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 10px}
+  .cli-kpis{margin-top:4px}
+  .cli-kpis .kpistat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px}
+  .cli-h3{font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:16px 0 6px}
+  .btn.sm{padding:5px 10px; font-size:12px}
   .row4{display:grid; gap:14px; grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:14px}
   .row4.row6{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
   .row6 .kpistat .kval{font-size:clamp(20px,1.9vw,26px)}
@@ -544,7 +563,7 @@
   @media (max-width:720px){ .login-box{grid-template-columns:1fr} .login-arte{min-height:0; padding:24px 16px 14px} .picole-big{width:130px} .login-arte-txt b{font-size:24px} .login-box .login-card{padding:24px 20px 26px} }
   @media (prefers-reduced-motion:reduce){ .picole-big, .picole-big .pg-gota{animation:none} }
   /* ---------- modo vendedor: só o que é dele ---------- */
-  html.modo-vendedor #tabBtnRankings, html.modo-vendedor #tabBtnConfig, html.modo-vendedor #tabRankings, html.modo-vendedor #tabConfig,
+  html.modo-vendedor #tabBtnRankings, html.modo-vendedor #tabBtnArvore, html.modo-vendedor #tabArvore, html.modo-vendedor #tabBtnConfig, html.modo-vendedor #tabRankings, html.modo-vendedor #tabConfig,
   html.modo-vendedor #btnPDF, html.modo-vendedor #btnRMR, html.modo-vendedor #resumoWrap, html.modo-vendedor #btnSemana, html.modo-vendedor #btnFile,
   html.modo-vendedor .fld:has(#fGrupo), html.modo-vendedor .fld:has(#fVend), html.modo-vendedor .fld:has(#fEmpresa), html.modo-vendedor #rowCanais,
   html.modo-vendedor label[for=feriadosInput], html.modo-vendedor #feriadosInput, html.modo-vendedor .so-equipe{display:none!important}
@@ -812,6 +831,7 @@
       <button type="button" id="tabBtnConfig">Config</button>
       <button type="button" id="tabBtnCarteira">Carteira</button>
       <button type="button" id="tabBtnProdutos">Produtos</button>
+      <button type="button" id="tabBtnArvore">Representatividade</button>
       <button type="button" id="tabBtnCampanha">Campanhas</button>
       <button type="button" id="tabBtnRemuneracao">Remuneração</button>
     </div>
@@ -992,11 +1012,17 @@
         <div class="panel">
           <div class="prod-head">
             <div><h2 id="prodTitulo">Produtos</h2></div>
+            <label class="prod-cat">Categoria <select id="prodCat"><option value="__all">Todas</option><option>Picolé</option><option>Pote 420g</option><option>Gelato</option><option>Outros</option></select></label>
             <div class="prod-met" id="prodMetrica" role="group" aria-label="Medir por">
               <button type="button" data-m="valor" class="on">R$</button><button type="button" data-m="qtde">Unidades</button>
             </div>
           </div>
           <p class="cart-take" id="prodTake"></p>
+        </div>
+        <div class="panel">
+          <h2>Categorias mês a mês · Naturalle x Selecto</h2>
+          <p class="desc" id="prodCatDesc"></p>
+          <div class="cart-scroll" id="prodCatBody"></div>
         </div>
       </div>
       <div class="row4 row6">
@@ -1052,6 +1078,19 @@
       </div>
     </div><!-- /tabProdutos -->
 
+    <div id="tabArvore" class="hidden">
+      <div class="grid"><div class="panel">
+        <div class="prod-head"><div><h2 id="arvTitulo">Árvore de representatividade</h2></div>
+          <div class="prod-met" id="arvComp" role="group" aria-label="Comparar com"><button type="button" data-c="mes" class="on">vs mês anterior</button><button type="button" data-c="ano">vs mesmo mês do ano anterior</button></div></div>
+        <p class="desc" id="arvDesc"></p>
+        <div class="cart-scroll" id="arvBody"></div>
+      </div></div>
+      <div class="grid"><div class="panel">
+        <h2>Evolução por empresa e canal</h2>
+        <p class="desc">Últimos 12 meses do histórico de notas, em R$ mil sem imposto.</p>
+        <div class="cart-scroll" id="arvEvol"></div>
+      </div></div>
+    </div><!-- /tabArvore -->
     <div id="tabRemuneracao" class="hidden"><div id="remBody"></div></div><!-- /tabRemuneracao -->
 
     <div id="tabCarteira" class="hidden">
@@ -1072,6 +1111,15 @@
         <div class="panel"><div class="kpistat" id="cartKpiNC"></div></div>
         <div class="panel"><div class="kpistat" id="cartKpiTicket"></div></div>
         <div class="panel"><div class="kpistat" id="cartKpiNovas"></div></div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>Análise por cliente</h2>
+          <p class="desc">Digite parte do nome do cliente (como vem no Questor) ou o código. Todos os cadastros que batem formam um grupo, por exemplo todas as lojas de uma rede. Clique numa loja para ver só ela. Usa o histórico de notas desde o primeiro mês importado.</p>
+          <div class="cart-tools"><input type="search" id="cliBusca" placeholder="Ex.: São Luiz, Fartura, 633…" aria-label="Buscar cliente para análise"></div>
+          <div id="cliRes"></div>
+        </div>
       </div>
 
       <div class="grid">
@@ -1547,9 +1595,9 @@ function readFileManual(file){
   rd.readAsArrayBuffer(file);
 }
 
-const TABS=['Geral','Rankings','Carteira','Produtos','Config','Campanha','Remuneracao'];
+const TABS=['Geral','Rankings','Carteira','Produtos','Arvore','Config','Campanha','Remuneracao'];
 function irParaAba(nome){
-  if(MODO_VENDEDOR() && (nome==='Rankings'||nome==='Config')) nome='Geral';
+  if(MODO_VENDEDOR() && (nome==='Rankings'||nome==='Config'||nome==='Arvore')) nome='Geral';
   TABS.forEach(n=>{
     $('#tab'+n).classList.toggle('hidden', n!==nome);
     $('#tabBtn'+n).classList.toggle('active', n===nome);
@@ -1558,6 +1606,7 @@ function irParaAba(nome){
   if(nome==='Carteira'){ try{ renderCarteira(); }catch(e){ console.error(e); } } // redesenha o gráfico já visível
   if(nome==='Campanha'){ try{ renderCampanha(); }catch(e){ console.error(e); } }
   if(nome==='Produtos'){ try{ renderProdutos(); }catch(e){ console.error(e); } }
+  if(nome==='Arvore'){ try{ renderArvore(); }catch(e){ console.error(e); } }
   if(nome==='Remuneracao'){ try{ renderRemuneracao(); }catch(e){ console.error(e); } }
 }
 TABS.forEach(n=>{ $('#tabBtn'+n).onclick=()=>irParaAba(n); });
@@ -2933,7 +2982,7 @@ $('#campSel').onchange=e=>{ campUI.id=e.target.value; campUI.mes=null; renderCam
 
 /* ---------- ABA PRODUTOS (aba "Itens" da planilha, alimentada pelo robô de relatórios) ---------- */
 let PRODUTOS = {status:'nao-configurado'}; // 'ok' | 'erro' | 'nao-configurado'
-const prodUI = {metrica:'valor'};
+const prodUI = {metrica:'valor', cat:'__all'};
 const PROD_OUTROS = /^(TAXA|EMBALAGEM|CARRINHO|FRETE|SACOLA|CAIXA)/;
 function prodNum(v){
   if(typeof v==='number') return v;
@@ -2990,7 +3039,7 @@ function computeProdutos(opt){
   const vendGrupo={};
   (RECS_ALL||[]).slice().sort((a,b)=>chronIdx(a.ano,a.mes)-chronIdx(b.ano,b.mes)).forEach(r=>{ vendGrupo[r.vendedor]=r.grupo; });
   const vendOk = d => (state.vend==='__all' || d.vendedor===state.vend) && (state.grupo==='__all' || vendGrupo[d.vendedor]===state.grupo);
-  const base=all.filter(marcaOk);
+  const base=all.filter(marcaOk).filter(d=>prodUI.cat==='__all' || categoria(d.produto)===prodUI.cat);
   const meses=[...new Set(base.map(d=>d.ano*100+d.mes))].sort((a,b)=>a-b);
   if(!meses.length) return {vazio:true};
   // mês: o escolhido no filtro de período, se a aba Itens tiver; senão o mais recente
@@ -3061,6 +3110,7 @@ function renderProdutos(){
       : '<b>A aba Produtos ainda não foi ligada à planilha.</b> Ela lê a aba "Itens", que o robô de relatórios preenche a partir do relatório de faturamento por produto do Questor.';
     return;
   }
+  try{ renderCategorias(); }catch(e){ console.error('categorias', e); }
   const K=computeProdutos();
   if(K.vazio){ fora(); aviso.innerHTML='<b>Sem itens para este filtro.</b> A aba "Itens" não tem vendas desta empresa.'; return; }
   cont.classList.remove('hidden');
@@ -3575,6 +3625,270 @@ function sessaoExpirada(){
 iniciarAcesso();
 
 /* ---------- boot ---------- */
+/* =====================================================================
+   ANÁLISES COM HISTÓRICO (v3): árvore de representatividade, categorias,
+   análise por cliente e vendedores antigos.
+   Base: notas do mês (abas Sem Imposto) + histórico de notas (meses fechados,
+   preenchido pelo robô a partir dos relatórios do Questor) + aba Itens (produtos).
+   ===================================================================== */
+const CATS = ['Picolé','Pote 420g','Gelato','Outros'];
+const CAT_COR = {'Picolé':C.orange, 'Pote 420g':C.mauve, 'Gelato':C.green, 'Outros':C.neutral};
+function categoria(prod){
+  const p = stripAccents(NORM(prod));
+  if(p.startsWith('PICOLE')) return 'Picolé';
+  if(/^SORVETE\s+420/.test(p) || /\b420\s*G\b/.test(p)) return 'Pote 420g';
+  if(/^(GELATO|SORBET)/.test(p) || /^SORVETE\s+\d+([,.]\d+)?\s*L\b/.test(p)) return 'Gelato';
+  return 'Outros';
+}
+const CANAIS = ['Vendedores','Distribuidores e venda direta','iFood e delivery','Outros','Sem vendedor identificado'];
+function canalDe(v){
+  const s = stripAccents(NORM(v));
+  if(!s || s==='SEM VENDEDOR' || s==='DOC NAO ENCONTRADO' || s==='SEM CADASTRO' || s.startsWith('#')) return 'Sem vendedor identificado';
+  if(/IFOOD|99 ?FOOD|DELIVERY/.test(s)) return 'iFood e delivery';
+  if(/VENDA DIRETA|DISTRIBUID|^JMJ\b|^JSM\b|RE TORRES/.test(s)) return 'Distribuidores e venda direta';
+  if(/^(FERNANDA|JACKSON)\b/.test(s)) return 'Outros';
+  return 'Vendedores';
+}
+const MARCA_L = m => m==='NATURALLE' ? 'Naturalle' : 'Selecto';
+const ymOf = d => d.ano*100+d.mes;
+const ymLabel = ym => MESES[ym%100-1]+'/'+String(Math.floor(ym/100)).slice(2);
+const ymPrev = ym => (ym%100===1) ? (Math.floor(ym/100)-1)*100+12 : ym-1;
+const ymAdd = (ym,n) => { let a=Math.floor(ym/100), m=ym%100+n; while(m>12){m-=12;a++;} while(m<1){m+=12;a--;} return a*100+m; };
+
+/* todas as notas: mês atual (abas) + histórico, sem repetir a mesma nota */
+let _NOTAS = {ref:null, lista:[]};
+function todasNotas(){
+  if(CARTEIRA.status!=='ok') return [];
+  if(_NOTAS.ref===CARTEIRA) return _NOTAS.lista;
+  const vistos=new Set(), out=[];
+  [...(CARTEIRA.atual||[]), ...(CARTEIRA.anterior||[])].forEach(n=>{
+    const k=n.marca+'|'+n.ano+'|'+n.mes+'|'+n.doc; if(vistos.has(k)) return; vistos.add(k);
+    out.push({...n, ym:n.ano*100+n.mes, canal:canalDe(n.vendedor)}); });
+  _NOTAS={ref:CARTEIRA, lista:out};
+  return out;
+}
+/* vendedor antigo = não aparece nos 3 últimos meses com nota */
+let _ATIVOS = {ref:null, set:null, ultimo:null};
+function vendedoresAtivos(){
+  const L=todasNotas(); if(_ATIVOS.ref===L) return _ATIVOS;
+  const ult=Math.max(0,...L.map(n=>n.ym)), lim=ymAdd(ult,-2), set=new Set();
+  L.forEach(n=>{ if(n.ym>=lim && n.canal==='Vendedores') set.add(n.vendedor); });
+  _ATIVOS={ref:L, set, ultimo:ult};
+  return _ATIVOS;
+}
+const ehAntigo = v => canalDe(v)==='Vendedores' && !vendedoresAtivos().set.has(v);
+const nomeVend = v => ehAntigo(v) ? v+' (antigo)' : v;
+/* dia de corte do mês em aberto: compara sempre "até o mesmo dia" */
+function corteDoMes(L, ym){ let mx=0; L.forEach(n=>{ if(n.ym===ym && n.dia>mx) mx=n.dia; }); return mx; }
+function mesAberto(ym){ const h=new Date(); return ym >= h.getFullYear()*100+h.getMonth()+1; }
+
+/* ---------------- ÁRVORE DE REPRESENTATIVIDADE ---------------- */
+const arvUI = {comp:'mes', abertos:new Set(['T','T|NATURALLE','T|SELECTO'])};
+function arvMes(){
+  const L=todasNotas(); if(!L.length) return null;
+  const meses=[...new Set(L.map(n=>n.ym))].sort((a,b)=>a-b);
+  const pedido = state.ano ? state.ano*100+state.mes : null;
+  return meses.includes(pedido) ? pedido : meses[meses.length-1];
+}
+function computeArvore(){
+  const L=todasNotas(); const ym=arvMes(); if(!ym) return null;
+  const aberto = mesAberto(ym), corte = aberto ? corteDoMes(L, ym) : 31;
+  const ymC = arvUI.comp==='ano' ? ym-100 : ymPrev(ym);
+  const temC = L.some(n=>n.ym===ymC);
+  const noMes = (n, alvo) => n.ym===alvo && (alvo===ym || !aberto || n.dia<=corte);
+  const atu=L.filter(n=>noMes(n,ym)), cmp=L.filter(n=>noMes(n,ymC));
+  const ativos=vendedoresAtivos().set;
+  // nó: id, nome, nível, valor, comparação, filhos
+  const no=(id,nome,nivel)=>({id,nome,nivel,v:0,c:0,filhos:new Map(),notas:0});
+  const T=no('T','Faturamento total',0);
+  const add=(n,campo)=>{
+    const val=n.valor; T[campo]+=val; if(campo==='v') T.notas++;
+    const path=[['T|'+n.marca, MARCA_L(n.marca)], [null, n.canal]];
+    let pai=T, id='T';
+    path.forEach(([pid,nome],i)=>{ id = pid || id+'|'+nome;
+      let f=pai.filhos.get(id); if(!f){ f=no(id,nome,i+1); pai.filhos.set(id,f); } f[campo]+=val; if(campo==='v') f.notas++; pai=f; });
+    // vendedores: um por um, antigos juntos
+    let nomeF = n.vendedor, idF;
+    if(n.canal==='Vendedores' && !ativos.has(n.vendedor)){ const gid=id+'|antigos';
+      let g=pai.filhos.get(gid); if(!g){ g=no(gid,'Vendedores antigos (fora dos últimos 3 meses)',3); pai.filhos.set(gid,g); } g[campo]+=val; if(campo==='v') g.notas++; pai=g; }
+    if(n.canal==='Sem vendedor identificado') return;
+    idF=id+'|v|'+nomeF; let f=pai.filhos.get(idF); if(!f){ f=no(idF,nomeF,pai.nivel+1); pai.filhos.set(idF,f); } f[campo]+=val; if(campo==='v') f.notas++;
+  };
+  atu.forEach(n=>add(n,'v')); cmp.forEach(n=>add(n,'c'));
+  // categorias (itens do mesmo mês), por empresa
+  const itens=(PRODUTOS.status==='ok'? PRODUTOS.itens : []);
+  const itAtu=itens.filter(d=>d.ano*100+d.mes===ym && (!aberto || d.dia<=corte));
+  const itCmp=itens.filter(d=>d.ano*100+d.mes===ymC && (!aberto || d.dia<=corte));
+  const temCat=itAtu.length>0;
+  ['NATURALLE','SELECTO'].forEach(m=>{
+    const emp=T.filhos.get('T|'+m); if(!emp || !temCat) return;
+    const cid='T|'+m+'|cat', cat=no(cid,'Por categoria de produto',2); cat.ehCat=true;
+    CATS.forEach(c=>{ const f=no(cid+'|'+c,c,3); f.cor=CAT_COR[c];
+      f.v=sum(itAtu.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.valor); f.c=sum(itCmp.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.valor);
+      f.un=sum(itAtu.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.qtde); f.unC=sum(itCmp.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.qtde);
+      if(f.v||f.c) cat.filhos.set(f.id,f); });
+    cat.v=sum([...cat.filhos.values()],f=>f.v); cat.c=sum([...cat.filhos.values()],f=>f.c);
+    emp.filhos.set(cid,cat);
+  });
+  return {T, ym, ymC, aberto, corte, temC, temCat};
+}
+function renderArvore(){
+  const box=$('#arvBody'); if(!box) return;
+  if(MODO_VENDEDOR()){ box.innerHTML=''; return; }
+  if(CARTEIRA.status!=='ok'){ box.innerHTML='<p class="desc">As notas ainda não carregaram.</p>'; return; }
+  const K=computeArvore(); if(!K){ box.innerHTML='<p class="desc">Sem notas para montar a árvore.</p>'; return; }
+  document.querySelectorAll('#arvComp button').forEach(b=>b.classList.toggle('on', b.dataset.c===arvUI.comp));
+  const per = (K.aberto? `01 a ${String(K.corte).padStart(2,'0')}/` : '')+ymLabel(K.ym);
+  const perC = (K.aberto? `01 a ${String(K.corte).padStart(2,'0')}/` : '')+ymLabel(K.ymC);
+  $('#arvTitulo').textContent = 'Árvore de representatividade · '+per;
+  $('#arvDesc').innerHTML = `Faturamento sem imposto por empresa → canal → vendedor, e por categoria de produto. `+
+    `<b>% do grupo</b> = peso dentro do nível de cima; <b>% do total</b> = peso no faturamento total. `+
+    (K.temC ? `Comparação com <b>${perC}</b>.` : `Sem notas de ${ymLabel(K.ymC)} no histórico para comparar.`)+
+    (K.temCat? '' : ' As categorias aparecem nos meses que têm produtos na aba Itens.');
+  const tot=K.T.v||1, linhas=[];
+  const vis=(n,pai)=>{
+    const filhos=[...n.filhos.values()].sort((a,b)=> (a.ehCat?1:0)-(b.ehCat?1:0) || b.v-a.v);
+    linhas.push({n, pai, tem:filhos.length>0});
+    if(arvUI.abertos.has(n.id)) filhos.forEach(f=>vis(f,n));
+  };
+  vis(K.T,null);
+  const pct=(a,b)=> b? (a/b*100) : null;
+  const varTxt=(n)=> !K.temC ? '' : (n.c? `<span class="${cartCls(pct(n.v,n.c)-100)}">${cartPct(pct(n.v,n.c)-100)}</span>` : (n.v? '<span class="good">novo</span>' : ''));
+  box.innerHTML = `<table class="rank-table arv"><thead><tr><th>Origem</th><th class="num">Faturamento</th><th class="num">% do grupo</th><th class="num">% do total</th>${K.temC?`<th class="num">${esc(perC)}</th><th class="num">Variação</th>`:''}</tr></thead><tbody>`+
+    linhas.map(({n,pai,tem})=>{
+      const base = pai ? (pai.ehCat ? pai.v : pai.v) : n.v;
+      const shG = pai ? pct(n.v, base) : 100, shT = n.ehCat || (pai&&pai.ehCat) ? null : pct(n.v, tot);
+      const cor = n.cor || (n.nivel===1 ? (n.nome==='Naturalle'?C.orange:C.mauve) : C.orangeL);
+      const bar = `<div class="arv-bar"><i style="width:${Math.max(0,Math.min(100,shG||0)).toFixed(1)}%;background:${cor}"></i></div>`;
+      const un = n.un!=null ? `<small>${Math.round(n.un).toLocaleString('pt-BR')} un${K.temC&&n.unC? ' · '+cartPct(pct(n.un,n.unC)-100)+' em unidades':''}</small>` : '';
+      return `<tr class="arv-n${n.nivel}${tem?' arv-pode':''}" data-id="${esc(n.id)}">
+        <td><span class="arv-nome" style="padding-left:${n.nivel*18}px">${tem?`<b class="arv-seta">${arvUI.abertos.has(n.id)?'▾':'▸'}</b>`:'<b class="arv-seta"></b>'}${esc(n.nome)}</span>${un}${bar}</td>
+        <td class="num">${BRL.format(n.v)}</td><td class="num">${shG==null?'—':Math.round(shG)+'%'}</td><td class="num">${shT==null?'—':(shT<1&&shT>0?'<1':Math.round(shT))+'%'}</td>
+        ${K.temC?`<td class="num sub">${n.c?BRL.format(n.c):'—'}</td><td class="num">${varTxt(n)}</td>`:''}</tr>`; }).join('')+'</tbody></table>';
+  box.querySelectorAll('tr.arv-pode').forEach(tr=>tr.onclick=()=>{ const id=tr.dataset.id; arvUI.abertos.has(id)? arvUI.abertos.delete(id) : arvUI.abertos.add(id); renderArvore(); });
+  renderArvEvol(K);
+}
+/* evolução dos últimos 12 meses por empresa e canal (meses fechados + atual até o dia de corte) */
+function renderArvEvol(K){
+  const box=$('#arvEvol'); if(!box) return;
+  const L=todasNotas(), meses=[]; for(let i=11;i>=0;i--) meses.push(ymAdd(K.ym,-i));
+  const temMes=new Set(L.map(n=>n.ym)); const ms=meses.filter(m=>temMes.has(m));
+  const val=(m,f)=>sum(L.filter(n=>n.ym===m && f(n)),n=>n.valor);
+  const linhas=[];
+  ['NATURALLE','SELECTO'].forEach(mc=>{
+    linhas.push({nome:MARCA_L(mc), forte:true, s:ms.map(m=>val(m,n=>n.marca===mc))});
+    CANAIS.forEach(c=>{ const s=ms.map(m=>val(m,n=>n.marca===mc && n.canal===c)); if(s.some(x=>x)) linhas.push({nome:c, s}); });
+  });
+  linhas.push({nome:'Total', forte:true, s:ms.map(m=>val(m,()=>true))});
+  const fmt=v=> v? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:0})+'k' : '—';
+  box.innerHTML = `<table class="rank-table arv-ev"><thead><tr><th>R$ sem imposto</th>${ms.map(m=>`<th class="num">${ymLabel(m)}${m===K.ym&&K.aberto?'*':''}</th>`).join('')}<th class="num">Últ. 3 vs 3 anteriores</th></tr></thead><tbody>`+
+    linhas.map(l=>{ const n=l.s.length, a=sum(l.s.slice(Math.max(0,n-4),n-1),x=>x), b=sum(l.s.slice(Math.max(0,n-7),n-4),x=>x), v=b? (a/b-1)*100 : null;
+      return `<tr class="${l.forte?'arv-forte':''}"><td>${esc(l.nome)}</td>${l.s.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num"><span class="${cartCls(v)}">${cartPct(v)}</span></td></tr>`; }).join('')+'</tbody></table>'+
+    `<p class="desc" style="margin-top:8px">${K.aberto?'* mês em andamento. ':''}Crescimento: soma dos 3 últimos meses fechados contra os 3 anteriores.</p>`;
+}
+
+/* ---------------- CATEGORIAS (aba Produtos) ---------------- */
+function renderCategorias(){
+  const box=$('#prodCatBody'); if(!box || PRODUTOS.status!=='ok') return;
+  const marcaOk = d => state.empresa==='__all' || d.marca===(state.empresa==='naturalle'?'NATURALLE':'SELECTO');
+  const vendOk = d => state.vend==='__all' || d.vendedor===state.vend;
+  const it=PRODUTOS.itens.filter(d=>marcaOk(d) && vendOk(d));
+  const meses=[...new Set(it.map(d=>d.ano*100+d.mes))].sort((a,b)=>a-b).slice(-8);
+  const M=prodUI.metrica==='qtde'?'qtde':'valor';
+  const fmt=v=> M==='qtde'? Math.round(v).toLocaleString('pt-BR') : (v>=1000? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k' : Math.round(v).toLocaleString('pt-BR'));
+  const cel=(m,c,mc,ate)=>sum(it.filter(d=>d.ano*100+d.mes===m && (!ate||d.dia<=ate) && categoria(d.produto)===c && (!mc||d.marca===mc)),d=>d[M]);
+  const ult=meses[meses.length-1], aberto=ult && mesAberto(ult), corte=aberto? Math.max(...it.filter(d=>d.ano*100+d.mes===ult).map(d=>d.dia)) : 31;
+  const pen=meses[meses.length-2];
+  const varUlt=(c,mc)=>{ if(!pen) return null; const a=cel(ult,c,mc), b=cel(pen,c,mc,aberto?corte:0); return b? (a/b-1)*100 : null; };
+  let h=`<table class="rank-table cat-tab"><thead><tr><th>Categoria</th><th>Empresa</th>${meses.map(m=>`<th class="num">${ymLabel(m)}</th>`).join('')}<th class="num">% da categoria em ${ult?ymLabel(ult):''}</th><th class="num">${pen? ymLabel(ult)+' vs '+ymLabel(pen)+(aberto?' (até dia '+corte+')':'') : 'vs mês anterior'}</th></tr></thead><tbody>`;
+  CATS.forEach(c=>{
+    const totC=meses.map(m=>cel(m,c)); if(!totC.some(x=>x)) return;
+    const linhasEmp = state.empresa==='__all' ? ['NATURALLE','SELECTO'] : [];
+    h+=`<tr class="arv-forte"><td><i class="cat-dot" style="background:${CAT_COR[c]}"></i>${c}</td><td>${state.empresa==='__all'?'As duas':MARCA_L(state.empresa==='naturalle'?'NATURALLE':'SELECTO')}</td>${totC.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">100%</td><td class="num">${(()=>{const v=varUlt(c);return `<span class="${cartCls(v)}">${cartPct(v)}</span>`;})()}</td></tr>`;
+    linhasEmp.forEach(mc=>{ const s=meses.map(m=>cel(m,c,mc)); if(!s.some(x=>x)) return; const n=s.length;
+      const sh=totC[n-1]? s[n-1]/totC[n-1]*100 : null, v=varUlt(c,mc);
+      h+=`<tr><td></td><td>${MARCA_L(mc)}</td>${s.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${sh==null?'—':Math.round(sh)+'%'}</td><td class="num"><span class="${cartCls(v)}">${cartPct(v)}</span></td></tr>`; });
+  });
+  box.innerHTML=h+'</tbody></table>';
+  $('#prodCatDesc').textContent=`${M==='qtde'?'Unidades vendidas':'Faturamento sem imposto (R$)'} por categoria e empresa, mês a mês. O mês mais recente pode estar em andamento. Picolé = linha de picolés; Pote 420g = sorvete de 420 g; Gelato = gelatos e sorbets de 3,6 L e 5 L.`;
+}
+
+/* ---------------- ANÁLISE POR CLIENTE (aba Carteira) ---------------- */
+const cliUI = {q:'', loja:null};
+const cliNorm = s => stripAccents(NORM(s)).replace(/[^A-Z0-9 ]/g,' ').replace(/Z/g,'S').replace(/Y/g,'I').replace(/PH/g,'F').replace(/\s+/g,' ').trim();
+const cliCod = s => (/^\s*(\d+)/.exec(String(s||''))||[])[1] || '';
+function renderCliente(){
+  const box=$('#cliRes'); if(!box) return;
+  const q=cliNorm(cliUI.q);
+  if(CARTEIRA.status!=='ok'){ box.innerHTML=''; return; }
+  if(q.length<3){ box.innerHTML='<p class="desc">Digite pelo menos 3 letras do nome ou o código do cliente.</p>'; kill('cCli'); return; }
+  const L=todasNotas().filter(n=>!CART_EXCLUIR.some(x=>stripAccents(NORM(n.cliente)).includes(x)));
+  const termos=q.split(' ');
+  const bate = n => { const c=cliNorm(n.cliente); return termos.every(t=>c.includes(t)) || cliCod(n.cliente)===q; };
+  const achadas=L.filter(bate);
+  if(!achadas.length){ box.innerHTML='<p class="desc">Nenhum cliente com esse nome nas notas.</p>'; kill('cCli'); return; }
+  // lojas (código do cliente)
+  const lojas=new Map(); achadas.forEach(n=>{ const k=n.marca+'|'+(cliCod(n.cliente)||n.cliente); let l=lojas.get(k);
+    if(!l){ l={k, cod:cliCod(n.cliente), nome:cartNomeLimpo(n.cliente), marca:n.marca, notas:[]}; lojas.set(k,l); } l.notas.push(n); });
+  if(cliUI.loja && !lojas.has(cliUI.loja)) cliUI.loja=null;
+  const sel = cliUI.loja ? lojas.get(cliUI.loja).notas : achadas;
+  const ult=Math.max(...todasNotas().map(n=>n.ym)), meses=[]; for(let i=23;i>=0;i--) meses.push(ymAdd(ult,-i));
+  const porMes=m=>sum(sel.filter(n=>n.ym===m),n=>n.valor);
+  const serie=meses.map(porMes), primeiro=meses.findIndex((m,i)=>serie[i]>0);
+  const ms=primeiro<0? meses.slice(-12) : meses.slice(Math.max(0,Math.min(primeiro,12)));
+  const iniHist=Math.min(...todasNotas().map(n=>n.ym));
+  const s12=sum(meses.slice(-12),porMes), s12a= iniHist<=meses[0] ? sum(meses.slice(0,12),porMes) : 0;
+  const fech=meses.slice(0,-1), u3=sum(fech.slice(-3),porMes), p3=sum(fech.slice(-6,-3),porMes);
+  const ultima=sel.reduce((a,n)=>{ const k=n.ano*10000+n.mes*100+n.dia; return k>a?k:a; },0);
+  const vends=[...new Set(sel.filter(n=>n.ym>=ymAdd(ult,-2)).map(n=>n.vendedor))];
+  const vendsTodos=[...new Set(sel.map(n=>n.vendedor))];
+  const dt=k=>k? String(k%100).padStart(2,'0')+'/'+String(Math.floor(k/100)%100).padStart(2,'0')+'/'+Math.floor(k/10000) : '—';
+  const nomeSel = cliUI.loja ? `${lojas.get(cliUI.loja).nome} (cód. ${lojas.get(cliUI.loja).cod})` : `${lojas.size} ${lojas.size===1?'cadastro':'cadastros'} com "${cliUI.q.trim()}"`;
+  const vv=(a,b)=> b? (a/b-1)*100 : null;
+  // produtos (aba Itens): por código de cliente
+  const cods=new Set((cliUI.loja? [lojas.get(cliUI.loja)] : [...lojas.values()]).map(l=>l.marca+'|'+l.cod));
+  const itens=(PRODUTOS.status==='ok'? PRODUTOS.itens : []).filter(d=>cods.has(d.marca+'|'+cliCod(d.cli)) || cods.has(d.marca+'|'+d.cli));
+  const P={}; itens.forEach(d=>{ const x=P[d.produto]||(P[d.produto]={nome:prodNome(d.produto), cat:categoria(d.produto), v:0, q:0}); x.v+=d.valor; x.q+=d.qtde; });
+  const prods=Object.values(P).filter(p=>p.cat!=='Outros').sort((a,b)=>b.v-a.v);
+  const catS=CATS.map(c=>({c, v:sum(itens.filter(d=>categoria(d.produto)===c),d=>d.valor)})).filter(x=>x.v>0);
+  const totCat=sum(catS,x=>x.v);
+  box.innerHTML = `
+    <div class="cli-sel"><b>${esc(nomeSel)}</b>${cliUI.loja?' <button type="button" class="btn ghost sm" id="cliVoltar">Ver o grupo todo</button>':''}</div>
+    <div class="row4 cli-kpis">
+      <div class="kpistat"><div class="kcap">Últimos 12 meses</div><div class="kval num">${cartMil(s12)}</div><div class="ksub">${s12a? `<span class="${cartCls(vv(s12,s12a))}">${cartPct(vv(s12,s12a))}</span> vs 12 meses anteriores` : 'o histórico ainda não tem os 12 meses anteriores'}</div></div>
+      <div class="kpistat"><div class="kcap">Média por mês (12 meses)</div><div class="kval num">${BRL.format(s12/12)}</div><div class="ksub">3 últimos fechados: <span class="${cartCls(vv(u3,p3))}">${cartPct(vv(u3,p3))}</span> vs 3 anteriores</div></div>
+      <div class="kpistat"><div class="kcap">Última compra</div><div class="kval num">${dt(ultima)}</div><div class="ksub">${sel.length} notas no histórico</div></div>
+      <div class="kpistat"><div class="kcap">Atendido por</div><div class="kval" style="font-size:16px">${esc((vends.length?vends:vendsTodos.slice(-1)).map(nomeVend).join(', ')||'—')}</div><div class="ksub">${vendsTodos.length>1? 'já foi de: '+esc(vendsTodos.filter(v=>!vends.includes(v)).map(nomeVend).join(', ')) : 'nos últimos 3 meses'}</div></div>
+    </div>
+    <div class="cbox"><canvas id="cCli"></canvas></div>
+    ${catS.length? `<p class="desc" style="margin:10px 0 4px"><b>Categorias</b> (desde ${PRODUTOS.itens.length? ymLabel(Math.min(...PRODUTOS.itens.map(d=>d.ano*100+d.mes))) : ''}): ${catS.map(x=>`<i class="cat-dot" style="background:${CAT_COR[x.c]}"></i>${x.c} ${Math.round(x.v/totCat*100)}%`).join(' · ')}${prods.length? ` · <b>mais comprados:</b> ${prods.slice(0,5).map(p=>esc(p.nome)).join(', ')}`:''}</p>` : ''}
+    <h3 class="cli-h3">${cliUI.loja? 'Mês a mês' : 'Lojas / cadastros encontrados'} </h3>
+    <div class="cart-scroll" id="cliLojas"></div>`;
+  // gráfico
+  kill('cCli');
+  charts.cCli = new Chart($('#cCli'), {type:'bar', data:{labels:ms.map(ymLabel), datasets:[{data:ms.map(porMes), backgroundColor:ms.map(m=>m===ult&&mesAberto(m)?C.orangeL:C.orange), borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false}, datalabels:{display:false}, tooltip:{callbacks:{label:c=>BRL.format(c.raw)}}}, scales:{y:{ticks:{callback:v=> Math.max(...ms.map(porMes))>=5000 ? BRLk(v) : 'R$ '+Math.round(v)}}}})});
+  const wrap=$('#cliLojas');
+  if(cliUI.loja){
+    const lin=ms.slice().reverse().map(m=>{ const ns=sel.filter(n=>n.ym===m); return {m, v:sum(ns,n=>n.valor), q:ns.length, vend:[...new Set(ns.map(n=>n.vendedor))].map(nomeVend).join(', ')}; });
+    wrap.innerHTML=`<table class="rank-table"><thead><tr><th>Mês</th><th class="num">Faturamento</th><th class="num">Notas</th><th>Vendedor</th></tr></thead><tbody>`+
+      lin.map(l=>`<tr><td>${ymLabel(l.m)}${l.m===ult&&mesAberto(l.m)?' (em andamento)':''}</td><td class="num">${l.v?BRL.format(l.v):'—'}</td><td class="num">${l.q||'—'}</td><td>${esc(l.vend)}</td></tr>`).join('')+'</tbody></table>';
+  } else {
+    const ls=[...lojas.values()].map(l=>{ const s=m=>sum(l.notas.filter(n=>n.ym===m),n=>n.valor); const u=l.notas.reduce((a,n)=>Math.max(a,n.ano*10000+n.mes*100+n.dia),0);
+      return {...l, v12:sum(meses.slice(-12),s), atu:s(ult), ant:s(ymPrev(ult)), ultima:u, vend:nomeVend(l.notas.slice().sort((a,b)=>a.ym-b.ym||a.dia-b.dia).pop().vendedor)}; }).sort((a,b)=>b.v12-a.v12);
+    wrap.innerHTML=`<table class="rank-table"><thead><tr><th>Cód.</th><th>Cliente</th><th>Empresa</th><th>Vendedor</th><th class="num">12 meses</th><th class="num">${ymLabel(ymPrev(ult))}</th><th class="num">${ymLabel(ult)}</th><th class="num">Última compra</th></tr></thead><tbody>`+
+      ls.map(l=>`<tr class="cart-click" data-k="${esc(l.k)}"><td>${esc(l.cod)}</td><td>${esc(l.nome)}</td><td>${MARCA_L(l.marca)}</td><td>${esc(l.vend)}</td><td class="num">${BRL.format(l.v12)}</td><td class="num">${l.ant?BRL.format(l.ant):'—'}</td><td class="num">${l.atu?BRL.format(l.atu):'—'}</td><td class="num">${dt(l.ultima)}</td></tr>`).join('')+'</tbody></table>'+
+      '<p class="desc" style="margin-top:6px">Clique numa loja para ver só ela, mês a mês.</p>';
+    wrap.querySelectorAll('tr[data-k]').forEach(tr=>tr.onclick=()=>{ cliUI.loja=tr.dataset.k; renderCliente(); });
+  }
+  const v=$('#cliVoltar'); if(v) v.onclick=()=>{ cliUI.loja=null; renderCliente(); };
+}
+(function ligarExtrasV3(){
+  const b=$('#cliBusca'); if(b){ let t; b.oninput=()=>{ clearTimeout(t); t=setTimeout(()=>{ cliUI.q=b.value; cliUI.loja=null; renderCliente(); },250); }; }
+  document.querySelectorAll('#arvComp button').forEach(x=>x.onclick=()=>{ arvUI.comp=x.dataset.c; renderArvore(); });
+  const sc=$('#prodCat'); if(sc) sc.onchange=()=>{ prodUI.cat=sc.value; renderProdutos(); };
+})();
+
 window.painelIr = nome => { if(TABS.includes(nome)) irParaAba(nome); };
 window.painelSemana = () => { if(RECS_ALL && RECS_ALL.length && BOOT_JA) abrirSemana(); else window.__abrirSemana = true; };
 let BOOT_JA=false;
@@ -3907,6 +4221,8 @@ function render(){
   try{ renderCanais(); }catch(e){ console.error('canais:', e); }
   try{ if(!$('#tabRemuneracao').classList.contains('hidden')) renderRemuneracao(); }catch(e){ console.error('remuneração:', e); }
   try{ if(!$('#tabProdutos').classList.contains('hidden')) renderProdutos(); }catch(e){ console.error('aba Produtos:', e); }
+  try{ if(!$('#tabArvore').classList.contains('hidden')) renderArvore(); }catch(e){ console.error('árvore:', e); }
+  try{ renderCliente(); }catch(e){ console.error('cliente:', e); }
   $('#heroDesc').innerHTML = k.hasMeta
     ? 'Linha cheia: realizado acumulado (equipe com meta). Pontilhada: projeção pelo ritmo atual. Área: meta acumulada.'
     : 'Sem meta definida neste recorte — exibindo apenas o realizado acumulado.';

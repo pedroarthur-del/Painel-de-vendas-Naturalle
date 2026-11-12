@@ -390,6 +390,7 @@
     { id: "rankings", nome: "Rankings", aba: "Rankings", gestao: true },
     { id: "carteira", nome: "Carteira de clientes", aba: "Carteira" },
     { id: "produtos", nome: "Produtos", aba: "Produtos" },
+    { id: "arvore", nome: "Representatividade", aba: "Arvore", gestao: true },
     { id: "campanhas", nome: "Campanhas", aba: "Campanha" },
     { id: "semana", nome: "Resultado da semana", aba: "Geral", acao: "semana", gestao: true },
   ];
