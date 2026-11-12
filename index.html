@@ -3682,6 +3682,17 @@ const nomeVend = v => ehAntigo(v) ? v+' (antigo)' : v;
 function corteDoMes(L, ym){ let mx=0; L.forEach(n=>{ if(n.ym===ym && n.dia>mx) mx=n.dia; }); return mx; }
 function mesAberto(ym){ const h=new Date(); return ym >= h.getFullYear()*100+h.getMonth()+1; }
 
+/* quanto das notas do mês os relatórios de produtos cobrem (meses importados só em parte ficam marcados) */
+let _COB={ref:null, ref2:null, m:{}};
+function coberturaItens(){
+  const L=todasNotas(), it=(PRODUTOS.status==='ok'? PRODUTOS.itens : []);
+  if(_COB.ref===L && _COB.ref2===it) return _COB.m;
+  const n={}, i={}; L.forEach(x=>{ const k=x.marca+'|'+x.ym; n[k]=(n[k]||0)+x.valor; });
+  it.forEach(d=>{ const k=d.marca+'|'+(d.ano*100+d.mes); i[k]=(i[k]||0)+d.valor; });
+  const m={}; Object.keys(i).forEach(k=>{ m[k]= n[k]? i[k]/n[k] : null; });
+  _COB={ref:L, ref2:it, m}; return m;
+}
+const cobOk = (marca, ym) => { const c=coberturaItens()[marca+'|'+ym]; return c==null || (c>=0.9 && c<=1.1); };
 /* ---------------- ÁRVORE DE REPRESENTATIVIDADE ---------------- */
 const arvUI = {comp:'mes', abertos:new Set(['T','T|NATURALLE','T|SELECTO'])};
 function arvMes(){
@@ -3722,7 +3733,8 @@ function computeArvore(){
   const temCat=itAtu.length>0;
   ['NATURALLE','SELECTO'].forEach(m=>{
     const emp=T.filhos.get('T|'+m); if(!emp || !temCat) return;
-    const cid='T|'+m+'|cat', cat=no(cid,'Por categoria de produto',2); cat.ehCat=true;
+    const cob=coberturaItens()[m+'|'+ym];
+    const cid='T|'+m+'|cat', cat=no(cid,'Por categoria de produto'+(cobOk(m,ym)? '' : ` (produtos cobrem ${Math.round((cob||0)*100)}% das notas do mês)`),2); cat.ehCat=true;
     CATS.forEach(c=>{ const f=no(cid+'|'+c,c,3); f.cor=CAT_COR[c];
       f.v=sum(itAtu.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.valor); f.c=sum(itCmp.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.valor);
       f.un=sum(itAtu.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.qtde); f.unC=sum(itCmp.filter(d=>d.marca===m && categoria(d.produto)===c),d=>d.qtde);
@@ -3793,9 +3805,10 @@ function renderCategorias(){
   const marcaOk = d => state.empresa==='__all' || d.marca===(state.empresa==='naturalle'?'NATURALLE':'SELECTO');
   const vendOk = d => state.vend==='__all' || d.vendedor===state.vend;
   const it=PRODUTOS.itens.filter(d=>marcaOk(d) && vendOk(d));
-  const meses=[...new Set(it.map(d=>d.ano*100+d.mes))].sort((a,b)=>a-b).slice(-8);
+  const meses=[...new Set(it.map(d=>d.ano*100+d.mes))].sort((a,b)=>a-b).slice(-13);
   const M=prodUI.metrica==='qtde'?'qtde':'valor';
   const fmt=v=> M==='qtde'? Math.round(v).toLocaleString('pt-BR') : (v>=1000? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k' : Math.round(v).toLocaleString('pt-BR'));
+  const parcial=(m,mc)=> mc? !cobOk(mc,m) : (!cobOk('NATURALLE',m) || !cobOk('SELECTO',m));
   const cel=(m,c,mc,ate)=>sum(it.filter(d=>d.ano*100+d.mes===m && (!ate||d.dia<=ate) && categoria(d.produto)===c && (!mc||d.marca===mc)),d=>d[M]);
   const ult=meses[meses.length-1], aberto=ult && mesAberto(ult), corte=aberto? Math.max(...it.filter(d=>d.ano*100+d.mes===ult).map(d=>d.dia)) : 31;
   const pen=meses[meses.length-2];
@@ -3804,12 +3817,12 @@ function renderCategorias(){
   CATS.forEach(c=>{
     const totC=meses.map(m=>cel(m,c)); if(!totC.some(x=>x)) return;
     const linhasEmp = state.empresa==='__all' ? ['NATURALLE','SELECTO'] : [];
-    h+=`<tr class="arv-forte"><td><i class="cat-dot" style="background:${CAT_COR[c]}"></i>${c}</td><td>${state.empresa==='__all'?'As duas':MARCA_L(state.empresa==='naturalle'?'NATURALLE':'SELECTO')}</td>${totC.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">100%</td><td class="num">${(()=>{const v=varUlt(c);return `<span class="${cartCls(v)}">${cartPct(v)}</span>`;})()}</td></tr>`;
+    h+=`<tr class="arv-forte"><td><i class="cat-dot" style="background:${CAT_COR[c]}"></i>${c}</td><td>${state.empresa==='__all'?'As duas':MARCA_L(state.empresa==='naturalle'?'NATURALLE':'SELECTO')}</td>${totC.map((x,i)=>`<td class="num">${fmt(x)}${parcial(meses[i])&&x?'*':''}</td>`).join('')}<td class="num">100%</td><td class="num">${(()=>{const v=varUlt(c);return `<span class="${cartCls(v)}">${cartPct(v)}</span>`;})()}</td></tr>`;
     linhasEmp.forEach(mc=>{ const s=meses.map(m=>cel(m,c,mc)); if(!s.some(x=>x)) return; const n=s.length;
       const sh=totC[n-1]? s[n-1]/totC[n-1]*100 : null, v=varUlt(c,mc);
-      h+=`<tr><td></td><td>${MARCA_L(mc)}</td>${s.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${sh==null?'—':Math.round(sh)+'%'}</td><td class="num"><span class="${cartCls(v)}">${cartPct(v)}</span></td></tr>`; });
+      h+=`<tr><td></td><td>${MARCA_L(mc)}</td>${s.map((x,i)=>`<td class="num">${fmt(x)}${parcial(meses[i],mc)&&x?'*':''}</td>`).join('')}<td class="num">${sh==null?'—':Math.round(sh)+'%'}</td><td class="num"><span class="${cartCls(v)}">${cartPct(v)}</span></td></tr>`; });
   });
-  box.innerHTML=h+'</tbody></table>';
+  box.innerHTML=h+'</tbody></table>'+(meses.some(m=>parcial(m))? '<p class="desc" style="margin-top:6px">* mês com produtos incompletos: os relatórios de produtos importados não cobrem todas as notas desse mês (ou cobrem em dobro). Para completar, solte na pasta o relatório "Faturamento por Documento com itens" do período.</p>' : '');
   $('#prodCatDesc').textContent=`${M==='qtde'?'Unidades vendidas':'Faturamento sem imposto (R$)'} por categoria e empresa, mês a mês. O mês mais recente pode estar em andamento. Picolé = linha de picolés; Pote 420g = sorvete de 420 g; Gelato = gelatos e sorbets de 3,6 L e 5 L.`;
 }
 

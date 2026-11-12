@@ -27,6 +27,15 @@ Se um arquivo não for reconhecido, ele vai para a subpasta **Com erro** e nada 
 - O vendedor de cada item vem da nota (abas Sem Imposto e histórico). Se a nota não for encontrada, usa o último vendedor do cliente.
 - Registra cada importação na aba **Log de importação**.
 
+## Histórico (meses fechados)
+
+Relatórios de meses que já fecharam (ex.: o ano de 2025 inteiro) **não mexem nas abas do mês**:
+- **Por documento** → as notas vão para a aba **Carteira mes anterior** (histórico), trocando os meses que vieram no arquivo.
+- **Por vendedor** → a nota e o vendedor vão para a aba **Vendedor por nota**; o histórico pega o vendedor por ela e pela aba **De-Para**.
+- Vendedor que não está no De-Para (já saiu) fica com o primeiro nome e o painel o marca como **antigo** (sem venda nos últimos 3 meses).
+- Pode soltar os arquivos em qualquer ordem. Para um ano inteiro: os dois relatórios (documento e vendedor) de cada empresa.
+- Conserto/refazer tudo: rode `reconstruirHistorico()` no editor (relê os relatórios de meses fechados que estão em Processados).
+
 ## Instalação (uma vez)
 
 1. Na planilha de vendas: Extensões → Apps Script.

@@ -322,7 +322,7 @@ function gravarItens_(ss, rows, c) {
   const fica = old.filter(r => r[0] !== '' && !dentro(r));
   const tudo = fica.concat(itens).sort((a, b) => (a[1] * 10000 + a[2] * 100 + a[3]) - (b[1] * 10000 + b[2] * 100 + b[3]) || String(a[0]).localeCompare(String(b[0])));
   if (sh.getMaxRows() < tudo.length + 1) sh.insertRowsAfter(sh.getMaxRows(), tudo.length + 1 - sh.getMaxRows() + 100);
-  sh.getRange(2, 1, Math.max(old.length, 1), ROBO.CAB_ITENS.length).clearContent();
+  sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, old.length, 1), ROBO.CAB_ITENS.length).clearContent(); // até a última linha: nada de sobra de outra gravação
   sh.getRange(2, 1, tudo.length, ROBO.CAB_ITENS.length).setValues(tudo);
   return itens.length;
 }
@@ -456,4 +456,44 @@ function reconstruirHistorico() {
     console.log('Mês atual de volta à pasta: ' + Object.values(atuais).map(f => f.getName()).join(', '));
   } finally { trava.releaseLock(); }
   processarPasta();
+}
+
+/* refaz a aba Itens com todos os relatórios de produtos que estão em Processados:
+   o arquivo mais novo vale para as datas dele (sem somar o mesmo período duas vezes) */
+function reconstruirItens() {
+  const trava = LockService.getScriptLock(); if (!trava.tryLock(30000)) throw new Error('o robô está rodando; tente de novo em 1 minuto');
+  try {
+    const ss = SpreadsheetApp.getActive();
+    const pasta = pegarPasta_(DriveApp.getRootFolder(), ROBO.PASTA), proc = pegarPasta_(pasta, 'Processados');
+    const it = proc.getFiles(), arqs = [];
+    while (it.hasNext()) { const f = it.next(); if (/\.(csv|txt)$/i.test(f.getName()) || /csv|text/i.test(f.getMimeType())) arqs.push(f); }
+    const lotes = [];
+    arqs.forEach(f => {
+      let rows, c; try { rows = lerArquivo_(f); c = classificar(rows); } catch (e) { return; }
+      if (!c || c.tipo !== 'ITENS' || c.min == null) return;
+      lotes.push({ nome: f.getName(), upd: f.getLastUpdated().getTime(), marca: c.marca, min: c.min, max: c.max, itens: extrairItens(rows, c.marca) });
+    });
+    lotes.sort((a, b) => a.upd - b.upd); // o mais novo por último: ganha nas datas dele
+    let tudo = [];
+    lotes.forEach(l => {
+      tudo = tudo.filter(r => !(r[0] === l.marca && (r[1] * 10000 + r[2] * 100 + r[3]) >= l.min && (r[1] * 10000 + r[2] * 100 + r[3]) <= l.max));
+      l.itens.forEach(i => tudo.push(i));
+    });
+    // vendedor pela nota (histórico + abas do mês) ou o último do cliente
+    const vend = {}, porCliente = {}, codCli = s => (/^(\d+)/.exec(String(s).trim()) || [])[1] || '';
+    const h = ss.getSheetByName(ROBO.ABA_HIST);
+    if (h && h.getLastRow() > 1) h.getRange(2, 1, h.getLastRow() - 1, 8).getValues()
+      .sort((x, y) => (Number(x[1]) * 100 + Number(x[2])) - (Number(y[1]) * 100 + Number(y[2])))
+      .forEach(r => { const m = semAcento(r[0]), v = String(r[6]).trim(); vend[m + '|' + String(r[4]).trim()] = v; const k = codCli(r[5]); if (k && v && v !== 'SEM VENDEDOR') porCliente[m + '|' + k] = v; });
+    tudo.forEach(i => { i[14] = vend[i[0] + '|' + i[4]] || porCliente[i[0] + '|' + i[6]] || ''; });
+    tudo.sort((a, b) => (a[1] * 10000 + a[2] * 100 + a[3]) - (b[1] * 10000 + b[2] * 100 + b[3]) || String(a[0]).localeCompare(String(b[0])));
+    const sh = aba_(ss, ROBO.ABA_ITENS, ROBO.CAB_ITENS), n = ROBO.CAB_ITENS.length;
+    const velho = Math.max(sh.getLastRow() - 1, 1);
+    if (sh.getMaxRows() < tudo.length + 1) sh.insertRowsAfter(sh.getMaxRows(), tudo.length + 1 - sh.getMaxRows() + 100);
+    sh.getRange(2, 1, velho, n).clearContent();
+    for (let i = 0; i < tudo.length; i += 20000) sh.getRange(2 + i, 1, Math.min(20000, tudo.length - i), n).setValues(tudo.slice(i, i + 20000));
+    console.log('Itens refeitos: ' + tudo.length + ' linhas de ' + lotes.length + ' arquivos: ' + lotes.map(l => l.nome + ' [' + l.marca + ' ' + l.min + '-' + l.max + ']').join(' ; '));
+    log_([new Date(), '(reprocessado)', 'Itens / produtos · reconstrução', '', '', tudo.length, 'ok']);
+  } finally { trava.releaseLock(); }
+  if (typeof portalInvalidar === 'function') portalInvalidar();
 }
