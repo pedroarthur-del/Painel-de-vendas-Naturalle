@@ -286,6 +286,9 @@ function guardarHistorico_(ss, marca) {
     notas.push([marca, d.getFullYear(), d.getMonth() + 1, d.getDate(), String(r[ROBO.SI.doc]).trim(), String(r[ROBO.SI.cliente] || '').trim(),
       (!vend || vend.charAt(0) === '#') ? 'SEM VENDEDOR' : vend, Math.round(numBR(r[ROBO.SI.valor]) * 100)]);
   });
+  // só o mês atual e o anterior (virada): meses fechados vêm dos relatórios de histórico, nunca das abas do mês
+  const hj = hojeObj_(), minimo = hj.mes === 1 ? (hj.ano - 1) * 100 + 12 : hj.ano * 100 + hj.mes - 1;
+  for (let i = notas.length - 1; i >= 0; i--) if (notas[i][1] * 100 + notas[i][2] < minimo) notas.splice(i, 1);
   if (!notas.length) return;
   const h = aba_(ss, ROBO.ABA_HIST, ROBO.CAB_HIST);
   const hv = h.getLastRow() > 1 ? h.getRange(2, 1, h.getLastRow() - 1, 8).getValues() : [];
