@@ -205,7 +205,9 @@ function nomeVendedor(marca, questor, depara, atuais) {
   const ql = limpo(q);
   for (const k in depara) { const [m, n] = k.split('|'); if (limpo(n) === ql && (m === marca || m === outra)) return depara[k]; }
   const p = ql.split(' ');
-  const um = p[0], dois = p.slice(0, 2).join(' ');
+  // nome muito comum (MARIA, JOSE…) não identifica ninguém: usa o segundo (MARIA DARLYANE → DARLYANE)
+  const comum = /^(MARIA|JOSE|JOAO|ANA|ANTONIO|ANTONIA|FRANCISCO|FRANCISCA|FRANCISCA|LUIZ|LUIS|PAULO|CARLOS)$/.test(p[0]) && p[1] && !/^(DE|DA|DO|DOS|DAS)$/.test(p[1]);
+  const um = comum ? p[1] : p[0], dois = comum ? p.slice(1, 3).join(' ') : p.slice(0, 2).join(' ');
   return (atuais && atuais[um]) ? dois : um;
 }
 /* converte o texto do relatório no que a importação do Sheets faria (números e datas) */
