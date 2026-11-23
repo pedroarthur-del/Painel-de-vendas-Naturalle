@@ -1856,7 +1856,13 @@ function computeCarteira(opt){
   const totAnt=sum(antMes.filter(d=>marcaOk(d) && d.dia<=corteAnt), d=>d.valor);
 
   // junta por loja (Naturalle + Selecto pelo nome; o relatório corta nomes longos, então prefixo ≥18 letras também junta)
-  const docs=[...atualMes.map(d=>({...d, per:'atu'})), ...antMes.map(d=>({...d, per:'ant'}))]
+  // mesmo código de cliente = mesma loja, mesmo que o Questor mude o nome (ex.: "COKKO LOKKO BEIRA MAR" → "COKKO LOKKO"):
+  // usa o nome mais completo já visto para aquele código
+  const nomeCod={}, codDe=c=>(/^\s*(\d+)/.exec(String(c||''))||[])[1];
+  [...A, ...P].forEach(d=>{ const k=codDe(d.cliente); if(!k) return; const kk=d.marca+'|'+k, n=cartNomeLimpo(d.cliente);
+    if(!nomeCod[kk] || n.length>nomeCod[kk].length) nomeCod[kk]=n; });
+  const comNome=d=>{ const k=codDe(d.cliente); const n=k && nomeCod[d.marca+'|'+k]; return n ? {...d, cliente:k+' '+n} : d; };
+  const docs=[...atualMes.map(d=>({...comNome(d), per:'atu'})), ...antMes.map(d=>({...comNome(d), per:'ant'}))]
     .filter(d=>marcaOk(d) && !CART_EXCLUIR.includes(cartChave(d.cliente)));
   const chaves=[...new Set(docs.map(d=>cartChave(d.cliente)))].sort((a,b)=>b.length-a.length);
   const canon={}, canonList=[];
