@@ -1162,7 +1162,8 @@
       <div class="grid">
         <div class="panel">
           <div class="cart-subtabs" id="cartSubtabs">
-            <button type="button" data-lista="nc" class="active">Não compraram ainda</button>
+            <button type="button" data-lista="nc" class="active" id="cartTabNc">Não compraram no mesmo período</button>
+            <button type="button" data-lista="ncm">Não compraram no mês</button>
             <button type="button" data-lista="cm">Comprando menos</button>
             <button type="button" data-lista="nv">Novos no mês</button>
             <button type="button" data-lista="iv">Passaram do intervalo de compra</button>
@@ -1743,7 +1744,7 @@ const FERIADOS_NACIONAIS = {1:[1], 4:[21], 5:[1], 9:[7], 10:[12], 11:[2,15,20], 
 const CART_EXCLUIR = ['CONSUMIDOR FINAL','CLIENTES DIVERSOS']; // iFood, 99, balcão: não são carteira
 
 let CARTEIRA = {status:'nao-configurado'}; // 'ok' | 'erro' | 'nao-configurado'
-const cartUI = {lista:'nc', sort:{nc:['ant','desc'], cm:['var_rs','asc'], nv:['atu','desc'], vend:['ant','desc'], iv:['atraso','desc']}};
+const cartUI = {lista:'nc', sort:{ncm:['antMes','desc'], nc:['ant','desc'], cm:['var_rs','asc'], nv:['atu','desc'], vend:['ant','desc'], iv:['atraso','desc']}};
 
 function cartConfigurada(u){ return u && u.indexOf('COLE_AQUI')!==0; }
 async function fetchCSVRows(url){
@@ -1871,12 +1872,13 @@ function computeCarteira(opt){
   docs.forEach(d=>{
     const k=canon[cartChave(d.cliente)];
     const l=L[k] || (L[k]={id:k, nome:cartNomeLimpo(d.cliente), ant:0, atu:0, antN:0, antS:0, atuN:0, atuS:0,
-      pedAnt:new Set(), pedAtu:new Set(), ultAnt:0, ultAtu:0, vAnt:new Map(), vAntMes:new Map(), vAtu:new Map(), datas:new Set(), tot2:0});
+      pedAnt:new Set(), pedAtu:new Set(), pedAntMes:new Set(), antMes:0, antMesN:0, antMesS:0, ultAnt:0, ultAtu:0, vAnt:new Map(), vAntMes:new Map(), vAtu:new Map(), datas:new Set(), tot2:0});
     if(cartNomeLimpo(d.cliente).length>l.nome.length) l.nome=cartNomeLimpo(d.cliente);
     const nat = d.marca==='NATURALLE';
     if(d.per==='ant'){
       l.ultAnt=Math.max(l.ultAnt, d.dia); l.datas.add(Date.UTC(d.ano,d.mes-1,d.dia)/864e5); l.tot2+=d.valor;
       l.vAntMes.set(d.vendedor,(l.vAntMes.get(d.vendedor)||0)+d.valor);
+      l.antMes+=d.valor; nat? l.antMesN+=d.valor : l.antMesS+=d.valor; l.pedAntMes.add(d.marca+d.doc);
       if(d.dia<=corteAnt){ l.ant+=d.valor; nat? l.antN+=d.valor : l.antS+=d.valor; l.pedAnt.add(d.marca+d.doc);
         l.vAnt.set(d.vendedor,(l.vAnt.get(d.vendedor)||0)+d.valor); }
     } else if(d.dia<=corte){
@@ -1886,11 +1888,11 @@ function computeCarteira(opt){
     }
   });
   const dataRef=new Date(ano,mes-1,corte);
-  const clientes=Object.values(L).filter(l=>l.ant>0 || l.atu>0).map(l=>{
+  const clientes=Object.values(L).filter(l=>l.ant>0 || l.atu>0 || l.antMes>0).map(l=>{
     const vendAtu=cartTop(l.vAtu), vendAnt=cartTop(l.vAnt.size? l.vAnt : l.vAntMes);
     const vendedor = l.atu>0 ? vendAtu : vendAnt;
     let status;
-    if(l.ant>0 && l.atu===0) status='nc'; else if(l.ant===0) status='nv'; else if(l.atu<l.ant) status='cm'; else status='cr';
+    if(l.ant>0 && l.atu===0) status='nc'; else if(l.ant===0 && l.atu===0) status='fora'; else if(l.ant===0) status='nv'; else if(l.atu<l.ant) status='cm'; else status='cr';
     const obs=[];
     if(l.antN>0 && l.atuN===0 && l.atuS>0) obs.push('Parou Naturalle (segue Selecto)');
     if(l.antS>0 && l.atuS===0 && l.atuN>0) obs.push('Parou Selecto (segue Naturalle)');
@@ -1898,7 +1900,7 @@ function computeCarteira(opt){
     const ult = l.ultAtu ? new Date(ano,mes-1,l.ultAtu) : (l.ultAnt ? new Date(pAno,pMes-1,l.ultAnt) : null);
     return {id:l.id, nome:l.nome, vendedor, grupo:vendGrupo[vendedor]||null, status, ant:l.ant, atu:l.atu, var_rs:l.atu-l.ant,
       var_pct:l.ant? (l.atu/l.ant-1)*100 : null, antN:l.antN, antS:l.antS, atuN:l.atuN, atuS:l.atuS,
-      pedAnt:l.pedAnt.size, pedAtu:l.pedAtu.size, ultAnt:l.ultAnt, ultAtu:l.ultAtu,
+      pedAnt:l.pedAnt.size, pedAtu:l.pedAtu.size, antMes:l.antMes, antMesN:l.antMesN, antMesS:l.antMesS, pedAntMes:l.pedAntMes.size, ncMes: l.antMes>0 && l.atu===0, ultAnt:l.ultAnt, ultAtu:l.ultAtu,
       dias: ult? Math.round((dataRef-ult)/864e5) : null, obs:obs.join(' · '), vAtuM:l.vAtu, vAntM:l.vAnt, ...cartIntervalo(l, ano, mes, corte)};
   });
   const grupoOk = c => state.grupo==='__all' || c.grupo===state.grupo;
@@ -1909,7 +1911,7 @@ function computeCarteira(opt){
     const r={ant:0, atu:0, cliAnt:0, cliAtu:0, nc_n:0, nc_rs:0, cm_n:0, cm_rs:0, cr_n:0, cr_rs:0, nv_n:0, nv_rs:0};
     arr.forEach(c=>{ r.ant+=c.ant; r.atu+=c.atu; if(c.ant>0) r.cliAnt++; if(c.atu>0) r.cliAtu++;
       if(c.status==='nc'){ r.nc_n++; r.nc_rs+=c.ant; } else if(c.status==='cm'){ r.cm_n++; r.cm_rs+=c.var_rs; }
-      else if(c.status==='cr'){ r.cr_n++; r.cr_rs+=c.var_rs; } else { r.nv_n++; r.nv_rs+=c.atu; } });
+      else if(c.status==='cr'){ r.cr_n++; r.cr_rs+=c.var_rs; } else if(c.status==='nv'){ r.nv_n++; r.nv_rs+=c.atu; } });
     r.var_pct = r.ant? (r.atu/r.ant-1)*100 : null;
     return r;
   };
@@ -2095,11 +2097,13 @@ function renderCartVend(K){
 }
 
 function renderCartLista(K){
+  const tNc=$('#cartTabNc'); if(tNc) tNc.textContent='Não compraram de 01 a '+K.corte;
   const q=stripAccents(NORM($('#cartBusca').value||''));
   const tipo=cartUI.lista;
-  const rows=K.lista.filter(c=> tipo==='iv' ? c.atrasado : c.status===tipo).filter(c=>!q || stripAccents(NORM(c.nome+' '+c.vendedor)).includes(q));
+  const rows=K.lista.filter(c=> tipo==='iv' ? c.atrasado : tipo==='ncm' ? c.ncMes : c.status===tipo).filter(c=>!q || stripAccents(NORM(c.nome+' '+c.vendedor)).includes(q));
   const mP=MESES[K.pMes-1], mA=MESES[K.mes-1];
-  const desc={nc:`Compraram de 01 a ${K.corteAnt}/${mP} e ainda não compraram em ${mA}. "Dias sem comprar" conta da última compra (qualquer dia de ${mP}) até ${K.corte}/${mA}.`,
+  const desc={ncm:`Compraram em ${mP} (qualquer dia do mês) e ainda não compraram em ${mA} (dados até ${K.corte}/${mA}). "Dias sem comprar" conta da última compra até ${K.corte}/${mA}.`,
+    nc:`Compraram de 01 a ${K.corteAnt}/${mP} e ainda não compraram em ${mA}. "Dias sem comprar" conta da última compra (qualquer dia de ${mP}) até ${K.corte}/${mA}.`,
     cm:`Compraram nos dois meses, mas menos em ${mA} no mesmo período. Ordenado pela maior queda em reais.`,
     nv:`Compraram em ${mA} e não tinham comprado de 01 a ${K.corteAnt}/${mP} (podem ter comprado depois do dia ${K.corteAnt}).`,
     iv:`Já passaram do tempo que costumam levar entre uma compra e outra (mediana de ${mP} e ${mA}; compras em dias seguidos contam como um pedido; precisa de 3 ciclos de compra ou mais). Contado até ${K.corte}/${mA}.`}[tipo];
@@ -2113,12 +2117,19 @@ function renderCartLista(K){
       {f:'nCompras', h:'Compras (2 meses)', num:1},
       {f:'ticket', h:'Valor por compra', num:1, fmt:cartMoney}]
     : tipo==='nc' ? [...base,
+      {f:'ultAnt', h:'Última compra', num:1, fmt:v=>cartDia(v,K.pMes)},
+      {f:'dias', h:'Dias sem comprar', num:1, cls:v=>v>=30?'rank-down':''},
+      {f:'pedAnt', h:'Pedidos '+mP, num:1},
       {f:'ant', h:'Período '+mP, num:1, fmt:cartMoney},
       {f:'antN', h:'Naturalle', num:1, fmt:cartMoneyOrDash},
-      {f:'antS', h:'Selecto', num:1, fmt:cartMoneyOrDash},
-      {f:'pedAnt', h:'Pedidos', num:1},
+      {f:'antS', h:'Selecto', num:1, fmt:cartMoneyOrDash}]
+    : tipo==='ncm' ? [...base,
       {f:'ultAnt', h:'Última compra', num:1, fmt:v=>cartDia(v,K.pMes)},
-      {f:'dias', h:'Dias sem comprar', num:1, cls:v=>v>=30?'rank-down':''}]
+      {f:'dias', h:'Dias sem comprar', num:1, cls:v=>v>=30?'rank-down':''},
+      {f:'pedAntMes', h:'Pedidos '+mP, num:1},
+      {f:'antMes', h:mP+' inteiro', num:1, fmt:cartMoney},
+      {f:'antMesN', h:'Naturalle', num:1, fmt:cartMoneyOrDash},
+      {f:'antMesS', h:'Selecto', num:1, fmt:cartMoneyOrDash}]
     : tipo==='cm' ? [...base,
       {f:'ant', h:'Período '+mP, num:1, fmt:cartMoney},
       {f:'atu', h:'Período '+mA, num:1, fmt:cartMoney},
