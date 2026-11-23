@@ -1899,7 +1899,7 @@ function computeCarteira(opt){
     return {id:l.id, nome:l.nome, vendedor, grupo:vendGrupo[vendedor]||null, status, ant:l.ant, atu:l.atu, var_rs:l.atu-l.ant,
       var_pct:l.ant? (l.atu/l.ant-1)*100 : null, antN:l.antN, antS:l.antS, atuN:l.atuN, atuS:l.atuS,
       pedAnt:l.pedAnt.size, pedAtu:l.pedAtu.size, ultAnt:l.ultAnt, ultAtu:l.ultAtu,
-      dias: ult? Math.round((dataRef-ult)/864e5) : null, obs:obs.join(' · '), ...cartIntervalo(l, ano, mes, corte)};
+      dias: ult? Math.round((dataRef-ult)/864e5) : null, obs:obs.join(' · '), vAtuM:l.vAtu, vAntM:l.vAnt, ...cartIntervalo(l, ano, mes, corte)};
   });
   const grupoOk = c => state.grupo==='__all' || c.grupo===state.grupo;
   const doGrupo = clientes.filter(grupoOk);
@@ -1916,11 +1916,18 @@ function computeCarteira(opt){
   // o dia de hoje ainda está sendo lançado: não conta como dia útil completo (mesma regra da projeção)
   const hoje=new Date(), corteEhHoje = hoje.getFullYear()===ano && hoje.getMonth()+1===mes && hoje.getDate()===corte;
   const duAtu=cartDiasUteis(ano,mes,corteEhHoje? corte-1 : corte), duAnt=cartDiasUteis(pAno,pMes,corteAnt);
+  // faturamento de um vendedor = notas emitidas por ele (como no relatório do Questor), não o total dos clientes dele
+  const somaVend=(v,campo)=> campo==='vAtuM'
+    ? sum(atualMes.filter(d=>marcaOk(d) && d.dia<=corte && d.vendedor===v), d=>d.valor)
+    : sum(antMes.filter(d=>marcaOk(d) && d.dia<=corteAnt && d.vendedor===v), d=>d.valor); // todas as notas dele, inclusive consumidor final
   const R=resumo(escopo);
+  if(state.vend!=='__all'){ R.atu=somaVend(state.vend,'vAtuM'); R.ant=somaVend(state.vend,'vAntM'); R.var_pct=R.ant? (R.atu/R.ant-1)*100 : null; }
   R.ritmo_pct = R.ant? ((R.atu/duAtu)/(R.ant/duAnt)-1)*100 : null;
   const porVend={};
   doGrupo.forEach(c=>{ (porVend[c.vendedor]=porVend[c.vendedor]||[]).push(c); });
-  const vendRows=Object.entries(porVend).map(([v,arr])=>({vendedor:v, ...resumo(arr)}));
+  const todosV=new Set(); doGrupo.forEach(c=>{ c.vAtuM.forEach((_,v)=>todosV.add(v)); c.vAntM.forEach((_,v)=>todosV.add(v)); });
+  const vendRows=[...todosV].map(v=>{ const r=resumo(porVend[v]||[]); r.atu=somaVend(v,'vAtuM'); r.ant=somaVend(v,'vAntM'); r.var_pct=r.ant? (r.atu/r.ant-1)*100 : null; return {vendedor:v, ...r}; })
+    .filter(r=>r.atu||r.ant);
   return {ano, mes, pAno, pMes, corte, corteAnt, duAtu, duAnt, aviso, R, vendRows, lista:escopo, totAtu, totAnt,
     cartAtu:sum(clientes,c=>c.atu), cartAnt:sum(clientes,c=>c.ant)};
 }
